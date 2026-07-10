@@ -92,6 +92,9 @@ def create_document(db: Session, nom: str, chemin: str, taille: int, user_id: in
 def get_documents(db: Session):
     return db.query(models.Document).order_by(desc(models.Document.uploade_le)).all()
 
+def get_document(db: Session, doc_id: int):
+    return db.query(models.Document).filter(models.Document.id == doc_id).first()
+
 def marquer_indexe(db: Session, doc_id: int):
     doc = db.query(models.Document).filter(models.Document.id == doc_id).first()
     if doc:

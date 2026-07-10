@@ -2,15 +2,17 @@
 Pipeline RAG – MedAssist AI
 100% gratuit avec Ollama (LLM + embeddings locaux)
 """
-from typing import List, Tuple
+from functools import lru_cache
+from typing import List, Tuple, Optional
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
-from langchain.schema import Document
+from chromadb.config import Settings as ChromaSettings
 from ..config import settings
 
 
 # ─── Embeddings (vecteurs de texte) ──────────────────────────────
+@lru_cache(maxsize=1)
 def _get_embeddings():
     if settings.LLM_PROVIDER == "ollama":
         # Modèle d'embedding gratuit et léger via Ollama
@@ -35,13 +37,17 @@ def _get_embeddings():
 
 
 # ─── LLM ─────────────────────────────────────────────────────────
+@lru_cache(maxsize=1)
 def _get_llm():
     if settings.LLM_PROVIDER == "ollama":
         from langchain_community.chat_models import ChatOllama
         return ChatOllama(
             base_url=settings.OLLAMA_BASE_URL,
             model=settings.LLM_MODEL,   # llama3.2 par défaut
-            temperature=0.1
+            temperature=0.1,
+            num_predict=settings.LLM_MAX_TOKENS,
+            timeout=settings.LLM_TIMEOUT_SECONDS,
+            keep_alive=settings.OLLAMA_KEEP_ALIVE,
         )
     elif settings.LLM_PROVIDER == "gemini":
         from langchain_google_genai import ChatGoogleGenerativeAI
@@ -55,24 +61,41 @@ def _get_llm():
         return ChatGroq(
             model=settings.LLM_MODEL or "llama3-8b-8192",
             groq_api_key=settings.GROQ_API_KEY,
-            temperature=0.1
+            temperature=0.1,
+            max_tokens=settings.LLM_MAX_TOKENS,
         )
     else:  # openai
         from langchain_openai import ChatOpenAI
         return ChatOpenAI(
             model=settings.LLM_MODEL,
             openai_api_key=settings.OPENAI_API_KEY,
-            temperature=0.1
+            temperature=0.1,
+            max_tokens=settings.LLM_MAX_TOKENS,
         )
 
 
 # ─── Base vectorielle ────────────────────────────────────────────
+@lru_cache(maxsize=1)
 def _get_vectorstore():
     return Chroma(
         persist_directory=settings.CHROMA_PATH,
         embedding_function=_get_embeddings(),
-        collection_name="medassist_docs"
+        collection_name="medassist_docs",
+        client_settings=ChromaSettings(anonymized_telemetry=False, is_persistent=True),
     )
+
+
+def _persist_vectorstore(vectorstore: Chroma) -> None:
+    persist = getattr(vectorstore, "persist", None)
+    if callable(persist):
+        persist()
+
+
+def supprimer_document_index(nom_document: str) -> None:
+    """Supprime les chunks Chroma associes a un document."""
+    vectorstore = _get_vectorstore()
+    vectorstore._collection.delete(where={"source_document": nom_document})
+    _persist_vectorstore(vectorstore)
 
 
 # ─── Indexation d'un PDF ─────────────────────────────────────────
@@ -92,7 +115,9 @@ def indexer_pdf(chemin_pdf: str, nom_document: str) -> int:
         chunk.metadata["source_document"] = nom_document
 
     vectorstore = _get_vectorstore()
+    vectorstore._collection.delete(where={"source_document": nom_document})
     vectorstore.add_documents(chunks)
+    _persist_vectorstore(vectorstore)
     return len(chunks)
 
 
@@ -112,13 +137,13 @@ Documents disponibles :
 {context}
 """
 
-def repondre(question: str, historique: List[dict] = None) -> Tuple[str, List[dict]]:
+def repondre(question: str, historique: Optional[List[dict]] = None) -> Tuple[str, List[dict]]:
     """Génère une réponse RAG. Retourne (réponse, sources)."""
     vectorstore = _get_vectorstore()
     llm = _get_llm()
 
     # Recherche des passages pertinents
-    resultats = vectorstore.similarity_search_with_score(question, k=4)
+    resultats = vectorstore.similarity_search_with_score(question, k=RETRIEVAL_K)
 
     if not resultats:
         return (
@@ -127,18 +152,27 @@ def repondre(question: str, historique: List[dict] = None) -> Tuple[str, List[di
             []
         )
 
-    # Filtrer par pertinence et construire le contexte
+    # Chroma retourne des distances dont l'echelle depend du modele d'embeddings.
+    # Avec Ollama/nomic-embed-text, les passages pertinents peuvent avoir des
+    # scores de plusieurs centaines. On garde donc les meilleurs resultats et on
+    # laisse le prompt interdire les reponses hors documents.
     context_parts, sources = [], []
     for doc, score in resultats:
-        if score < 1.6:
-            context_parts.append(doc.page_content)
-            src = {
-                "document": doc.metadata.get("source_document", "Inconnu"),
-                "page": doc.metadata.get("page", "?"),
-                "score": round(float(score), 3)
-            }
-            if src not in sources:
-                sources.append(src)
+        if not doc.page_content.strip():
+            continue
+
+        source_document = doc.metadata.get("source_document", "Inconnu")
+        page = doc.metadata.get("page", "?")
+        context_parts.append(
+            f"Source: {source_document}, page {page}\n{doc.page_content}"
+        )
+        src = {
+            "document": source_document,
+            "page": page,
+            "score": round(float(score), 3)
+        }
+        if src not in sources:
+            sources.append(src)
 
     if not context_parts:
         return ("Je n'ai pas trouvé d'information pertinente dans les documents disponibles.", [])

@@ -4,14 +4,15 @@ import { Shield } from 'lucide-react'
 
 export default function AssistantPage() {
   return (
-    <div className="p-6 space-y-4">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800">Assistant IA</h2>
-        <p className="text-gray-500 text-sm">Posez vos questions — les réponses sont fondées sur vos documents officiels</p>
+    <div className="mx-auto flex max-w-7xl flex-col space-y-4 p-4 md:h-full md:p-6">
+      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <p className="text-sm font-semibold uppercase tracking-wide text-primary">Support documentaire</p>
+        <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Assistant IA</h2>
+        <p className="mt-1 text-sm text-slate-500">Posez vos questions; les reponses s'appuient sur vos documents officiels.</p>
       </div>
-      <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg">
-        <Shield size={13} />
-        Cet assistant est un outil d'aide à l'information. Il ne remplace pas le jugement médical ou technique d'un professionnel.
+      <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
+        <Shield size={16} className="mt-0.5 shrink-0" />
+        Cet assistant aide a retrouver l'information. Il ne remplace pas le jugement medical ou technique d'un professionnel.
       </div>
       <ChatInterface />
     </div>

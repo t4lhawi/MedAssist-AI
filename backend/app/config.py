@@ -1,5 +1,18 @@
-from pydantic_settings import BaseSettings
+from pathlib import Path
 from typing import Literal
+
+from pydantic_settings import BaseSettings
+
+
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+
+
+def _resolve_backend_path(value: str) -> str:
+    path = Path(value)
+    if path.is_absolute():
+        return str(path)
+    return str((BACKEND_DIR / path).resolve())
+
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://postgres:admin@postgres:5432/medassist"
@@ -9,7 +22,12 @@ class Settings(BaseSettings):
     # Provider IA — par défaut Ollama (gratuit, local)
     LLM_PROVIDER: Literal["ollama", "gemini", "groq", "openai"] = "ollama"
     LLM_MODEL: str = "llama3.2"
+    LLM_MAX_TOKENS: int = 256
+    LLM_TIMEOUT_SECONDS: int = 60
     OLLAMA_BASE_URL: str = "http://ollama:11434"
+    OLLAMA_KEEP_ALIVE: str = "30m"
+    RAG_RETRIEVAL_K: int = 4
+    RAG_HISTORY_MESSAGES: int = 4
 
     # Clés optionnelles (alternatives gratuites)
     OPENAI_API_KEY: str = ""
@@ -20,6 +38,8 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "./uploads"
 
     class Config:
-        env_file = ".env"
+        env_file = str(BACKEND_DIR / ".env")
 
 settings = Settings()
+settings.CHROMA_PATH = _resolve_backend_path(settings.CHROMA_PATH)
+settings.UPLOAD_DIR = _resolve_backend_path(settings.UPLOAD_DIR)

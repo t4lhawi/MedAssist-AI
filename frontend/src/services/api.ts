@@ -45,8 +45,12 @@ export const uploadDocument = (file: File) => {
 }
 export const deleteDocument = (id: number) => api.delete(`/api/documents/${id}`)
 
-export const sendChat = (question: string, historique: {role: string; content: string}[]) =>
-  api.post('/api/chat/', { question, historique })
+export const sendChat = (
+  question: string,
+  historique: {role: string; content: string}[],
+  signal?: AbortSignal
+) =>
+  api.post('/api/chat/', { question, historique }, { signal })
 export const getChatHistory = () => api.get('/api/chat/historique')
 export const interpreterMesure = (type: string, valeur: number, unite: string, emplacement: string) =>
   api.post('/api/chat/interpreter', null, { params: { capteur_type: type, valeur, unite, emplacement } })
