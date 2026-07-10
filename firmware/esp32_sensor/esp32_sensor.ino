@@ -16,7 +16,7 @@ const char* SERVER_URL = "http://192.168.1.100:8000";
 const int CAPTEUR_ID_TEMP = 1;
 const int CAPTEUR_ID_HUM  = 2;
 
-const unsigned long INTERVAL_MS = 30000;
+const unsigned long INTERVAL_MS = 3000;
 
 // ===============================
 

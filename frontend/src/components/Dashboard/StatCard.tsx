@@ -12,31 +12,41 @@ interface Props {
 }
 
 const TONE: Record<NonNullable<Props['tone']>, string> = {
-  neutral: 'bg-slate-50 text-slate-600 border-slate-200',
-  good: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  warning: 'bg-amber-50 text-amber-700 border-amber-200',
-  danger: 'bg-red-50 text-red-700 border-red-200',
+  neutral: 'bg-slate-100 text-slate-500',
+  good: 'bg-emerald-50 text-emerald-600',
+  warning: 'bg-amber-50 text-amber-600',
+  danger: 'bg-red-50 text-red-500',
+}
+
+const DOT: Record<NonNullable<Props['tone']>, string> = {
+  neutral: 'bg-slate-400',
+  good: 'bg-emerald-500',
+  warning: 'bg-amber-500',
+  danger: 'bg-red-500',
 }
 
 export default function StatCard({ title, value, unit, icon: Icon, color, sub, tone = 'neutral' }: Props) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-slate-500">{title}</p>
-          <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950">
-            {value}
-            {unit && <span className="ml-1 text-sm font-semibold text-slate-500">{unit}</span>}
-          </p>
-        </div>
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${color}`}>
-          <Icon size={20} className="text-white" />
+    <div className="group relative overflow-hidden rounded-2xl border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_8px_-2px_rgba(0,0,0,0.05)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.1)]">
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <p className="truncate text-[13px] font-medium text-slate-500">{title}</p>
+        <div
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] ${color} shadow-[0_2px_6px_-1px_rgba(0,0,0,0.15)] transition-transform duration-200 group-hover:scale-105`}
+        >
+          <Icon size={17} strokeWidth={2.2} className="text-white" />
         </div>
       </div>
+
+      <p className="text-[26px] font-semibold leading-none tracking-[-0.02em] text-slate-900">
+        {value}
+        {unit && <span className="ml-1 text-[13px] font-medium text-slate-400">{unit}</span>}
+      </p>
+
       {sub && (
-        <span className={`inline-flex max-w-full rounded-full border px-2.5 py-1 text-xs font-medium ${TONE[tone]}`}>
+        <div className={`mt-4 inline-flex max-w-full items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-medium ${TONE[tone]}`}>
+          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[tone]}`} />
           <span className="truncate">{sub}</span>
-        </span>
+        </div>
       )}
     </div>
   )

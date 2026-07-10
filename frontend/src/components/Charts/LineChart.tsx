@@ -11,7 +11,7 @@ interface Props {
   color?: string
 }
 
-export default function LineChart({ mesures, title, color = '#0F5C9E' }: Props) {
+export default function LineChart({ mesures, title, color = '#2563EB' }: Props) {
   const data = [...mesures].reverse().map(m => ({
     time: format(new Date(m.timestamp), 'HH:mm', { locale: fr }),
     valeur: m.valeur,
@@ -19,34 +19,50 @@ export default function LineChart({ mesures, title, color = '#0F5C9E' }: Props) 
   }))
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_8px_-2px_rgba(0,0,0,0.05)]">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h3 className="font-semibold text-slate-800">{title}</h3>
-        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">
+        <h3 className="text-[14px] font-semibold tracking-[-0.01em] text-slate-900">{title}</h3>
+        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500">
           {data.length} points
         </span>
       </div>
 
       {data.length === 0 ? (
-        <div className="flex h-[220px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-center text-slate-400">
-          <Activity size={28} className="mb-2" />
-          <p className="text-sm font-medium">Aucune mesure disponible</p>
+        <div className="flex h-[220px] flex-col items-center justify-center rounded-xl bg-slate-50 text-center">
+          <Activity size={26} strokeWidth={1.5} className="mb-2 text-slate-300" />
+          <p className="text-[13px] font-medium text-slate-400">Aucune mesure disponible</p>
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={220}>
           <LC data={data} margin={{ left: -12, right: 8, top: 6, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-            <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#64748B' }} tickLine={false} axisLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: '#64748B' }} tickLine={false} axisLine={false} />
+            <defs>
+              <linearGradient id={`fill-${title.replace(/\s+/g, '')}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity={0.18} />
+                <stop offset="100%" stopColor={color} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="0" vertical={false} stroke="#F1F5F9" />
+            <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#94A3B8' }} tickLine={false} axisLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: '#94A3B8' }} tickLine={false} axisLine={false} />
             <Tooltip
               formatter={(v: number) => [`${v} ${data[0]?.unite || ''}`, 'Valeur']}
               contentStyle={{
-                border: '1px solid #E2E8F0',
-                borderRadius: 8,
-                boxShadow: '0 12px 30px -20px rgba(15, 23, 42, 0.45)',
+                border: 'none',
+                borderRadius: 12,
+                boxShadow: '0 8px 24px -8px rgba(15, 23, 42, 0.2)',
+                fontSize: 12.5,
+                padding: '8px 12px',
               }}
             />
-            <Line type="monotone" dataKey="valeur" stroke={color} strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+            <Line
+              type="monotone"
+              dataKey="valeur"
+              stroke={color}
+              strokeWidth={2.5}
+              dot={false}
+              activeDot={{ r: 5, strokeWidth: 2, stroke: '#fff' }}
+              fill={`url(#fill-${title.replace(/\s+/g, '')})`}
+            />
           </LC>
         </ResponsiveContainer>
       )}

@@ -28,8 +28,7 @@ else:
 # Créer des capteurs de démo
 capteurs_demo = [
     models.Capteur(nom="Capteur Salle 101", type="temperature", emplacement="Salle de soins 101"),
-    models.Capteur(nom="Capteur Pharmacie", type="temperature", emplacement="Pharmacie centrale"),
-    models.Capteur(nom="Humidité Bloc A",   type="humidite",    emplacement="Bloc opératoire A"),
+    models.Capteur(nom="Capteur Salle 101", type="humidite", emplacement="Salle de soins 101"),
 ]
 for c in capteurs_demo:
     if not db.query(models.Capteur).filter_by(nom=c.nom).first():

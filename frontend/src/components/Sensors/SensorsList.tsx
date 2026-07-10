@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Capteur, Mesure } from '../../types'
 import { createCapteur, getMesures } from '../../services/api'
 import { Activity, Droplets, Loader2, Plus, Thermometer, Wind, X } from 'lucide-react'
+import Select from '../ui/select'
 
 interface Props {
   capteurs: Capteur[]
@@ -15,7 +16,7 @@ const ICONS: Record<string, React.ElementType> = {
 }
 
 const UNITS: Record<string, string> = {
-  temperature: 'deg C',
+  temperature: '°C',
   humidite: '%',
   air: 'ppm',
 }
@@ -65,105 +66,111 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="mb-4 flex items-center justify-between gap-3">
+    <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_8px_-2px_rgba(0,0,0,0.05)]">
+      <div className="mb-5 flex items-center justify-between gap-3">
         <div>
-          <h3 className="flex items-center gap-2 font-semibold text-slate-800">
-            <Activity size={18} className="text-primary" />
+          <h3 className="flex items-center gap-2 text-[15px] font-semibold tracking-[-0.01em] text-slate-900">
+            <span className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-blue-50 text-blue-600">
+              <Activity size={15} strokeWidth={2.2} />
+            </span>
             Capteurs
           </h3>
-          <p className="mt-1 text-xs text-slate-500">{capteurs.length} capteur(s) configure(s)</p>
+          <p className="mt-1 pl-9 text-[12.5px] text-slate-400">{capteurs.length} capteur(s) configuré(s)</p>
         </div>
         <button
           onClick={() => setShowForm(v => !v)}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark"
+          className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-3.5 py-2 text-[13px] font-medium text-white shadow-[0_2px_6px_-1px_rgba(37,99,235,0.4)] transition-all hover:bg-blue-700 active:scale-95"
         >
-          {showForm ? <X size={15} /> : <Plus size={15} />}
+          {showForm ? <X size={14} /> : <Plus size={14} />}
           {showForm ? 'Fermer' : 'Ajouter'}
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={submit} className="mb-4 rounded-lg border border-primary/20 bg-primary-light p-4">
+        <form onSubmit={submit} className="mb-4 rounded-2xl bg-slate-50 p-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="sm:col-span-2">
-              <span className="mb-1 block text-xs font-semibold text-slate-600">Nom du capteur</span>
+              <span className="mb-1.5 block text-[12px] font-medium text-slate-500">Nom du capteur</span>
               <input
                 value={form.nom}
                 onChange={e => setForm({ ...form, nom: e.target.value })}
-                placeholder="Ex: Temperature salle 101"
+                placeholder="Ex: Température salle 101"
                 required
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                className="w-full rounded-xl border-0 bg-white px-3.5 py-2.5 text-[13.5px] text-slate-800 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] outline-none transition-shadow placeholder:text-slate-400 focus:shadow-[inset_0_0_0_1.5px_rgba(37,99,235,0.5)]"
               />
             </label>
             <label>
-              <span className="mb-1 block text-xs font-semibold text-slate-600">Type</span>
-              <select
+              <span className="mb-1.5 block text-[12px] font-medium text-slate-500">Type</span>
+              <Select
                 value={form.type}
-                onChange={e => setForm({ ...form, type: e.target.value })}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
-              >
-                <option value="temperature">Temperature</option>
-                <option value="humidite">Humidite</option>
-                <option value="air">Qualite de l'air</option>
-              </select>
+                onChange={v => setForm({ ...form, type: v })}
+                options={[
+                  { value: 'temperature', label: 'Température' },
+                  { value: 'humidite', label: 'Humidité' },
+                  { value: 'air', label: "Qualité de l'air" },
+                ]}
+              />
             </label>
             <label>
-              <span className="mb-1 block text-xs font-semibold text-slate-600">Emplacement</span>
+              <span className="mb-1.5 block text-[12px] font-medium text-slate-500">Emplacement</span>
               <input
                 value={form.emplacement}
                 onChange={e => setForm({ ...form, emplacement: e.target.value })}
                 placeholder="Salle 101"
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                className="w-full rounded-xl border-0 bg-white px-3.5 py-2.5 text-[13.5px] text-slate-800 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] outline-none transition-shadow placeholder:text-slate-400 focus:shadow-[inset_0_0_0_1.5px_rgba(37,99,235,0.5)]"
               />
             </label>
           </div>
 
-          {error && <p className="mt-3 text-sm font-medium text-red-700">{error}</p>}
+          {error && <p className="mt-3 text-[13px] font-medium text-red-600">{error}</p>}
 
           <div className="mt-4 flex justify-end gap-2">
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              className="rounded-full bg-white px-3.5 py-2 text-[13px] font-medium text-slate-600 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] transition-colors hover:bg-slate-100"
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-3.5 py-2 text-[13px] font-medium text-white shadow-[0_2px_6px_-1px_rgba(37,99,235,0.4)] transition-colors hover:bg-blue-700 disabled:opacity-60"
             >
-              {saving && <Loader2 size={14} className="animate-spin" />}
+              {saving && <Loader2 size={13} className="animate-spin" />}
               Enregistrer
             </button>
           </div>
         </form>
       )}
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {capteurs.map(c => {
           const Icon = ICONS[c.type] || Activity
           const derniere = dernieres[c.id]
 
           return (
-            <div key={c.id} className="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-primary shadow-sm">
-                <Icon size={16} />
+            <div key={c.id} className="flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-slate-50">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-slate-100 text-slate-500">
+                <Icon size={16} strokeWidth={2} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-slate-800">{c.nom}</p>
-                <p className="truncate text-xs text-slate-500">{c.emplacement || 'Emplacement non renseigne'}</p>
+                <p className="truncate text-[13.5px] font-medium text-slate-800">{c.nom}</p>
+                <p className="truncate text-[12px] text-slate-400">{c.emplacement || 'Emplacement non renseigné'}</p>
               </div>
               <div className="shrink-0 text-right">
                 {derniere ? (
-                  <p className="text-sm font-bold text-primary">{derniere.valeur} {UNITS[c.type] || ''}</p>
+                  <p className="text-[14px] font-semibold text-slate-900">
+                    {derniere.valeur} <span className="text-[12px] font-medium text-slate-400">{UNITS[c.type] || ''}</span>
+                  </p>
                 ) : (
-                  <p className="text-xs font-medium text-slate-400">Aucune mesure</p>
+                  <p className="text-[12px] font-medium text-slate-300">Aucune mesure</p>
                 )}
-                <span className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                  c.actif ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-200 text-slate-500'
-                }`}>
+                <span
+                  className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                    c.actif ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'
+                  }`}
+                >
                   <span className={`h-1.5 w-1.5 rounded-full ${c.actif ? 'bg-emerald-500' : 'bg-slate-400'}`} />
                   {c.actif ? 'Actif' : 'Inactif'}
                 </span>
@@ -173,9 +180,9 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
         })}
 
         {capteurs.length === 0 && (
-          <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center">
-            <Activity size={30} className="mx-auto mb-2 text-slate-300" />
-            <p className="text-sm font-medium text-slate-500">Aucun capteur enregistre</p>
+          <div className="rounded-2xl bg-slate-50 px-4 py-10 text-center">
+            <Activity size={28} strokeWidth={1.5} className="mx-auto mb-2 text-slate-300" />
+            <p className="text-[13.5px] font-medium text-slate-500">Aucun capteur enregistré</p>
           </div>
         )}
       </div>
