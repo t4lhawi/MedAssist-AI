@@ -61,7 +61,7 @@ export default function DashboardPage() {
           <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600">Vue temps réel</p>
           <h2 className="text-[25px] font-semibold tracking-[-0.03em] text-slate-950">Tableau de bord</h2>
           <p className="mt-1 text-[13px] text-slate-500">
-            Surveillance température, humidité, pression, chambres froides, qualité d'air et CO2.
+            Surveillance température, humidité, pression, et qualité d'air.
           </p>
         </div>
         <button
@@ -106,18 +106,9 @@ export default function DashboardPage() {
           sub={`${indexedDocuments} indexé(s)`}
           tone={indexedDocuments === documents.length && documents.length > 0 ? 'good' : 'neutral'}
         />
-{/*         <StatCard
-          title="CO2 réel"
-          value={latestValue('co2')}
-          unit="ppm"
-          icon={Cloud}
-          color="bg-gradient-to-b from-slate-500 to-slate-700"
-          sub={countByType('co2') > 0 ? `${countByType('co2')} capteur(s)` : 'Option selon budget'}
-          tone="neutral"
-        /> */}
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {MONITORING_TYPES.map(item => (
           <StatCard
             key={item.type}

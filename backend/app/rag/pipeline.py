@@ -1,13 +1,10 @@
-"""
-Pipeline RAG – MedAssist AI
-100% gratuit avec Ollama (LLM + embeddings locaux)
-"""
 from functools import lru_cache
-from typing import List, Tuple, Optional
+from typing import Any, List, Tuple, Optional, cast
 from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from chromadb.config import Settings as ChromaSettings
+from pydantic import SecretStr
 from ..config import settings
 
 
@@ -17,23 +14,25 @@ def _get_embeddings():
     if settings.LLM_PROVIDER == "ollama":
         # Modèle d'embedding gratuit et léger via Ollama
         from langchain_community.embeddings import OllamaEmbeddings
-        return OllamaEmbeddings(
+        return cast(Any, OllamaEmbeddings)(
             base_url=settings.OLLAMA_BASE_URL,
             model="nomic-embed-text"   # petit modèle, rapide
         )
     elif settings.LLM_PROVIDER == "gemini":
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
-        return GoogleGenerativeAIEmbeddings(
+        return cast(Any, GoogleGenerativeAIEmbeddings)(
             model="models/embedding-001",
-            google_api_key=settings.GEMINI_API_KEY
+            google_api_key=SecretStr(settings.GEMINI_API_KEY) if settings.GEMINI_API_KEY else None
         )
     elif settings.LLM_PROVIDER == "groq":
         # Groq n'a pas d'embeddings → on utilise un modèle HuggingFace local léger
         from langchain_community.embeddings import HuggingFaceEmbeddings
-        return HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        return cast(Any, HuggingFaceEmbeddings)(model_name="sentence-transformers/all-MiniLM-L6-v2")
     else:  # openai
         from langchain_openai import OpenAIEmbeddings
-        return OpenAIEmbeddings(openai_api_key=settings.OPENAI_API_KEY)
+        return cast(Any, OpenAIEmbeddings)(
+            api_key=SecretStr(settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
+        )
 
 
 # ─── LLM ─────────────────────────────────────────────────────────
@@ -41,7 +40,7 @@ def _get_embeddings():
 def _get_llm():
     if settings.LLM_PROVIDER == "ollama":
         from langchain_community.chat_models import ChatOllama
-        return ChatOllama(
+        return cast(Any, ChatOllama)(
             base_url=settings.OLLAMA_BASE_URL,
             model=settings.LLM_MODEL,   # llama3.2 par défaut
             temperature=0.1,
@@ -51,24 +50,24 @@ def _get_llm():
         )
     elif settings.LLM_PROVIDER == "gemini":
         from langchain_google_genai import ChatGoogleGenerativeAI
-        return ChatGoogleGenerativeAI(
+        return cast(Any, ChatGoogleGenerativeAI)(
             model=settings.LLM_MODEL or "gemini-1.5-flash",
-            google_api_key=settings.GEMINI_API_KEY,
+            api_key=SecretStr(settings.GEMINI_API_KEY) if settings.GEMINI_API_KEY else None,
             temperature=0.1
         )
     elif settings.LLM_PROVIDER == "groq":
         from langchain_groq import ChatGroq
-        return ChatGroq(
+        return cast(Any, ChatGroq)(
             model=settings.LLM_MODEL or "llama3-8b-8192",
-            groq_api_key=settings.GROQ_API_KEY,
+            api_key=SecretStr(settings.GROQ_API_KEY) if settings.GROQ_API_KEY else None,
             temperature=0.1,
             max_tokens=settings.LLM_MAX_TOKENS,
         )
     else:  # openai
         from langchain_openai import ChatOpenAI
-        return ChatOpenAI(
+        return cast(Any, ChatOpenAI)(
             model=settings.LLM_MODEL,
-            openai_api_key=settings.OPENAI_API_KEY,
+            api_key=SecretStr(settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None,
             temperature=0.1,
             max_tokens=settings.LLM_MAX_TOKENS,
         )
@@ -143,7 +142,7 @@ def repondre(question: str, historique: Optional[List[dict]] = None) -> Tuple[st
     llm = _get_llm()
 
     # Recherche des passages pertinents
-    resultats = vectorstore.similarity_search_with_score(question, k=RETRIEVAL_K)
+    resultats = vectorstore.similarity_search_with_score(question, k=settings.RAG_RETRIEVAL_K)
 
     if not resultats:
         return (
@@ -156,7 +155,8 @@ def repondre(question: str, historique: Optional[List[dict]] = None) -> Tuple[st
     # Avec Ollama/nomic-embed-text, les passages pertinents peuvent avoir des
     # scores de plusieurs centaines. On garde donc les meilleurs resultats et on
     # laisse le prompt interdire les reponses hors documents.
-    context_parts, sources = [], []
+    context_parts: list[str] = []
+    sources: list[dict[str, object]] = []
     for doc, score in resultats:
         if not doc.page_content.strip():
             continue
@@ -166,7 +166,7 @@ def repondre(question: str, historique: Optional[List[dict]] = None) -> Tuple[st
         context_parts.append(
             f"Source: {source_document}, page {page}\n{doc.page_content}"
         )
-        src = {
+        src: dict[str, object] = {
             "document": source_document,
             "page": page,
             "score": round(float(score), 3)
@@ -180,8 +180,8 @@ def repondre(question: str, historique: Optional[List[dict]] = None) -> Tuple[st
     context = "\n\n---\n\n".join(context_parts)
     prompt = SYSTEM_PROMPT.format(context=context)
 
-    from langchain.schema import SystemMessage, HumanMessage, AIMessage
-    messages = [SystemMessage(content=prompt)]
+    from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+    messages: list[BaseMessage] = [SystemMessage(content=prompt)]
 
     if historique:
         for msg in historique[-6:]:
@@ -193,7 +193,7 @@ def repondre(question: str, historique: Optional[List[dict]] = None) -> Tuple[st
     messages.append(HumanMessage(content=question))
 
     reponse = llm.invoke(messages)
-    return (reponse.content, sources)
+    return (str(reponse.content), sources)
 
 
 # ─── Interprétation d'une mesure capteur ─────────────────────────
@@ -211,7 +211,7 @@ def interpreter_mesure(type_capteur: str, valeur: float, unite: str, emplacement
     except Exception:
         context = ""
 
-    from langchain.schema import HumanMessage
+    from langchain_core.messages import HumanMessage
     prompt = f"""Tu es un assistant hospitalier expert.
 {f'Protocole de référence : {context}' if context else ''}
 
@@ -224,4 +224,4 @@ En 2 à 3 phrases, indique si cette valeur est dans les normes, et si une action
 Réponds en français, de manière claire et directe."""
 
     result = llm.invoke([HumanMessage(content=prompt)])
-    return result.content
+    return str(result.content)

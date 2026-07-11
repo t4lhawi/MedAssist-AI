@@ -41,7 +41,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     if not email:
         raise HTTPException(status_code=401, detail="Token invalide")
     user = db.query(models.Utilisateur).filter(models.Utilisateur.email == email).first()
-    if not user or not user.actif:
+    if user is None or getattr(user, "actif", True) is False:
         raise HTTPException(status_code=401, detail="Utilisateur introuvable")
     return user
 

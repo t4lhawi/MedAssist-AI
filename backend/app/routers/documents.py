@@ -1,7 +1,7 @@
 import os, shutil
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, cast
 from ..database import get_db, SessionLocal
 from ..schemas import DocumentOut
 from ..auth import get_current_user
@@ -41,7 +41,7 @@ async def upload(
         finally:
             db_index.close()
 
-    background_tasks.add_task(_indexer, doc.id, chemin, filename)
+    background_tasks.add_task(_indexer, cast(int, doc.id), chemin, filename)
     return doc
 
 @router.get("/", response_model=List[DocumentOut])
@@ -53,8 +53,8 @@ def supprimer(doc_id: int, db: Session = Depends(get_db), user=Depends(get_curre
     doc = crud.get_document(db, doc_id)
     if not doc:
         raise HTTPException(404, "Document introuvable")
-    nom = doc.nom
-    chemin = doc.chemin
+    nom = cast(str, doc.nom)
+    chemin = cast(str, doc.chemin)
     crud.delete_document(db, doc_id)
     try:
         supprimer_document_index(nom)
