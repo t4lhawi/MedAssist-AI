@@ -83,6 +83,9 @@ class ChatResponse(BaseModel):
 class AlerteOut(BaseModel):
     id: int
     capteur_id: Optional[int]
+    capteur_nom: Optional[str] = None
+    capteur_type: Optional[str] = None
+    capteur_emplacement: Optional[str] = None
     niveau: str
     message: str
     traitee: bool

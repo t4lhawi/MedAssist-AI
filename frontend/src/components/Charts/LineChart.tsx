@@ -19,8 +19,8 @@ export default function LineChart({ mesures, title, color = '#2563EB' }: Props) 
   }))
 
   return (
-    <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_8px_-2px_rgba(0,0,0,0.05)]">
-      <div className="mb-4 flex items-center justify-between gap-3">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
         <h3 className="text-[14px] font-semibold tracking-[-0.01em] text-slate-900">{title}</h3>
         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500">
           {data.length} points
@@ -28,12 +28,12 @@ export default function LineChart({ mesures, title, color = '#2563EB' }: Props) 
       </div>
 
       {data.length === 0 ? (
-        <div className="flex h-[220px] flex-col items-center justify-center rounded-xl bg-slate-50 text-center">
+        <div className="flex h-[200px] flex-col items-center justify-center rounded-xl bg-slate-50 text-center">
           <Activity size={26} strokeWidth={1.5} className="mb-2 text-slate-300" />
           <p className="text-[13px] font-medium text-slate-400">Aucune mesure disponible</p>
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={200}>
           <LC data={data} margin={{ left: -12, right: 8, top: 6, bottom: 0 }}>
             <defs>
               <linearGradient id={`fill-${title.replace(/\s+/g, '')}`} x1="0" y1="0" x2="0" y2="1">

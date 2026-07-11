@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc
 from . import models, schemas
 from .auth import hacher_mdp
@@ -7,7 +7,21 @@ from .auth import hacher_mdp
 SEUILS = {
     "temperature": {"min": 18.0, "max": 26.0},
     "humidite":    {"min": 30.0, "max": 70.0},
+    "pression":    {"min": 950.0, "max": 1050.0},
+    "chambre_froide": {"min": 2.0, "max": 8.0},
+    "qualite_air": {"max": 100.0},
     "air":         {"max": 1000.0},
+    "co2":         {"max": 1000.0},
+}
+
+LIBELLES_CAPTEURS = {
+    "temperature": "Température",
+    "humidite": "Humidité",
+    "pression": "Pression",
+    "chambre_froide": "Chambre froide",
+    "qualite_air": "Qualité de l'air",
+    "air": "Qualité de l'air",
+    "co2": "CO2",
 }
 
 # ─── Utilisateurs ────────────────────────────────────────────────
@@ -57,13 +71,14 @@ def _verifier_seuil(db: Session, mesure: models.Mesure):
     if not capteur:
         return
     seuil = SEUILS.get(capteur.type, {})
+    libelle = LIBELLES_CAPTEURS.get(capteur.type, capteur.type.capitalize())
     niveau = None; msg = None
     if "max" in seuil and mesure.valeur > seuil["max"]:
         niveau = "critique" if mesure.valeur > seuil["max"] * 1.1 else "attention"
-        msg = f"{capteur.type.capitalize()} trop élevée : {mesure.valeur} {mesure.unite or ''} (max: {seuil['max']})"
+        msg = f"{libelle} trop élevée : {mesure.valeur} {mesure.unite or ''} (max: {seuil['max']})"
     elif "min" in seuil and mesure.valeur < seuil["min"]:
         niveau = "attention"
-        msg = f"{capteur.type.capitalize()} trop basse : {mesure.valeur} {mesure.unite or ''} (min: {seuil['min']})"
+        msg = f"{libelle} trop basse : {mesure.valeur} {mesure.unite or ''} (min: {seuil['min']})"
     if niveau:
         alerte = models.Alerte(capteur_id=capteur.id, mesure_id=mesure.id, niveau=niveau, message=msg)
         db.add(alerte); db.commit()
@@ -71,13 +86,13 @@ def _verifier_seuil(db: Session, mesure: models.Mesure):
 
 # ─── Alertes ─────────────────────────────────────────────────────
 def get_alertes(db: Session, traitee: bool = None, limit: int = 50):
-    q = db.query(models.Alerte)
+    q = db.query(models.Alerte).options(joinedload(models.Alerte.capteur))
     if traitee is not None:
         q = q.filter(models.Alerte.traitee == traitee)
     return q.order_by(desc(models.Alerte.cree_le)).limit(limit).all()
 
 def traiter_alerte(db: Session, alerte_id: int):
-    a = db.query(models.Alerte).filter(models.Alerte.id == alerte_id).first()
+    a = db.query(models.Alerte).options(joinedload(models.Alerte.capteur)).filter(models.Alerte.id == alerte_id).first()
     if a:
         a.traitee = True; db.commit()
     return a

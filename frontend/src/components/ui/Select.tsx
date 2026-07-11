@@ -34,8 +34,8 @@ export default function Select({ options, value, onChange, placeholder = 'Sélec
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
-        className={`flex w-full items-center justify-between gap-2 rounded-xl bg-slate-100 px-3.5 py-2.5 text-left text-[13.5px] transition-shadow ${
-          open ? 'bg-white shadow-[inset_0_0_0_1.5px_rgba(37,99,235,0.5)]' : 'hover:bg-slate-100/80'
+        className={`flex w-full items-center justify-between gap-2 rounded-xl border px-3.5 py-2.5 text-left text-[13.5px] transition-colors ${
+          open ? 'border-blue-300 bg-white' : 'border-slate-200 bg-white hover:bg-slate-50'
         }`}
       >
         <span className={selected ? 'truncate text-slate-800' : 'truncate text-slate-400'}>
@@ -48,7 +48,7 @@ export default function Select({ options, value, onChange, placeholder = 'Sélec
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-30 max-h-64 origin-top animate-[selectIn_0.12s_ease-out] overflow-auto rounded-2xl border border-black/5 bg-white/95 p-1.5 shadow-[0_10px_30px_-8px_rgba(0,0,0,0.18)] backdrop-blur-xl">
+        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-30 max-h-64 origin-top animate-[selectIn_0.12s_ease-out] overflow-auto rounded-xl border border-slate-200 bg-white/95 p-1.5 shadow-[0_10px_30px_-8px_rgba(0,0,0,0.18)] backdrop-blur-xl">
           {options.length === 0 && (
             <p className="px-3 py-2.5 text-[13px] text-slate-400">Aucune option</p>
           )}

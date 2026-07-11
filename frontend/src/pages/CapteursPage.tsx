@@ -4,7 +4,8 @@ import { getCapteurs, getMesures } from '../services/api'
 import { Capteur, Mesure } from '../types'
 import SensorsList from '../components/Sensors/SensorsList'
 import LineChart from '../components/Charts/LineChart'
-import Select from '../components/ui/select'
+import Select from '../components/ui/Select'
+import { getMonitoringType } from '../monitoring'
 
 export default function CapteursPage() {
   const [capteurs, setCapteurs] = useState<Capteur[]>([])
@@ -26,18 +27,20 @@ export default function CapteursPage() {
   const sel = capteurs.find(c => c.id === selected)
 
   return (
-    <div className="mx-auto max-w-7xl space-y-5 p-4 md:p-6">
-      <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_8px_-2px_rgba(0,0,0,0.05)]">
-        <p className="text-[12px] font-semibold uppercase tracking-wide text-blue-600">Infrastructure</p>
-        <h2 className="mt-1 text-[24px] font-semibold tracking-[-0.02em] text-slate-900">Capteurs</h2>
-        <p className="mt-1 text-[13px] text-slate-400">Configuration et historique des mesures terrain.</p>
+    <div className="mx-auto max-w-7xl space-y-4 p-3 md:p-5">
+      <div className="flex flex-col gap-1">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600">Infrastructure</p>
+        <h2 className="text-[25px] font-semibold tracking-[-0.03em] text-slate-950">Capteurs</h2>
+        <p className="text-[13px] text-slate-500">
+          Configuration, état et historique des mesures environnementales et chambres froides.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.85fr)]">
         <SensorsList capteurs={capteurs} onRefresh={loadCapteurs} />
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_8px_-2px_rgba(0,0,0,0.05)]">
-            <label className="mb-2 block text-[12px] font-medium text-slate-500">Historique d'un capteur</label>
+        <div className="space-y-3">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <label className="mb-2 block text-[12px] font-semibold text-slate-500">Historique d'un capteur</label>
             <Select
               value={selected ? String(selected) : ''}
               onChange={v => setSelected(v ? Number(v) : null)}
@@ -53,12 +56,12 @@ export default function CapteursPage() {
             <LineChart
               mesures={mesures}
               title={`Historique : ${sel?.nom}`}
-              color={sel?.type === 'temperature' ? '#EF4444' : sel?.type === 'humidite' ? '#0EA5E9' : '#10B981'}
+              color={getMonitoringType(sel?.type).chart}
             />
           )}
 
           {selected && mesures.length === 0 && (
-            <div className="rounded-2xl bg-slate-50 p-10 text-center">
+            <div className="rounded-xl border border-dashed border-slate-200 bg-white p-10 text-center">
               <Activity size={28} strokeWidth={1.5} className="mx-auto mb-2 text-slate-300" />
               <p className="text-[13px] font-medium text-slate-400">Aucune mesure disponible pour ce capteur.</p>
             </div>

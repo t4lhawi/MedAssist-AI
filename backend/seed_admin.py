@@ -29,9 +29,13 @@ else:
 capteurs_demo = [
     models.Capteur(nom="Capteur Salle 101", type="temperature", emplacement="Salle de soins 101"),
     models.Capteur(nom="Capteur Salle 101", type="humidite", emplacement="Salle de soins 101"),
+    models.Capteur(nom="Pression Zone technique", type="pression", emplacement="Zone technique"),
+    models.Capteur(nom="Chambre froide Pharmacie", type="chambre_froide", emplacement="Pharmacie centrale"),
+    models.Capteur(nom="Qualité air Bloc", type="qualite_air", emplacement="Bloc opératoire"),
+    models.Capteur(nom="CO2 Salle attente", type="co2", emplacement="Salle d'attente"),
 ]
 for c in capteurs_demo:
-    if not db.query(models.Capteur).filter_by(nom=c.nom).first():
+    if not db.query(models.Capteur).filter_by(nom=c.nom, type=c.type, emplacement=c.emplacement).first():
         db.add(c)
 db.commit()
 print("✅ Capteurs de démo créés")

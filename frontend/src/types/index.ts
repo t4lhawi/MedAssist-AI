@@ -9,6 +9,7 @@ export interface Mesure {
 }
 export interface Alerte {
   id: number; capteur_id: number | null; niveau: 'info' | 'attention' | 'critique';
+  capteur_nom?: string | null; capteur_type?: string | null; capteur_emplacement?: string | null;
   message: string; traitee: boolean; cree_le: string;
 }
 export interface Document {

@@ -4,6 +4,7 @@ import { Alerte } from "../types";
 import { AlertTriangle, Check, CheckCircle, Info, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { getMonitoringType } from "../monitoring";
 
 const STYLES: Record<string, { badge: string; icon: string }> = {
   critique: { badge: "bg-red-50 text-red-600", icon: "bg-red-50 text-red-500" },
@@ -46,27 +47,27 @@ export default function AlertesPage() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-5 p-4 md:p-6">
-      <div className="flex flex-col gap-4 rounded-2xl border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_8px_-2px_rgba(0,0,0,0.05)] md:flex-row md:items-center md:justify-between">
+    <div className="mx-auto max-w-7xl space-y-4 p-3 md:p-5">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-[12px] font-semibold uppercase tracking-wide text-blue-600">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600">
             Suivi des incidents
           </p>
-          <h2 className="mt-1 text-[24px] font-semibold tracking-[-0.02em] text-slate-900">
+          <h2 className="text-[25px] font-semibold tracking-[-0.03em] text-slate-950">
             Alertes
           </h2>
-          <p className="mt-1 text-[13px] text-slate-400">
+          <p className="mt-1 text-[13px] text-slate-500">
             {alertes.length} alerte(s) affichée(s)
           </p>
         </div>
-        <div className="inline-flex rounded-full bg-slate-100 p-1">
+        <div className="inline-flex w-fit rounded-full border border-slate-200 bg-white p-1 shadow-sm">
           {(["all", "active", "traitee"] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFiltre(f)}
               className={`rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-all ${
                 filtre === f
-                  ? "bg-white text-slate-900 shadow-[0_1px_3px_rgba(0,0,0,0.1)]"
+                  ? "bg-slate-900 text-white shadow-sm"
                   : "text-slate-500 hover:text-slate-800"
               }`}
             >
@@ -78,7 +79,7 @@ export default function AlertesPage() {
 
       <div
         key={filtre}
-        className="content-fade overflow-hidden rounded-2xl border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_8px_-2px_rgba(0,0,0,0.05)]"
+        className="content-fade overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
       >
         {alertes.length === 0 ? (
           <div className="px-4 py-16 text-center">
@@ -97,6 +98,8 @@ export default function AlertesPage() {
             {alertes.map((a) => {
               const Icon = ICONS[a.niveau];
               const s = STYLES[a.niveau];
+              const sensor = getMonitoringType(a.capteur_type || undefined);
+              const SensorIcon = sensor.icon;
               return (
                 <div
                   key={a.id}
@@ -112,6 +115,18 @@ export default function AlertesPage() {
                     <p className="text-[13.5px] font-medium text-slate-800">
                       {a.message}
                     </p>
+                    {(a.capteur_type || a.capteur_nom || a.capteur_emplacement) && (
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11.5px] text-slate-500">
+                        {a.capteur_type && (
+                          <span className="inline-flex items-center gap-1 font-medium text-slate-600">
+                            <SensorIcon size={12} strokeWidth={2} />
+                            {sensor.title}
+                          </span>
+                        )}
+                        {a.capteur_nom && <span>{a.capteur_nom}</span>}
+                        {a.capteur_emplacement && <span>{a.capteur_emplacement}</span>}
+                      </div>
+                    )}
                     <p className="mt-1 text-[11.5px] text-slate-400">
                       {format(new Date(a.cree_le), "dd MMMM yyyy HH:mm", {
                         locale: fr,

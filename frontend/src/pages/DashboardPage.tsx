@@ -1,11 +1,12 @@
-import React, { useEffect, useState, useCallback } from 'react'
-import { AlertCircle, Bell, Droplets, FileText, RefreshCw, Thermometer } from 'lucide-react'
+import React, { useCallback, useEffect, useState } from 'react'
+import { Activity, AlertCircle, Bell, Cloud, FileText, RefreshCw } from 'lucide-react'
 import StatCard from '../components/Dashboard/StatCard'
 import LineChart from '../components/Charts/LineChart'
 import AlertsList from '../components/Alerts/AlertsList'
 import SensorsList from '../components/Sensors/SensorsList'
-import { getCapteurs, getMesures, getAlertes, getDocuments } from '../services/api'
-import { Capteur, Mesure, Alerte, Document } from '../types'
+import { getAlertes, getCapteurs, getDocuments, getMesures } from '../services/api'
+import { Alerte, Capteur, Document, Mesure } from '../types'
+import { MONITORING_TYPES } from '../monitoring'
 
 export default function DashboardPage() {
   const [capteurs, setCapteurs] = useState<Capteur[]>([])
@@ -20,7 +21,7 @@ export default function DashboardPage() {
     try {
       const [c, m, a, d] = await Promise.all([
         getCapteurs(),
-        getMesures(undefined, 50),
+        getMesures(undefined, 80),
         getAlertes(false),
         getDocuments(),
       ])
@@ -42,26 +43,31 @@ export default function DashboardPage() {
     return mesures.filter(m => ids.includes(m.capteur_id))
   }
 
-  const derniereVal = (type: string) => {
+  const latestValue = (type: string) => {
     const m = byType(type)[0]
     return m ? `${m.valeur}` : '--'
   }
 
+  const countByType = (type: string) => capteurs.filter(c => c.type === type).length
   const activeAlerts = alertes.filter(a => !a.traitee).length
   const indexedDocuments = documents.filter(d => d.indexe).length
+  const activeMonitoringFamilies = MONITORING_TYPES.filter(t => countByType(t.type) > 0).length
+  const chartTypes = MONITORING_TYPES.filter(t => countByType(t.type) > 0)
 
   return (
-    <div className="mx-auto max-w-7xl space-y-5 p-4 md:p-6">
-      <div className="flex flex-col gap-4 rounded-2xl border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_8px_-2px_rgba(0,0,0,0.05)] md:flex-row md:items-center md:justify-between">
+    <div className="mx-auto max-w-7xl space-y-4 p-3 md:p-5">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-[12px] font-semibold uppercase tracking-wide text-blue-600">Vue temps réel</p>
-          <h2 className="mt-1 text-[24px] font-semibold tracking-[-0.02em] text-slate-900">Tableau de bord</h2>
-          <p className="mt-1 text-[13px] text-slate-400">Surveillance opérationnelle · CHU Mohammed VI Oujda</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600">Vue temps réel</p>
+          <h2 className="text-[25px] font-semibold tracking-[-0.03em] text-slate-950">Tableau de bord</h2>
+          <p className="mt-1 text-[13px] text-slate-500">
+            Surveillance température, humidité, pression, chambres froides, qualité d'air et CO2.
+          </p>
         </div>
         <button
           onClick={load}
           disabled={loading}
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-100 px-3.5 py-2 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-200 disabled:opacity-60"
+          className="inline-flex w-fit items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-100 disabled:opacity-60"
         >
           <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
           Actualiser
@@ -69,29 +75,19 @@ export default function DashboardPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-[13px] font-medium text-red-600">
+        <div className="flex items-center gap-2 rounded-xl bg-red-50 px-4 py-3 text-[13px] font-medium text-red-600">
           <AlertCircle size={15} />
           {error}
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard
-          title="Température"
-          value={derniereVal('temperature')}
-          unit="°C"
-          icon={Thermometer}
-          color="bg-gradient-to-b from-red-400 to-red-500"
-          sub={`${capteurs.filter(c => c.type === 'temperature').length} capteur(s)`}
-          tone="neutral"
-        />
-        <StatCard
-          title="Humidité"
-          value={derniereVal('humidite')}
-          unit="%"
-          icon={Droplets}
-          color="bg-gradient-to-b from-sky-400 to-sky-500"
-          sub={`${capteurs.filter(c => c.type === 'humidite').length} capteur(s)`}
+          title="Familles surveillées"
+          value={activeMonitoringFamilies}
+          icon={Activity}
+          color="bg-gradient-to-b from-blue-400 to-blue-600"
+          sub={`${capteurs.length} capteur(s) actif(s)`}
           tone="neutral"
         />
         <StatCard
@@ -110,14 +106,44 @@ export default function DashboardPage() {
           sub={`${indexedDocuments} indexé(s)`}
           tone={indexedDocuments === documents.length && documents.length > 0 ? 'good' : 'neutral'}
         />
+{/*         <StatCard
+          title="CO2 réel"
+          value={latestValue('co2')}
+          unit="ppm"
+          icon={Cloud}
+          color="bg-gradient-to-b from-slate-500 to-slate-700"
+          sub={countByType('co2') > 0 ? `${countByType('co2')} capteur(s)` : 'Option selon budget'}
+          tone="neutral"
+        /> */}
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <LineChart mesures={byType('temperature')} title="Température (°C)" color="#EF4444" />
-        <LineChart mesures={byType('humidite')} title="Humidité (%)" color="#0EA5E9" />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {MONITORING_TYPES.map(item => (
+          <StatCard
+            key={item.type}
+            title={item.title}
+            value={latestValue(item.type)}
+            unit={item.unit}
+            icon={item.icon}
+            color={item.color}
+            sub={`${countByType(item.type)} capteur(s)`}
+            tone={countByType(item.type) > 0 ? 'neutral' : 'warning'}
+          />
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {(chartTypes.length > 0 ? chartTypes : MONITORING_TYPES.slice(0, 2)).map(item => (
+          <LineChart
+            key={item.type}
+            mesures={byType(item.type)}
+            title={`${item.title} (${item.unit})`}
+            color={item.chart}
+          />
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <SensorsList capteurs={capteurs} onRefresh={load} />
         <AlertsList alertes={alertes} onRefresh={load} />
       </div>

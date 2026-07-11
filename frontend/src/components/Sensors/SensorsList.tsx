@@ -1,24 +1,13 @@
 import React, { useState } from 'react'
 import { Capteur, Mesure } from '../../types'
 import { createCapteur, getMesures } from '../../services/api'
-import { Activity, Droplets, Loader2, Plus, Thermometer, Wind, X } from 'lucide-react'
-import Select from '../ui/select'
+import { Activity, Loader2, Plus, X } from 'lucide-react'
+import Select from '../ui/Select'
+import { MONITORING_TYPES, getMonitoringType } from '../../monitoring'
 
 interface Props {
   capteurs: Capteur[]
   onRefresh: () => void
-}
-
-const ICONS: Record<string, React.ElementType> = {
-  temperature: Thermometer,
-  humidite: Droplets,
-  air: Wind,
-}
-
-const UNITS: Record<string, string> = {
-  temperature: '°C',
-  humidite: '%',
-  air: 'ppm',
 }
 
 export default function SensorsList({ capteurs, onRefresh }: Props) {
@@ -66,11 +55,11 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
   }
 
   return (
-    <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_8px_-2px_rgba(0,0,0,0.05)]">
-      <div className="mb-5 flex items-center justify-between gap-3">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <h3 className="flex items-center gap-2 text-[15px] font-semibold tracking-[-0.01em] text-slate-900">
-            <span className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-blue-50 text-blue-600">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
               <Activity size={15} strokeWidth={2.2} />
             </span>
             Capteurs
@@ -79,7 +68,7 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
         </div>
         <button
           onClick={() => setShowForm(v => !v)}
-          className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-3.5 py-2 text-[13px] font-medium text-white shadow-[0_2px_6px_-1px_rgba(37,99,235,0.4)] transition-all hover:bg-blue-700 active:scale-95"
+          className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-3.5 py-2 text-[13px] font-medium text-white shadow-sm transition-all hover:bg-blue-700 active:scale-95"
         >
           {showForm ? <X size={14} /> : <Plus size={14} />}
           {showForm ? 'Fermer' : 'Ajouter'}
@@ -87,14 +76,14 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
       </div>
 
       {showForm && (
-        <form onSubmit={submit} className="mb-4 rounded-2xl bg-slate-50 p-4">
+        <form onSubmit={submit} className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="sm:col-span-2">
               <span className="mb-1.5 block text-[12px] font-medium text-slate-500">Nom du capteur</span>
               <input
                 value={form.nom}
                 onChange={e => setForm({ ...form, nom: e.target.value })}
-                placeholder="Ex: Température salle 101"
+                placeholder="Ex: CO2 chambre froide 02"
                 required
                 className="w-full rounded-xl border-0 bg-white px-3.5 py-2.5 text-[13.5px] text-slate-800 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] outline-none transition-shadow placeholder:text-slate-400 focus:shadow-[inset_0_0_0_1.5px_rgba(37,99,235,0.5)]"
               />
@@ -104,11 +93,7 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
               <Select
                 value={form.type}
                 onChange={v => setForm({ ...form, type: v })}
-                options={[
-                  { value: 'temperature', label: 'Température' },
-                  { value: 'humidite', label: 'Humidité' },
-                  { value: 'air', label: "Qualité de l'air" },
-                ]}
+                options={MONITORING_TYPES.map(({ type, title }) => ({ value: type, label: type === 'chambre_froide' ? 'Chambre froide précise' : title }))}
               />
             </label>
             <label>
@@ -116,7 +101,7 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
               <input
                 value={form.emplacement}
                 onChange={e => setForm({ ...form, emplacement: e.target.value })}
-                placeholder="Salle 101"
+                placeholder="Salle 101, bloc, chambre froide..."
                 className="w-full rounded-xl border-0 bg-white px-3.5 py-2.5 text-[13.5px] text-slate-800 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] outline-none transition-shadow placeholder:text-slate-400 focus:shadow-[inset_0_0_0_1.5px_rgba(37,99,235,0.5)]"
               />
             </label>
@@ -135,7 +120,7 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-3.5 py-2 text-[13px] font-medium text-white shadow-[0_2px_6px_-1px_rgba(37,99,235,0.4)] transition-colors hover:bg-blue-700 disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-3.5 py-2 text-[13px] font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-60"
             >
               {saving && <Loader2 size={13} className="animate-spin" />}
               Enregistrer
@@ -144,24 +129,27 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
         </form>
       )}
 
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         {capteurs.map(c => {
-          const Icon = ICONS[c.type] || Activity
+          const meta = getMonitoringType(c.type)
+          const Icon = meta.icon
           const derniere = dernieres[c.id]
 
           return (
-            <div key={c.id} className="flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-slate-50">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-slate-100 text-slate-500">
+            <div key={c.id} className="flex items-center gap-3 rounded-xl border border-transparent p-2.5 transition-colors hover:border-slate-200 hover:bg-slate-50">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
                 <Icon size={16} strokeWidth={2} />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13.5px] font-medium text-slate-800">{c.nom}</p>
-                <p className="truncate text-[12px] text-slate-400">{c.emplacement || 'Emplacement non renseigné'}</p>
+                <p className="truncate text-[12px] text-slate-400">
+                  {meta.title} · {c.emplacement || 'Emplacement non renseigné'}
+                </p>
               </div>
               <div className="shrink-0 text-right">
                 {derniere ? (
                   <p className="text-[14px] font-semibold text-slate-900">
-                    {derniere.valeur} <span className="text-[12px] font-medium text-slate-400">{UNITS[c.type] || ''}</span>
+                    {derniere.valeur} <span className="text-[12px] font-medium text-slate-400">{derniere.unite || meta.unit}</span>
                   </p>
                 ) : (
                   <p className="text-[12px] font-medium text-slate-300">Aucune mesure</p>
@@ -180,7 +168,7 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
         })}
 
         {capteurs.length === 0 && (
-          <div className="rounded-2xl bg-slate-50 px-4 py-10 text-center">
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
             <Activity size={28} strokeWidth={1.5} className="mx-auto mb-2 text-slate-300" />
             <p className="text-[13.5px] font-medium text-slate-500">Aucun capteur enregistré</p>
           </div>

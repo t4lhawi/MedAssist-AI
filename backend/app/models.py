@@ -25,7 +25,7 @@ class Capteur(Base):
     __tablename__ = "capteurs"
     id          = Column(Integer, primary_key=True, index=True)
     nom         = Column(String(100), nullable=False)
-    type        = Column(String(50), nullable=False)   # temperature | humidite | air
+    type        = Column(String(50), nullable=False)   # temperature | humidite | pression | chambre_froide | qualite_air | co2
     emplacement = Column(String(200))
     actif       = Column(Boolean, default=True)
     cree_le     = Column(DateTime(timezone=True), server_default=func.now())
@@ -83,3 +83,15 @@ class Alerte(Base):
 
     capteur = relationship("Capteur", back_populates="alertes")
     mesure  = relationship("Mesure", back_populates="alertes")
+
+    @property
+    def capteur_nom(self):
+        return self.capteur.nom if self.capteur else None
+
+    @property
+    def capteur_type(self):
+        return self.capteur.type if self.capteur else None
+
+    @property
+    def capteur_emplacement(self):
+        return self.capteur.emplacement if self.capteur else None
