@@ -95,3 +95,5 @@ class Alerte(Base):
     @property
     def capteur_emplacement(self):
         return self.capteur.emplacement if self.capteur else None
+
+

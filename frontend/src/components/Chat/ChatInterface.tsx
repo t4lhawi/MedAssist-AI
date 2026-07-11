@@ -1,15 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { sendChat } from '../../services/api'
+import { getChatHistory, sendChat } from '../../services/api'
 import { ChatMessage } from '../../types'
 import {
   ArrowUp,
   BookOpen,
   Check,
   Clipboard,
+  Clock3,
   MessageCircle,
+  RotateCcw,
   Square,
   SquarePen,
   Stethoscope,
+  X,
 } from 'lucide-react'
 
 const SUGGESTIONS = [
@@ -21,6 +24,13 @@ const SUGGESTIONS = [
 
 const WELCOME_MESSAGE =
   "Je peux répondre à vos questions en m'appuyant sur les documents officiels indexés dans MedAssist AI."
+
+type ConversationHistoryItem = {
+  question: string
+  reponse: string
+  sources?: NonNullable<ChatMessage['sources']>
+  date: string
+}
 
 function SourceChip({ source }: { source: NonNullable<ChatMessage['sources']>[number] }) {
   return (
@@ -95,8 +105,130 @@ function MessageRow({
   )
 }
 
+function HistoryPanel({
+  open,
+  onClose,
+  history,
+  historyLoading,
+  historyError,
+  onRefresh,
+  onSelect,
+}: {
+  open: boolean
+  onClose: () => void
+  history: ConversationHistoryItem[]
+  historyLoading: boolean
+  historyError: string
+  onRefresh: () => void
+  onSelect: (item: ConversationHistoryItem) => void
+}) {
+  const formatHistoryDate = (date: string) =>
+    new Intl.DateTimeFormat('fr-FR', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(date))
+
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        className={`fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-[1px] transition-opacity duration-300 ${
+          open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+      />
+
+      {/* Drawer */}
+      <aside
+        role="dialog"
+        aria-label="Historique des conversations"
+        aria-hidden={!open}
+        className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col border-l border-slate-200 bg-white shadow-2xl transition-transform duration-300 ease-out ${
+          open ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+          <div className="flex items-center gap-2 text-[14px] font-semibold tracking-[-0.01em] text-slate-900">
+            <Clock3 size={16} strokeWidth={2.2} className="text-blue-600" />
+            Historique
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={onRefresh}
+              title="Actualiser"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            >
+              <RotateCcw size={14} strokeWidth={2.2} />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              title="Fermer"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            >
+              <X size={16} strokeWidth={2.2} />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          {historyLoading ? (
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-[12.5px] text-slate-500">
+              Chargement de l'historique...
+            </div>
+          ) : historyError ? (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-4 text-[12.5px] leading-5 text-rose-700">
+              {historyError}
+            </div>
+          ) : history.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-4 text-[12.5px] leading-5 text-slate-500">
+              Aucune conversation enregistrée pour le moment.
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {history.map((item, index) => (
+                <button
+                  key={`${item.date}-${index}`}
+                  type="button"
+                  onClick={() => onSelect(item)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-left transition hover:border-blue-200 hover:bg-blue-50/40 hover:shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="min-w-0 flex-1 truncate text-[13px] font-medium text-slate-900">
+                      {item.question}
+                    </p>
+                    <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10.5px] font-medium text-slate-500">
+                      {item.sources?.length ?? 0} source{(item.sources?.length ?? 0) > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11.5px] text-slate-400">{formatHistoryDate(item.date)}</p>
+                  <p className="mt-2 line-clamp-2 text-[12.5px] leading-5 text-slate-600">{item.reponse}</p>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </aside>
+    </>
+  )
+}
+
 export default function ChatInterface() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [history, setHistory] = useState<ConversationHistoryItem[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyError, setHistoryError] = useState('')
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
@@ -104,9 +236,28 @@ export default function ChatInterface() {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const interruptedRef = useRef(false)
 
+  const loadHistory = async () => {
+    setHistoryLoading(true)
+    setHistoryError('')
+
+    try {
+      const response = await getChatHistory()
+      const items = response.data as ConversationHistoryItem[]
+      setHistory(items)
+    } catch {
+      setHistoryError("Impossible de charger l'historique des conversations.")
+    } finally {
+      setHistoryLoading(false)
+    }
+  }
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
+
+  useEffect(() => {
+    loadHistory()
+  }, [])
 
   useEffect(() => {
     if (!inputRef.current) return
@@ -130,6 +281,7 @@ export default function ChatInterface() {
       const r = await sendChat(q, historique)
       if (interruptedRef.current) return
       setMessages(prev => [...prev, { role: 'assistant', content: r.data.reponse, sources: r.data.sources }])
+      await loadHistory()
     } catch {
       if (interruptedRef.current) return
       setMessages(prev => [...prev, { role: 'assistant', content: 'Désolé, une erreur est survenue. Veuillez réessayer.' }])
@@ -162,6 +314,15 @@ export default function ChatInterface() {
     inputRef.current?.focus()
   }
 
+  const openHistoryItem = (item: ConversationHistoryItem) => {
+    setMessages([
+      { role: 'user', content: item.question },
+      { role: 'assistant', content: item.reponse, sources: item.sources },
+    ])
+    setHistoryOpen(false)
+    inputRef.current?.focus()
+  }
+
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white">
       <header className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-6">
@@ -176,15 +337,32 @@ export default function ChatInterface() {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={resetChat}
-          title="Nouvelle conversation"
-          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
-        >
-          <SquarePen size={14} strokeWidth={2.2} />
-          <span className="hidden sm:inline">Nouveau</span>
-        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setHistoryOpen(true)}
+            title="Historique des conversations"
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+          >
+            <Clock3 size={14} strokeWidth={2.2} />
+            <span className="hidden sm:inline">Historique</span>
+            {history.length > 0 && (
+              <span className="flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-slate-200 px-1 text-[10px] font-semibold text-slate-600">
+                {history.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={resetChat}
+            title="Nouvelle conversation"
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+          >
+            <SquarePen size={14} strokeWidth={2.2} />
+            <span className="hidden sm:inline">Nouveau</span>
+          </button>
+        </div>
       </header>
 
       <div className="flex-1 overflow-y-auto">
@@ -212,6 +390,17 @@ export default function ChatInterface() {
                     </button>
                   ))}
                 </div>
+
+                {history.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setHistoryOpen(true)}
+                    className="mt-6 inline-flex items-center gap-1.5 text-[12.5px] font-medium text-blue-600 transition hover:text-blue-700"
+                  >
+                    <Clock3 size={13} strokeWidth={2.2} />
+                    Reprendre une conversation précédente
+                  </button>
+                )}
               </div>
             </div>
           ) : (
@@ -286,6 +475,16 @@ export default function ChatInterface() {
           MedAssist peut faire des erreurs. Vérifiez les informations importantes.
         </p>
       </footer>
+
+      <HistoryPanel
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        history={history}
+        historyLoading={historyLoading}
+        historyError={historyError}
+        onRefresh={loadHistory}
+        onSelect={openHistoryItem}
+      />
     </section>
   )
 }
