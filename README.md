@@ -1,197 +1,179 @@
-# 🏥 MedAssist AI
+# MedAssist
 
-**Plateforme intelligente de surveillance hospitalière — 100% Gratuite**
+Professional remote monitoring and document-assisted AI for healthcare environments.
 
-> Projet de stage d'initiation · ENSA Oujda · CHU Mohammed VI  
-> Aucune clé API payante requise — fonctionne entièrement en local avec Ollama
+MedAssist is an open-source prototype that integrates IoT sensor monitoring (ESP32),
+real-time visualization, alerting, document ingestion, and a retrieval-augmented
+generation (RAG) assistant for question-answering over uploaded documents.
 
----
+This repository contains a Docker-based development stack that runs the API backend,
+an Ollama-based local LLM service by default, and a Vite React frontend.
 
-## ✨ Fonctionnalités
+## Key Features
 
-| Module | Description |
-|---|---|
-| **IoT (ESP32)** | Collecte automatique temp / humidité / qualité de l'air |
-| **Tableau de bord** | Visualisation temps réel avec graphiques |
-| **Alertes** | Déclenchement automatique selon des seuils |
-| **Documents PDF** | Téléversement et indexation dans la base IA |
-| **Assistant IA (RAG)** | Questions-réponses fondées sur vos documents — GRATUIT avec Ollama |
-| **Authentification** | JWT sécurisé avec gestion des rôles |
+- IoT data ingestion: ESP32-based sensors send temperature, humidity and air-quality readings.
+- Real-time dashboard with charts and alerts.
+- Document upload and indexing for RAG-powered Q&A.
+- Role-based authentication with JWTs.
+- Configurable LLM provider: Ollama (local), Groq, or Google Gemini.
 
----
+## Architecture Overview
 
-## 🆓 Solutions IA gratuites disponibles
+- backend/: FastAPI application that exposes the REST API, authentication, and RAG pipeline.
+- frontend/: Vite + React UI for monitoring, documents, and assistant interaction.
+- firmware/: ESP32 sensor firmware for data collection.
+- chroma_db/: Local Chroma vector DB used for document embeddings.
 
-| Solution | Coût | Vitesse | Confidentialité | Qualité |
-|---|---|---|---|---|
-| **Ollama** ✅ (défaut) | 💚 Gratuit | Dépend de votre PC | 💚 100% local | ⭐⭐⭐ |
-| **Groq** | 💚 Gratuit | 💚 Très rapide | ☁️ Cloud | ⭐⭐⭐⭐ |
-| **Google Gemini** | 💚 Gratuit (1500 req/j) | 💚 Rapide | ☁️ Cloud | ⭐⭐⭐⭐ |
+## Quick Start (Development)
 
----
+Prerequisites
 
-## 🚀 Démarrage rapide
+- Docker Desktop (or Docker Engine)
+- 4 GB RAM minimum (8 GB recommended for local LLMs)
+- ~5 GB free disk space for model artifacts
 
-### Prérequis
-
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installé et lancé
-- **4 Go de RAM minimum** (8 Go recommandés pour Ollama)
-- **5 Go d'espace disque** (pour les modèles IA)
-
-### Étape 1 — Copier la configuration
+1) Copy the environment template
 
 ```bash
 cp .env.example .env
 ```
 
-Le fichier `.env` est déjà configuré pour Ollama. Vous pouvez le laisser tel quel.
-
-### Étape 2 — Lancer les services
+2) Build and start services
 
 ```bash
 docker compose up --build -d
 ```
 
-La première fois, cette commande peut prendre **5 à 10 minutes** (téléchargement des images Docker).
+3) Install default models (one-time)
 
-### Étape 3 — Installer les modèles IA (une seule fois)
+On macOS / Linux:
 
-**Sur Mac / Linux :**
 ```bash
 chmod +x setup_ollama.sh
 ./setup_ollama.sh
 ```
 
-**Sur Windows (PowerShell) :**
+On Windows (PowerShell), wait for the Ollama container to be ready, then run:
+
 ```powershell
-# Attendre qu'Ollama soit prêt, puis :
 docker exec medassist_ollama ollama pull llama3.2
 docker exec medassist_ollama ollama pull nomic-embed-text
 docker exec medassist_api python seed_admin.py
 ```
 
-> ⏳ `llama3.2` pèse environ **2 Go** — le téléchargement peut prendre quelques minutes selon votre connexion.
+4) Access the services
 
-### Étape 4 — Ouvrir l'application
+- Web UI: http://localhost:3000
+- API docs: http://localhost:8000/docs
 
-| Service | Adresse |
-|---|---|
-| **Application web** | http://localhost:3000 |
-| **API documentation** | http://localhost:8000/docs |
+Default admin credentials (for development)
 
-**Identifiants :**
-- Email : `admin@medassist.ma`
-- Mot de passe : `Admin@2026!`
+- Email: admin@medassist.ma
+- Password: Admin@2026!
 
----
+Note: change these defaults in production.
 
-## 🔄 Utiliser Groq à la place (option gratuite plus rapide)
+## Local Development (without Docker)
 
-Groq est une alternative cloud gratuite, beaucoup plus rapide qu'Ollama sur un PC peu puissant.
+Backend
 
-1. Créer un compte gratuit sur https://console.groq.com
-2. Créer une clé API (gratuit, pas de carte bancaire requise)
-3. Modifier `.env` :
+```bash
+python -m venv .venv
+source .venv/bin/activate   # or .venv\\Scripts\\activate on Windows
+pip install -r backend/requirements.txt
+cd backend
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## Configuring LLM Providers
+
+The default configuration uses Ollama locally. Alternatives include Groq and
+Google Gemini. Configure the provider and credentials in the `.env` file:
+
+Examples
 
 ```env
+LLM_PROVIDER=ollama
+LLM_MODEL=llama3.2
+
+# or for Groq
 LLM_PROVIDER=groq
-LLM_MODEL=llama3-8b-8192
-GROQ_API_KEY=votre_cle_groq_ici
-```
+GROQ_API_KEY=your_groq_key
 
-4. Redémarrer le backend :
-```bash
-docker compose restart backend
-```
-
----
-
-## 🔄 Utiliser Google Gemini (option gratuite)
-
-Google Gemini Flash est gratuit jusqu'à 1500 requêtes par jour.
-
-1. Aller sur https://aistudio.google.com/app/apikey
-2. Cliquer "Create API Key" (gratuit, compte Google requis)
-3. Modifier `.env` :
-
-```env
+# or for Google Gemini
 LLM_PROVIDER=gemini
-LLM_MODEL=gemini-1.5-flash
-GEMINI_API_KEY=votre_cle_ici
+GEMINI_API_KEY=your_gemini_key
 ```
 
-4. Redémarrer :
+After changing `.env`, restart the backend:
+
 ```bash
 docker compose restart backend
 ```
 
----
+## ESP32 Firmware
 
-## 🔌 Configurer l'ESP32
+- Open `firmware/esp32_sensor.ino` in the Arduino IDE or PlatformIO.
+- Install dependencies (`DHTesp`, `ArduinoJson`) via the Library Manager.
+- Configure Wi‑Fi credentials and `SERVER_URL` to point to your API host.
 
-1. Ouvrir `firmware/esp32_sensor.ino` dans l'IDE Arduino
-2. Installer les bibliothèques (Library Manager) :
-   - `DHTesp` par Bernd Giesecke
-   - `ArduinoJson` par Benoit Blanchon
-3. Modifier les valeurs en haut du fichier :
+## Document Ingestion & Assistant
 
-```cpp
-const char* WIFI_SSID     = "NOM_WIFI";
-const char* WIFI_PASSWORD = "MOT_DE_PASSE_WIFI";
-const char* SERVER_URL    = "http://192.168.X.X:8000"; // IP de votre PC
+1. Upload PDFs via the Documents page in the web UI.
+2. Wait until indexing completes (status: Indexed).
+3. Use the Assistant page to ask questions based on uploaded documents.
 
-// IDs des capteurs créés dans l'interface web :
-const int CAPTEUR_ID_TEMP = 1;
-const int CAPTEUR_ID_HUM  = 2;
-```
-
-4. Brancher l'ESP32, sélectionner `ESP32 Dev Module`, cliquer Upload
-
----
-
-## 🤖 Utiliser l'assistant IA
-
-1. Aller dans **Documents** → téléverser vos PDF
-2. Attendre le statut **Indexé** ✅
-3. Aller dans **Assistant IA** → poser vos questions
-
-*Exemple : "Quelle est la température recommandée pour une salle de soins ?"*
-
----
-
-## 🛑 Commandes utiles
+## Useful Commands
 
 ```bash
-# Démarrer
+# Start
 docker compose up -d
 
-# Arrêter
+# Stop
 docker compose down
 
-# Voir les logs
+# View backend logs
 docker compose logs -f backend
 
-# Redémarrer un seul service
+# Restart backend only
 docker compose restart backend
 
-# Lister les modèles Ollama installés
+# List Ollama models
 docker exec medassist_ollama ollama list
 ```
 
+## Default Alert Thresholds
+
+- Temperature: 18 °C — 26 °C
+- Humidity: 30% — 70%
+- Air quality: up to 1000 ppm
+
+Thresholds are defined in `backend/app/crud.py` as the `SEUILS` dictionary.
+
+## Security & Disclaimer
+
+This project is a pedagogical prototype and is not a medical device. It is
+intended for research and demonstration purposes only and must not replace
+certified medical equipment or professional judgement.
+
+## Contributing
+
+Contributions are welcome. Please open issues or pull requests with clear
+descriptions of changes and testing instructions.
+
+## License
+
+This project is provided under the terms of the repository LICENSE.
+
 ---
 
-## 📋 Seuils d'alerte par défaut
-
-| Paramètre | Min | Max |
-|---|---|---|
-| Température | 18 °C | 26 °C |
-| Humidité | 30 % | 70 % |
-| Qualité air | — | 1000 ppm |
-
-Modifiables dans `backend/app/crud.py` → dictionnaire `SEUILS`.
-
----
-
-## ⚠️ Avertissement
-
-Prototype pédagogique. Ne remplace pas les dispositifs médicaux certifiés.
+If you'd like, I can also add a short CONTRIBUTING.md, update the `.env.example`,
+or local development scripts. What would you like next?
