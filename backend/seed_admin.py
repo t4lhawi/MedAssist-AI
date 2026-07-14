@@ -24,7 +24,7 @@ else:
 capteurs_demo = [
     models.Capteur(nom="Temperature", type="temperature", emplacement="Salle 1"),
     models.Capteur(nom="Humidite", type="humidite", emplacement="Salle 1"),
-    models.Capteur(nom="pression", type="pression", emplacement="Salle 1"),
+    models.Capteur(nom="Pression", type="pression", emplacement="Salle 1"),
     models.Capteur(nom="Qualite Air", type="qualite_air", emplacement="Salle 1"),
 ]
 

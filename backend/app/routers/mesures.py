@@ -10,7 +10,11 @@ router = APIRouter(prefix="/api/mesures", tags=["Mesures"])
 
 @router.post("/", response_model=MesureOut)
 def creer(data: MesureCreate, db: Session = Depends(get_db)):
-    """Endpoint public pour l'ESP32 (protégeable par API key si besoin)."""
+    """Endpoint conservé pour tests manuels / clients HTTP legacy.
+
+    Les ESP32 en production publient désormais sur MQTT
+    ``medassist/mesures/<capteur_id>`` (voir ``backend/app/mqtt_client.py``).
+    """
     return crud.create_mesure(db, data)
 
 @router.get("/", response_model=List[MesureOut])

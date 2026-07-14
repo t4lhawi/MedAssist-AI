@@ -36,7 +36,12 @@ export default function DashboardPage() {
     }
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    load()
+    // Recharge toutes les 5s pour voir les nouvelles mesures MQTT en temps réel.
+    const id = setInterval(load, 5000)
+    return () => clearInterval(id)
+  }, [load])
 
   const byType = (type: string) => {
     const ids = capteurs.filter(c => c.type === type).map(c => c.id)

@@ -1,17 +1,35 @@
 import os
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from .database import engine, Base
+from .mqtt_client import MqttIngestClient
 from .routers import auth, capteurs, mesures, alertes, documents, chat
 from . import models
 
-# Créer les tables au démarrage
-Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Crée les tables au démarrage (idempotent).
+    Base.metadata.create_all(bind=engine)
+
+    # Démarre le subscriber MQTT sur un thread en arrière-plan.
+    mqtt_client = MqttIngestClient()
+    mqtt_client.start()
+    app.state.mqtt = mqtt_client
+    try:
+        yield
+    finally:
+        mqtt_client.stop()
+
 
 app = FastAPI(
     title="MedAssist AI",
     description="Plateforme intelligente de surveillance hospitalière basée sur l'IA",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # CORS – autoriser le frontend

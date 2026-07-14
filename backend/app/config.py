@@ -37,6 +37,15 @@ class Settings(BaseSettings):
     CHROMA_PATH: str = "./chroma_db"
     UPLOAD_DIR: str = "./uploads"
 
+    # ── MQTT (ingestion capteurs IoT) ────────────────────────
+    MQTT_HOST: str = "localhost"
+    MQTT_PORT: int = 1883
+    MQTT_TOPIC_PREFIX: str = "medassist/mesures"   # souscrit "<prefix>/+"
+    MQTT_CLIENT_ID: str = "medassist-backend"
+    MQTT_USERNAME: str = ""                        # vide = anonyme
+    MQTT_PASSWORD: str = ""
+    MQTT_KEEPALIVE: int = 30
+
     class Config:
         env_file = str(BACKEND_DIR / ".env")
 

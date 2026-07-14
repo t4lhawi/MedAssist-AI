@@ -122,8 +122,61 @@ docker compose restart backend
 ## ESP32 Firmware
 
 - Open `firmware/esp32_sensor.ino` in the Arduino IDE or PlatformIO.
-- Install dependencies (`DHTesp`, `ArduinoJson`) via the Library Manager.
-- Configure Wi‑Fi credentials and `SERVER_URL` to point to your API host.
+- Install dependencies (`DHTesp`, `ArduinoJson`, **`PubSubClient`**) via the Library Manager.
+- Configure `WIFI_SSID`, `WIFI_PASSWORD`, and `MQTT_BROKER` (the IP of the
+  machine running Mosquitto) at the top of the sketch.
+
+## MQTT Ingestion (ESP32 → Mosquitto → Backend)
+
+Sensor data flows over MQTT instead of HTTP. The backend subscribes to the
+broker and inserts rows into PostgreSQL on every received message.
+
+Install a local broker:
+
+- Windows: `winget install EclipseFoundation.Mosquitto`
+- Linux: `sudo apt-get install -y mosquitto mosquitto-clients`
+- macOS: `brew install mosquitto`
+
+Start the broker (foreground, verbose):
+
+```bash
+mosquitto -p 1883 -v
+```
+
+Add MQTT settings to `backend/.env` (defaults work for local dev):
+
+```env
+MQTT_HOST=localhost
+MQTT_PORT=1883
+MQTT_TOPIC_PREFIX=medassist/mesures
+```
+
+When the FastAPI backend starts it opens a subscriber on
+`medassist/mesures/+` and logs `MQTT connecté, abonnement à medassist/mesures/+`.
+
+Topic shape:
+
+```
+medassist/mesures/<capteur_id>
+```
+
+Payload (JSON, UTF-8):
+
+```json
+{"valeur": 22.5, "unite": "°C", "timestamp_iso": ""}
+```
+
+`timestamp_iso` is currently ignored by the backend (server stamps
+`func.now()`). The ESP32 firmware in `firmware/esp32_sensor/` uses
+`PubSubClient` and connects to `MQTT_BROKER` (set in the `.ino`) with
+QoS 0.
+
+Quick smoke test without the ESP32:
+
+```bash
+mosquitto_pub -t "medassist/mesures/1" \
+  -m "{\"valeur\": 22.5, \"unite\": \"°C\", \"timestamp_iso\": \"\"}"
+```
 
 ## Document Ingestion & Assistant
 

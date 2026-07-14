@@ -11,7 +11,6 @@ SEUILS = {
     "humidite":    {"min": 30.0, "max": 70.0},
     "pression":    {"min": 950.0, "max": 1050.0},
     "qualite_air": {"max": 100.0},
-    "air":         {"max": 1000.0},
 }
 
 LIBELLES_CAPTEURS = {
@@ -19,7 +18,6 @@ LIBELLES_CAPTEURS = {
     "humidite": "Humidité",
     "pression": "Pression",
     "qualite_air": "Qualité de l'air",
-    "air": "Qualité de l'air",
 }
 
 # ─── Utilisateurs ────────────────────────────────────────────────
@@ -136,3 +134,20 @@ def get_conversations(db: Session, user_id: int, limit: int = 20):
     return db.query(models.Conversation)\
         .filter(models.Conversation.utilisateur_id == user_id)\
         .order_by(desc(models.Conversation.cree_le)).limit(limit).all()
+
+def delete_conversations(db: Session, user_id: int):
+    deleted = db.query(models.Conversation).filter(models.Conversation.utilisateur_id == user_id).delete(synchronize_session=False)
+    db.commit()
+    return deleted
+
+def delete_conversation(db: Session, user_id: int, conversation_id: int) -> bool:
+    conv = db.query(models.Conversation)\
+        .filter(
+            models.Conversation.id == conversation_id,
+            models.Conversation.utilisateur_id == user_id,
+        ).first()
+    if not conv:
+        return False
+    db.delete(conv)
+    db.commit()
+    return True

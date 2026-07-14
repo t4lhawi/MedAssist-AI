@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { getChatHistory, sendChat } from '../../services/api'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { deleteChatHistoryItem, getChatHistory, sendChat } from '../../services/api'
 import { ChatMessage } from '../../types'
 import {
   ArrowUp,
@@ -9,9 +10,11 @@ import {
   Clock3,
   MessageCircle,
   RotateCcw,
+  Search,
   Square,
   SquarePen,
   Stethoscope,
+  Trash2,
   X,
 } from 'lucide-react'
 
@@ -26,6 +29,7 @@ const WELCOME_MESSAGE =
   "Je peux répondre à vos questions en m'appuyant sur les documents officiels indexés dans MedAssist AI."
 
 type ConversationHistoryItem = {
+  id?: string
   question: string
   reponse: string
   sources?: NonNullable<ChatMessage['sources']>
@@ -105,6 +109,108 @@ function MessageRow({
   )
 }
 
+function historyItemKey(item: ConversationHistoryItem, index: number) {
+  return item.id ?? `${item.date}-${index}`
+}
+
+function HistoryCard({
+  item,
+  index,
+  onSelect,
+  onDelete,
+}: {
+  item: ConversationHistoryItem
+  index: number
+  onSelect: () => void
+  onDelete: () => Promise<void>
+}) {
+  const [confirming, setConfirming] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const formatHistoryDate = (date: string) =>
+    new Intl.DateTimeFormat('fr-FR', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(date))
+
+  const handleConfirmDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setDeleting(true)
+    try {
+      await onDelete()
+    } finally {
+      setDeleting(false)
+      setConfirming(false)
+    }
+  }
+
+  if (confirming) {
+    return (
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50/70 px-3.5 py-3">
+        <p className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-rose-700">
+          Supprimer « {item.question} » ?
+        </p>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              setConfirming(false)
+            }}
+            disabled={deleting}
+            className="rounded-lg px-2.5 py-1.5 text-[11.5px] font-medium text-slate-500 transition hover:bg-white disabled:opacity-50"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirmDelete}
+            disabled={deleting}
+            className="rounded-lg bg-rose-600 px-2.5 py-1.5 text-[11.5px] font-semibold text-white transition hover:bg-rose-700 disabled:opacity-60"
+          >
+            {deleting ? '...' : 'Supprimer'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') onSelect()
+      }}
+      className="group relative w-full cursor-pointer rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-left transition hover:border-blue-200 hover:bg-blue-50/40 hover:shadow-sm"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <p className="min-w-0 flex-1 truncate pr-6 text-[13px] font-medium text-slate-900">
+          {item.question}
+        </p>
+        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10.5px] font-medium text-slate-500 transition group-hover:opacity-0">
+          {item.sources?.length ?? 0} source{(item.sources?.length ?? 0) > 1 ? 's' : ''}
+        </span>
+      </div>
+      <p className="mt-1 text-[11.5px] text-slate-400">{formatHistoryDate(item.date)}</p>
+      <p className="mt-2 line-clamp-2 text-[12.5px] leading-5 text-slate-600">{item.reponse}</p>
+
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          setConfirming(true)
+        }}
+        title="Supprimer cette conversation"
+        className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full text-slate-300 opacity-0 transition hover:bg-rose-50 hover:text-rose-600 group-hover:opacity-100 focus-visible:opacity-100"
+      >
+        <Trash2 size={13} strokeWidth={2.2} />
+      </button>
+    </div>
+  )
+}
+
 function HistoryPanel({
   open,
   onClose,
@@ -113,6 +219,7 @@ function HistoryPanel({
   historyError,
   onRefresh,
   onSelect,
+  onDeleteItem,
 }: {
   open: boolean
   onClose: () => void
@@ -121,12 +228,9 @@ function HistoryPanel({
   historyError: string
   onRefresh: () => void
   onSelect: (item: ConversationHistoryItem) => void
+  onDeleteItem: (item: ConversationHistoryItem, index: number) => Promise<void>
 }) {
-  const formatHistoryDate = (date: string) =>
-    new Intl.DateTimeFormat('fr-FR', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    }).format(new Date(date))
+  const [query, setQuery] = useState('')
 
   useEffect(() => {
     if (!open) return
@@ -137,7 +241,20 @@ function HistoryPanel({
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
 
-  return (
+  useEffect(() => {
+    if (!open) setQuery('')
+  }, [open])
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return history
+    return history.filter(
+      item =>
+        item.question.toLowerCase().includes(q) || item.reponse.toLowerCase().includes(q)
+    )
+  }, [history, query])
+
+  return createPortal(
     <>
       {/* Backdrop */}
       <div
@@ -160,6 +277,11 @@ function HistoryPanel({
           <div className="flex items-center gap-2 text-[14px] font-semibold tracking-[-0.01em] text-slate-900">
             <Clock3 size={16} strokeWidth={2.2} className="text-blue-600" />
             Historique
+            {history.length > 0 && (
+              <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10.5px] font-semibold text-slate-500">
+                {history.length}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1">
             <button
@@ -181,45 +303,76 @@ function HistoryPanel({
           </div>
         </div>
 
+        {history.length > 0 && (
+          <div className="shrink-0 border-b border-slate-100 px-4 py-3">
+            <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 focus-within:border-blue-300 focus-within:bg-white">
+              <Search size={14} strokeWidth={2.2} className="shrink-0 text-slate-400" />
+              <input
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Rechercher dans l'historique..."
+                className="w-full min-w-0 bg-transparent text-[12.5px] text-slate-700 outline-none placeholder:text-slate-400"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  className="shrink-0 text-slate-400 transition hover:text-slate-600"
+                >
+                  <X size={13} strokeWidth={2.2} />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto px-4 py-4">
           {historyLoading ? (
-            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-[12.5px] text-slate-500">
-              Chargement de l'historique...
+            <div className="space-y-2.5">
+              {[0, 1, 2].map(i => (
+                <div
+                  key={i}
+                  className="animate-pulse rounded-2xl border border-slate-100 bg-slate-50 px-3.5 py-3"
+                >
+                  <div className="h-3 w-2/3 rounded bg-slate-200" />
+                  <div className="mt-2 h-2.5 w-1/3 rounded bg-slate-200" />
+                  <div className="mt-3 h-2.5 w-full rounded bg-slate-200" />
+                  <div className="mt-1.5 h-2.5 w-4/5 rounded bg-slate-200" />
+                </div>
+              ))}
             </div>
           ) : historyError ? (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-4 text-[12.5px] leading-5 text-rose-700">
               {historyError}
             </div>
           ) : history.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-4 text-[12.5px] leading-5 text-slate-500">
-              Aucune conversation enregistrée pour le moment.
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-8 text-center">
+              <Clock3 size={18} strokeWidth={1.8} className="text-slate-300" />
+              <p className="text-[12.5px] leading-5 text-slate-500">
+                Aucune conversation enregistrée pour le moment.
+              </p>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-6 text-center text-[12.5px] text-slate-500">
+              Aucun résultat pour « {query} ».
             </div>
           ) : (
             <div className="space-y-2.5">
-              {history.map((item, index) => (
-                <button
-                  key={`${item.date}-${index}`}
-                  type="button"
-                  onClick={() => onSelect(item)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-left transition hover:border-blue-200 hover:bg-blue-50/40 hover:shadow-sm"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="min-w-0 flex-1 truncate text-[13px] font-medium text-slate-900">
-                      {item.question}
-                    </p>
-                    <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10.5px] font-medium text-slate-500">
-                      {item.sources?.length ?? 0} source{(item.sources?.length ?? 0) > 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-[11.5px] text-slate-400">{formatHistoryDate(item.date)}</p>
-                  <p className="mt-2 line-clamp-2 text-[12.5px] leading-5 text-slate-600">{item.reponse}</p>
-                </button>
+              {filtered.map((item, index) => (
+                <HistoryCard
+                  key={historyItemKey(item, index)}
+                  item={item}
+                  index={index}
+                  onSelect={() => onSelect(item)}
+                  onDelete={() => onDeleteItem(item, index)}
+                />
               ))}
             </div>
           )}
         </div>
       </aside>
-    </>
+    </>,
+    document.body
   )
 }
 
@@ -248,6 +401,17 @@ export default function ChatInterface() {
       setHistoryError("Impossible de charger l'historique des conversations.")
     } finally {
       setHistoryLoading(false)
+    }
+  }
+
+  const deleteHistoryItem = async (item: ConversationHistoryItem, index: number) => {
+    const key = historyItemKey(item, index)
+    try {
+      await deleteChatHistoryItem(item.id ?? key)
+      setHistory(prev => prev.filter((h, i) => historyItemKey(h, i) !== key))
+    } catch {
+      setHistoryError("Impossible de supprimer cette conversation.")
+      throw new Error('delete-failed')
     }
   }
 
@@ -484,6 +648,7 @@ export default function ChatInterface() {
         historyError={historyError}
         onRefresh={loadHistory}
         onSelect={openHistoryItem}
+        onDeleteItem={deleteHistoryItem}
       />
     </section>
   )

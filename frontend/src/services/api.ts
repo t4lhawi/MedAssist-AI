@@ -52,6 +52,8 @@ export const sendChat = (
 ) =>
   api.post('/api/chat/', { question, historique }, { signal })
 export const getChatHistory = () => api.get('/api/chat/historique')
+export const deleteChatHistory = () => api.delete('/api/chat/historique')
+export const deleteChatHistoryItem = (id: number | string) => api.delete(`/api/chat/historique/${id}`)
 export const interpreterMesure = (type: string, valeur: number, unite: string, emplacement: string) =>
   api.post('/api/chat/interpreter', null, { params: { capteur_type: type, valeur, unite, emplacement } })
 

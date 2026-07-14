@@ -77,6 +77,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     reponse: str
     sources: List[Any] = []
+    explication: str | None = None
 
 
 # ─── Alerte ──────────────────────────────────────────────────────

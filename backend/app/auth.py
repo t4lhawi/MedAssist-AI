@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
+import hashlib
 from typing import Optional
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -9,15 +10,27 @@ from .config import settings
 from .database import get_db
 from . import models
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+
+
+def _normaliser_mdp(mdp: str) -> bytes:
+    return hashlib.sha256(mdp.encode("utf-8")).digest()
 
 # ─── Mot de passe ────────────────────────────────────────────────
 def hacher_mdp(mdp: str) -> str:
-    return pwd_context.hash(mdp)
+    mdp_normalise = _normaliser_mdp(mdp)
+    hash_bcrypt = bcrypt.hashpw(mdp_normalise, bcrypt.gensalt())
+    return f"sha256${hash_bcrypt.decode('utf-8')}"
 
 def verifier_mdp(mdp_brut: str, mdp_hash: str) -> bool:
-    return pwd_context.verify(mdp_brut, mdp_hash)
+    try:
+        if mdp_hash.startswith("sha256$"):
+            hash_bcrypt = mdp_hash.removeprefix("sha256$").encode("utf-8")
+            return bcrypt.checkpw(_normaliser_mdp(mdp_brut), hash_bcrypt)
+
+        return bcrypt.checkpw(mdp_brut.encode("utf-8"), mdp_hash.encode("utf-8"))
+    except (ValueError, TypeError):
+        return False
 
 
 # ─── JWT ─────────────────────────────────────────────────────────
