@@ -6,7 +6,7 @@ import LoginPage from './components/Auth/LoginPage'
 import Navbar from './components/Dashboard/Navbar'
 import Sidebar from './components/Dashboard/Sidebar'
 import DashboardPage from './pages/DashboardPage'
-import CapteursPage from './pages/CapteursPage'
+import AdminSallesPage from './pages/AdminSallesPage'
 import AlertesPage from './pages/AlertesPage'
 import DocumentsPage from './pages/DocumentsPage'
 import AssistantPage from './pages/AssistantPage'
@@ -26,7 +26,7 @@ function AnimatedRoutes() {
     <div key={location.pathname} className="page-transition">
       <Routes location={location}>
         <Route path="/" element={<DashboardPage />} />
-        <Route path="/capteurs" element={<CapteursPage />} />
+        <Route path="/admin/salles" element={<AdminSallesPage />} />
         <Route path="/alertes" element={<AlertesPage />} />
         <Route path="/documents" element={<DocumentsPage />} />
         <Route path="/assistant" element={<AssistantPage />} />

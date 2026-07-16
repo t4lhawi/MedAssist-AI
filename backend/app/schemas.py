@@ -1,6 +1,8 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional, List, Any
+import re
 from datetime import datetime
+from typing import Any, Dict, List, Literal, Optional
+
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 # ─── Auth ────────────────────────────────────────────────────────
@@ -31,7 +33,8 @@ class UtilisateurOut(BaseModel):
         from_attributes = True
 
 
-# ─── Capteur ─────────────────────────────────────────────────────
+# ─── Capteur (legacy — kept for the read-only CapteursPage
+#              during the migration window). New code uses Esp32Device.
 class CapteurCreate(BaseModel):
     nom: str
     type: str
@@ -45,14 +48,106 @@ class CapteurOut(CapteurCreate):
         from_attributes = True
 
 
+# ─── ESP32 (source-of-truth device registry) ───────────────────
+SensorType = Literal["temperature", "humidite", "pression", "qualite_air"]
+SENSOR_TYPES: tuple[SensorType, ...] = (
+    "temperature", "humidite", "pression", "qualite_air",
+)
+
+# Conservative IPv4 validator — we store the string verbatim but reject
+# obvious garbage from the admin form.
+_IPV4_RE = re.compile(r"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$")
+
+
+def _validate_ipv4(value: str) -> str:
+    if not isinstance(value, str) or not _IPV4_RE.match(value):
+        raise ValueError("Adresse IP invalide (format IPv4 attendu)")
+    for part in value.split("."):
+        if int(part) > 255:
+            raise ValueError("Adresse IP invalide (octet > 255)")
+    return value
+
+
+class Esp32DeviceBase(BaseModel):
+    ip: str
+    salle: str = Field(min_length=1, max_length=100)
+    note: Optional[str] = Field(default=None, max_length=200)
+    actif: bool = True
+
+    @field_validator("ip")
+    @classmethod
+    def _ip_v4(cls, v: str) -> str:
+        return _validate_ipv4(v)
+
+
+class Esp32DeviceCreate(Esp32DeviceBase):
+    pass
+
+
+class Esp32DeviceUpdate(BaseModel):
+    salle: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    note: Optional[str] = Field(default=None, max_length=200)
+    actif: Optional[bool] = None
+
+
+class Esp32DeviceOut(BaseModel):
+    id: int
+    ip: str
+    salle: str
+    note: Optional[str] = None
+    actif: bool
+    cree_le: datetime
+    derniere_mesure_le: Optional[datetime] = None
+    class Config:
+        from_attributes = True
+
+
+class Esp32ClaimRequest(BaseModel):
+    """Body for POST /api/admin/esp32/claim — promote an unregistered IP
+    to a fully-registered ESP32 in a single call."""
+    ip: str
+    salle: str = Field(min_length=1, max_length=100)
+    note: Optional[str] = Field(default=None, max_length=200)
+
+    @field_validator("ip")
+    @classmethod
+    def _ip_v4(cls, v: str) -> str:
+        return _validate_ipv4(v)
+
+
 # ─── Mesure ──────────────────────────────────────────────────────
 class MesureCreate(BaseModel):
-    capteur_id: int
+    """Insertion DTO. Accepts both the new (esp32_id, type, source_ip) and
+    the legacy (capteur_id) shape — the legacy field is ignored on insert
+    with a deprecation log so old clients keep working during the migration
+    window."""
+    # New (preferred)
+    esp32_id: Optional[int] = None
+    type: Optional[SensorType] = None
+    source_ip: Optional[str] = None
+    # Salle segment read from the MQTT topic (medassist/salle/<topic_salle>/<type>).
+    # Optional for callers that don't go through the MQTT path.
+    topic_salle: Optional[str] = None
+    # Legacy — ignored on insert
+    capteur_id: Optional[int] = None
     valeur: float
     unite: Optional[str] = None
 
-class MesureOut(MesureCreate):
+    @field_validator("source_ip")
+    @classmethod
+    def _source_ip_v4(cls, v: Optional[str]) -> Optional[str]:
+        return _validate_ipv4(v) if v else v
+
+
+class MesureOut(BaseModel):
     id: int
+    esp32_id: Optional[int] = None
+    type: Optional[SensorType] = None
+    source_ip: Optional[str] = None
+    salle: Optional[str] = None
+    topic_salle: Optional[str] = None
+    valeur: float
+    unite: Optional[str] = None
     timestamp: datetime
     class Config:
         from_attributes = True
@@ -83,13 +178,50 @@ class ChatResponse(BaseModel):
 # ─── Alerte ──────────────────────────────────────────────────────
 class AlerteOut(BaseModel):
     id: int
-    capteur_id: Optional[int]
-    capteur_nom: Optional[str] = None
-    capteur_type: Optional[str] = None
-    capteur_emplacement: Optional[str] = None
+    esp32_id: Optional[int] = None
+    type: Optional[SensorType] = None
+    salle: Optional[str] = None
     niveau: str
     message: str
     traitee: bool
     cree_le: datetime
     class Config:
         from_attributes = True
+
+
+# ─── Aggregated views for the salle-grouped dashboard ──────────
+SensorState = Literal["active", "offline", "not_installed"]
+
+
+class SensorStatus(BaseModel):
+    type: SensorType
+    state: SensorState
+    last_value: Optional[float] = None
+    last_unite: Optional[str] = None
+    last_timestamp: Optional[datetime] = None
+    # Convenient pre-formatted "il y a 12 min" string for the dashboard.
+    last_seen_label: Optional[str] = None
+
+
+class SalleStatus(BaseModel):
+    esp32_id: Optional[int] = None
+    salle: str
+    ip: Optional[str] = None
+    actif: bool
+    online: bool
+    sensors: List[SensorStatus] = []
+    # The most recent timestamp of any sensor in this salle — used to
+    # determine the "online dot" on the card header.
+    derniere_mesure_le: Optional[datetime] = None
+
+
+class UnregisteredSource(BaseModel):
+    ip: str
+    last_seen: Optional[datetime] = None
+    measurement_count: int
+    # Most recent type seen — a hint for the admin ("this device is
+    # reporting temperature + humidity").
+    last_type: Optional[SensorType] = None
+    last_valeur: Optional[float] = None
+    last_unite: Optional[str] = None
+

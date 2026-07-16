@@ -1,6 +1,6 @@
 from sqlalchemy import (
     Column, Integer, String, Float, Boolean,
-    DateTime, ForeignKey, Text, JSON
+    DateTime, ForeignKey, Text, JSON, Index,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -21,29 +21,57 @@ class Utilisateur(Base):
     documents     = relationship("Document", back_populates="uploade_par_user")
 
 
-class Capteur(Base):
-    __tablename__ = "capteurs"
-    id          = Column(Integer, primary_key=True, index=True)
-    nom         = Column(String(100), nullable=False)
-    type        = Column(String(50), nullable=False)   # temperature | humidite | pression | qualite_air
-    emplacement = Column(String(200))
-    actif       = Column(Boolean, default=True)
-    cree_le     = Column(DateTime(timezone=True), server_default=func.now())
+class Esp32Device(Base):
+    """A registered IoT device, identified by its LAN IP and assigned to
+    a physical 'salle'. Sensor *types* are not declared up-front — they are
+    discovered from incoming MQTT payloads."""
+    __tablename__ = "esp32_devices"
 
-    mesures = relationship("Mesure", back_populates="capteur")
-    alertes = relationship("Alerte", back_populates="capteur")
+    id        = Column(Integer, primary_key=True, index=True)
+    # IPv4 fits in 15 chars, IPv6 in 45 — keep room for the latter.
+    ip        = Column(String(45), nullable=False, unique=True, index=True)
+    salle     = Column(String(100), nullable=False, index=True)
+    note      = Column(String(200))
+    actif     = Column(Boolean, default=True)
+    cree_le   = Column(DateTime(timezone=True), server_default=func.now())
+    # Bumped by the MQTT ingester on every accepted measurement from this
+    # IP. Used by the admin "unregistered bucket" and by the salle grid's
+    # online/offline dot.
+    derniere_mesure_le = Column(DateTime(timezone=True))
+
+    mesures = relationship("Mesure", back_populates="esp32")
+    alertes = relationship("Alerte", back_populates="esp32")
 
 
 class Mesure(Base):
+    """One observation from an ESP32. The sensor *type* lives on the row
+    (not on the device) because a single ESP32 may emit multiple types.
+
+    The ``esp32_id`` FK is nullable so we can keep measurements from
+    devices that haven't been registered yet (``source_ip`` will be set
+    instead)."""
     __tablename__ = "mesures"
+
     id         = Column(Integer, primary_key=True, index=True)
-    capteur_id = Column(Integer, ForeignKey("capteurs.id"), nullable=False)
+    esp32_id   = Column(Integer, ForeignKey("esp32_devices.id"), nullable=True, index=True)
+    type       = Column(String(30), nullable=False, index=True)
+    source_ip  = Column(String(45), nullable=True, index=True)
+    # Salle segment from the MQTT topic (medassist/salle/<topic_salle>/<type>).
+    # Stored even when esp32_id is NULL so the admin can see "a device claimed
+    # to be Salle X but I haven't registered any device for Salle X".
+    topic_salle = Column(String(100), nullable=True, index=True)
     valeur     = Column(Float, nullable=False)
     unite      = Column(String(20))
-    timestamp  = Column(DateTime(timezone=True), server_default=func.now())
+    timestamp  = Column(DateTime(timezone=True), server_default=func.now(), index=True)
 
-    capteur = relationship("Capteur", back_populates="mesures")
+    esp32   = relationship("Esp32Device", back_populates="mesures")
     alertes = relationship("Alerte", back_populates="mesure")
+
+    # Composite index powers the salle-grid query:
+    #   WHERE esp32_id = ? AND type = ? ORDER BY timestamp DESC
+    __table_args__ = (
+        Index("ix_mesures_esp32_type_ts", "esp32_id", "type", "timestamp"),
+    )
 
 
 class Document(Base):
@@ -74,24 +102,15 @@ class Conversation(Base):
 class Alerte(Base):
     __tablename__ = "alertes"
     id         = Column(Integer, primary_key=True, index=True)
-    capteur_id = Column(Integer, ForeignKey("capteurs.id"))
-    mesure_id  = Column(Integer, ForeignKey("mesures.id"))
+    # Alertes are tied to a specific (esp32, type) pair so the dashboard can
+    # group by salle without an extra join. mesure_id remains for traceability.
+    esp32_id   = Column(Integer, ForeignKey("esp32_devices.id"), nullable=True, index=True)
+    type       = Column(String(30), nullable=True)
+    mesure_id  = Column(Integer, ForeignKey("mesures.id"), nullable=True)
     niveau     = Column(String(20), nullable=False)   # info | attention | critique
     message    = Column(Text, nullable=False)
     traitee    = Column(Boolean, default=False)
     cree_le    = Column(DateTime(timezone=True), server_default=func.now())
 
-    capteur = relationship("Capteur", back_populates="alertes")
-    mesure  = relationship("Mesure", back_populates="alertes")
-
-    @property
-    def capteur_nom(self):
-        return self.capteur.nom if self.capteur else None
-
-    @property
-    def capteur_type(self):
-        return self.capteur.type if self.capteur else None
-
-    @property
-    def capteur_emplacement(self):
-        return self.capteur.emplacement if self.capteur else None
+    esp32  = relationship("Esp32Device", back_populates="alertes")
+    mesure = relationship("Mesure", back_populates="alertes")

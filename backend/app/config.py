@@ -40,7 +40,9 @@ class Settings(BaseSettings):
     # ── MQTT (ingestion capteurs IoT) ────────────────────────
     MQTT_HOST: str = "localhost"
     MQTT_PORT: int = 1883
-    MQTT_TOPIC_PREFIX: str = "medassist/mesures"   # souscrit "<prefix>/+"
+    # Topic shape: <prefix>/<salle>/<type> — the salle segment is the
+    # source of truth for the device registry.
+    MQTT_TOPIC_PREFIX: str = "medassist/salle"
     MQTT_CLIENT_ID: str = "medassist-backend"
     MQTT_USERNAME: str = ""                        # vide = anonyme
     MQTT_PASSWORD: str = ""

@@ -14,10 +14,18 @@ const char* WIFI_PASSWORD = "22092005";
 const char* MQTT_BROKER     = "192.168.1.100";
 const int   MQTT_PORT       = 1883;
 const char* MQTT_CLIENT_ID  = "esp32-sensor-1";
-const char* MQTT_TOPIC_PREFIX = "medassist/mesures";
 
-const int CAPTEUR_ID_TEMP = 1;
-const int CAPTEUR_ID_HUM  = 2;
+// ── Salle identification ────────────────────────────────────────
+// IMPORTANT: this value MUST match the `salle` field registered for
+// this device on the dashboard. If you rename a salle in the admin UI,
+// re-flash the ESP32 with the new value — the topic prefix is baked
+// in at compile time and is the source of truth for salle matching
+// on the backend.
+#define SALLE "chambre-101"
+
+// Topic shape (compiled):  medassist/salle/<SALLE>/<type>
+// Where <type> ∈ { temperature, humidite, pression, qualite_air }.
+const char* MQTT_TOPIC_PREFIX = "medassist/salle/" SALLE;
 
 const unsigned long INTERVAL_MS = 3000;
 
@@ -54,6 +62,8 @@ void connecterWiFi() {
   Serial.println("Wi-Fi connecté !");
   Serial.print("Adresse IP ESP32 : ");
   Serial.println(WiFi.localIP());
+  Serial.print  ("Salle déclarée  : ");
+  Serial.println(SALLE);
   Serial.print  ("Sleep Wi-Fi désactivé : ");
   Serial.println(WiFi.getSleep() ? "non" : "oui");
 }
@@ -82,7 +92,11 @@ void connecterMQTT() {
 // Envoi MQTT
 // ===============================
 
-bool envoyerMesure(int capteur_id, float valeur, const String &unite) {
+// Publishes one mesure on ``<MQTT_TOPIC_PREFIX>/<type>`` with a JSON
+// payload of ``{ip, type, valeur, unite}``. The IP is taken from the
+// ESP32's own WiFi.localIP() so the backend can sanity-check that the
+// salle's registered device matches the source IP.
+bool envoyerMesure(const char* type, float valeur, const char* unite) {
 
   if (WiFi.status() != WL_CONNECTED) {
     connecterWiFi();
@@ -92,13 +106,14 @@ bool envoyerMesure(int capteur_id, float valeur, const String &unite) {
   }
   mqtt.loop();   // maintient la connexion en vie entre deux publications
 
-  char topic[64];
-  snprintf(topic, sizeof(topic), "%s/%d", MQTT_TOPIC_PREFIX, capteur_id);
+  char topic[96];
+  snprintf(topic, sizeof(topic), "%s/%s", MQTT_TOPIC_PREFIX, type);
 
   JsonDocument doc;
-  doc["valeur"]        = valeur;
-  doc["unite"]         = unite;
-  doc["timestamp_iso"] = "";   // vide — le backend stamp via func.now()
+  doc["ip"]     = WiFi.localIP().toString();
+  doc["type"]   = type;
+  doc["valeur"] = valeur;
+  doc["unite"]  = unite;
 
   String payload;
   serializeJson(doc, payload);
@@ -127,6 +142,7 @@ void diagnosticReseau() {
   Serial.print  ("SSID connecte        : "); Serial.println(WiFi.SSID());
   Serial.print  ("RSSI                 : "); Serial.print(WiFi.RSSI()); Serial.println(" dBm");
   Serial.print  ("Adresse IP ESP32     : "); Serial.println(WiFi.localIP());
+  Serial.print  ("Salle (topic prefix) : "); Serial.println(SALLE);
   Serial.print  ("Masque               : "); Serial.println(WiFi.subnetMask());
   Serial.print  ("Passerelle           : "); Serial.println(WiFi.gatewayIP());
   Serial.print  ("DNS primaire         : "); Serial.println(WiFi.dnsIP(0));
@@ -174,7 +190,7 @@ void setup() {
   connecterWiFi();
   diagnosticReseau();
 
-  mqtt.setServer(MQTT_BROKER, MQTT_PORT);   // <-- this line was missing
+  mqtt.setServer(MQTT_BROKER, MQTT_PORT);
 
   connecterMQTT();
 
@@ -201,11 +217,17 @@ void loop() {
     Serial.print(data.humidity);
     Serial.println(" %");
 
-    envoyerMesure(CAPTEUR_ID_TEMP, data.temperature, "°C");
+    envoyerMesure("temperature", data.temperature, "°C");
 
     delay(200);
 
-    envoyerMesure(CAPTEUR_ID_HUM, data.humidity, "%");
+    envoyerMesure("humidite", data.humidity, "%");
+
+    // Optional sensor types — wire them when the hardware is on the
+    // board. The data model and dashboard already support them.
+    //
+    // envoyerMesure("pression",    readBmp(),        "hPa");    // BMP280
+    // envoyerMesure("qualite_air", readSgp(),        "ppm");    // SGP40 / SGP30
 
   } else {
 

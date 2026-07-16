@@ -1,15 +1,18 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { Activity, AlertCircle, Bell, Cloud, FileText, RefreshCw } from 'lucide-react'
+import { Activity, AlertCircle, Bell, FileText, RefreshCw, Settings2 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import StatCard from '../components/Dashboard/StatCard'
 import LineChart from '../components/Charts/LineChart'
 import AlertsList from '../components/Alerts/AlertsList'
-import SensorsList from '../components/Sensors/SensorsList'
-import { getAlertes, getCapteurs, getDocuments, getMesures } from '../services/api'
-import { Alerte, Capteur, Document, Mesure } from '../types'
+import { getAlertes, getDocuments, getMesures, getSallesStatus } from '../services/api'
+import { useAuth } from '../context/AuthContext'
+import { Alerte, Document, Mesure, SalleStatus } from '../types'
 import { MONITORING_TYPES } from '../monitoring'
 
 export default function DashboardPage() {
-  const [capteurs, setCapteurs] = useState<Capteur[]>([])
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
+  const [salles, setSalles] = useState<SalleStatus[]>([])
   const [mesures, setMesures] = useState<Mesure[]>([])
   const [alertes, setAlertes] = useState<Alerte[]>([])
   const [documents, setDocuments] = useState<Document[]>([])
@@ -19,13 +22,13 @@ export default function DashboardPage() {
   const load = useCallback(async () => {
     setError('')
     try {
-      const [c, m, a, d] = await Promise.all([
-        getCapteurs(),
-        getMesures(undefined, 80),
+      const [s, m, a, d] = await Promise.all([
+        getSallesStatus(),
+        getMesures({ limit: 80 }),
         getAlertes(false),
         getDocuments(),
       ])
-      setCapteurs(c.data)
+      setSalles(s.data)
       setMesures(m.data)
       setAlertes(a.data)
       setDocuments(d.data)
@@ -43,21 +46,23 @@ export default function DashboardPage() {
     return () => clearInterval(id)
   }, [load])
 
-  const byType = (type: string) => {
-    const ids = capteurs.filter(c => c.type === type).map(c => c.id)
-    return mesures.filter(m => ids.includes(m.capteur_id))
-  }
+  const byType = (type: string) => mesures.filter(m => m.type === type)
 
   const latestValue = (type: string) => {
     const m = byType(type)[0]
     return m ? `${m.valeur}` : '--'
   }
 
-  const countByType = (type: string) => capteurs.filter(c => c.type === type).length
+  const countByType = (type: string) => salles.filter(s =>
+    s.sensors.some(x => x.type === type && x.state === 'active'),
+  ).length
+
   const activeAlerts = alertes.filter(a => !a.traitee).length
   const indexedDocuments = documents.filter(d => d.indexe).length
   const activeMonitoringFamilies = MONITORING_TYPES.filter(t => countByType(t.type) > 0).length
   const chartTypes = MONITORING_TYPES.filter(t => countByType(t.type) > 0)
+  const registeredSalles = salles.filter(s => s.esp32_id !== null).length
+  const onlineSalles = salles.filter(s => s.online).length
 
   return (
     <div className="mx-auto max-w-7xl space-y-4 p-3 md:p-5">
@@ -86,13 +91,13 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          title="Familles surveillées"
-          value={activeMonitoringFamilies}
+          title="Salles surveillées"
+          value={onlineSalles}
           icon={Activity}
           color="bg-gradient-to-b from-blue-400 to-blue-600"
-          sub={`${capteurs.length} capteur(s) actif(s)`}
+          sub={`${registeredSalles} enregistrée(s)`}
           tone="neutral"
         />
         <StatCard
@@ -111,6 +116,14 @@ export default function DashboardPage() {
           sub={`${indexedDocuments} indexé(s)`}
           tone={indexedDocuments === documents.length && documents.length > 0 ? 'good' : 'neutral'}
         />
+        <StatCard
+          title="Familles actives"
+          value={activeMonitoringFamilies}
+          icon={Settings2}
+          color="bg-gradient-to-b from-violet-400 to-violet-500"
+          sub={`sur ${MONITORING_TYPES.length}`}
+          tone="neutral"
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -122,7 +135,7 @@ export default function DashboardPage() {
             unit={item.unit}
             icon={item.icon}
             color={item.color}
-            sub={`${countByType(item.type)} capteur(s)`}
+            sub={`${countByType(item.type)} salle(s) active(s)`}
             tone={countByType(item.type) > 0 ? 'neutral' : 'warning'}
           />
         ))}
@@ -139,8 +152,29 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <SensorsList capteurs={capteurs} onRefresh={load} />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_minmax(22rem,0.85fr)]">
+        {isAdmin ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h3 className="text-[15px] font-semibold text-slate-900">Salles &amp; ESP32</h3>
+            <p className="mt-1 text-[12.5px] text-slate-500">
+              {registeredSalles} salle(s) enregistrée(s), {onlineSalles} en ligne.
+            </p>
+            <Link
+              to="/admin/salles"
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-blue-600 px-3.5 py-2 text-[13px] font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+            >
+              <Settings2 size={14} />
+              Ouvrir l'administration
+            </Link>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h3 className="text-[15px] font-semibold text-slate-900">Surveillance</h3>
+            <p className="mt-1 text-[12.5px] text-slate-500">
+              {registeredSalles} salle(s) surveillée(s) par les ESP32 du service.
+            </p>
+          </div>
+        )}
         <AlertsList alertes={alertes} onRefresh={load} />
       </div>
     </div>

@@ -1,20 +1,31 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-import { Activity, Bell, FileText, LayoutDashboard, MessageCircle } from 'lucide-react'
+import { Activity, Bell, FileText, LayoutDashboard, MessageCircle, Settings2 } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
 
-const NAV = [
+interface NavItem {
+  to: string
+  icon: React.ComponentType<{ size?: number; strokeWidth?: number }>
+  label: string
+  adminOnly?: boolean
+}
+
+const NAV: NavItem[] = [
   { to: '/', icon: LayoutDashboard, label: 'Tableau' },
-  { to: '/capteurs', icon: Activity, label: 'Capteurs' },
+  { to: '/admin/salles', icon: Settings2, label: 'Salles', adminOnly: true },
   { to: '/alertes', icon: Bell, label: 'Alertes' },
   { to: '/documents', icon: FileText, label: 'Docs' },
   { to: '/assistant', icon: MessageCircle, label: 'Assistant' },
 ]
 
 export default function Sidebar() {
+  const { user } = useAuth()
+  const items = NAV.filter(n => !n.adminOnly || user?.role === 'admin')
+
   return (
     <aside className="fixed inset-x-0 bottom-0 z-30 border-t border-black/5 bg-white/80 backdrop-blur-xl md:static md:inset-auto md:flex md:w-60 md:flex-col md:border-r md:border-t-0 md:bg-slate-50/60">
       <nav className="flex items-center justify-around gap-1 px-3 py-2 md:flex-1 md:flex-col md:items-stretch md:justify-start md:gap-0.5 md:p-3 md:pt-5">
-        {NAV.map(({ to, icon: Icon, label }) => (
+        {items.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}

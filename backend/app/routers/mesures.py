@@ -1,27 +1,41 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ..database import get_db
-from ..schemas import MesureCreate, MesureOut
+
+from .. import crud, schemas
 from ..auth import get_current_user
-from .. import crud
+from ..database import get_db
 
 router = APIRouter(prefix="/api/mesures", tags=["Mesures"])
 
-@router.post("/", response_model=MesureOut)
-def creer(data: MesureCreate, db: Session = Depends(get_db)):
-    """Endpoint conservé pour tests manuels / clients HTTP legacy.
 
-    Les ESP32 en production publient désormais sur MQTT
-    ``medassist/mesures/<capteur_id>`` (voir ``backend/app/mqtt_client.py``).
-    """
+@router.post("/", response_model=schemas.MesureOut)
+def creer(data: schemas.MesureCreate, db: Session = Depends(get_db)):
+    """Legacy endpoint kept for manual testing and the existing README
+    smoke test. ESP32 devices in production publish via MQTT to
+    ``medassist/mesures/<topic>`` (see ``backend/app/mqtt_client.py``).
+
+    The new ``type`` and ``source_ip`` fields on the payload are now
+    **required** for inserts. The legacy ``capteur_id`` field is silently
+    ignored (deprecated)."""
     return crud.create_mesure(db, data)
 
-@router.get("/", response_model=List[MesureOut])
+
+@router.get("/", response_model=List[schemas.MesureOut])
 def lister(
-    capteur_id: Optional[int] = Query(None),
+    capteur_id: Optional[int] = Query(None, description="Legacy — ignored"),
     limit: int = Query(100, le=500),
+    esp32_id: Optional[int] = Query(None),
+    type: Optional[str] = Query(None),
+    salle: Optional[str] = Query(None),
     db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    user=Depends(get_current_user),
 ):
-    return crud.get_mesures(db, capteur_id=capteur_id, limit=limit)
+    return crud.get_mesures(
+        db,
+        capteur_id=capteur_id,
+        limit=limit,
+        esp32_id=esp32_id,
+        type=type,
+        salle=salle,
+    )
