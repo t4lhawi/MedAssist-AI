@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from ..database import get_db
-from ..schemas import AlerteOut
+from ..schemas import AlerteOut, _alerte_to_out
 from ..auth import get_current_user
 from .. import crud
 
@@ -15,7 +15,8 @@ def lister(
     db: Session = Depends(get_db),
     user=Depends(get_current_user)
 ):
-    return crud.get_alertes(db, traitee=traitee, limit=limit)
+    alertes = crud.get_alertes(db, traitee=traitee, limit=limit)
+    return [_alerte_to_out(a) for a in alertes]
 
 @router.patch("/{alerte_id}/traiter", response_model=AlerteOut)
 def traiter(alerte_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -23,4 +24,4 @@ def traiter(alerte_id: int, db: Session = Depends(get_db), user=Depends(get_curr
     if not a:
         from fastapi import HTTPException
         raise HTTPException(404, "Alerte introuvable")
-    return a
+    return _alerte_to_out(a)

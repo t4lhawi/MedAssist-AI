@@ -146,19 +146,18 @@ def update_esp32(
 
 
 def delete_esp32(db: Session, esp32_id: int) -> bool:
-    """Delete a device and NULL its ``mesures.esp32_id`` / ``alertes.esp32_id``
-    so the historical data survives in the unregistered bucket. Returns
-    True if a row was deleted."""
+    """Delete a device and NULL its ``mesures.esp32_id`` so the historical
+    data survives in the unregistered bucket. Alertes are kept and remain
+    linked via ``mesure_id``. Returns True if a row was deleted."""
     d = get_esp32(db, esp32_id)
     if d is None:
         return False
     db.query(models.Mesure).filter(
         models.Mesure.esp32_id == esp32_id,
-    ).update({models.Mesure.esp32_id: None}, synchronize_session=False)
-    db.query(models.Alerte).filter(
-        models.Alerte.esp32_id == esp32_id,
-    ).update({models.Alerte.esp32_id: None}, synchronize_session=False)
-    db.delete(d); db.commit()
+    ).update({models.Mesure.esp32_id: None}, synchronize_session='fetch')
+    db.flush()
+    db.delete(d)
+    db.commit()
     return True
 
 
@@ -456,7 +455,13 @@ def get_alertes(
     limit: int = 50,
     esp32_id: Optional[int] = None,
 ):
-    q = db.query(models.Alerte).options(joinedload(models.Alerte.esp32))
+    """Filter by esp32_id uses the direct Alerte.esp32_id link.
+    Old alertes where esp32_id is NULL rely on the alerte → mesure chain;
+    they won't appear in esp32-specific queries."""
+    q = db.query(models.Alerte).options(
+        joinedload(models.Alerte.esp32),
+        joinedload(models.Alerte.mesure).joinedload(models.Mesure.esp32),
+    )
     if traitee is not None:
         q = q.filter(models.Alerte.traitee == traitee)
     if esp32_id is not None:

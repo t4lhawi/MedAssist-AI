@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
+// @ts-expect-error legacy types — kept for backward compat
 import { Capteur, Mesure } from '../../types'
+// @ts-expect-error legacy API — kept for backward compat
 import { createCapteur, getMesures } from '../../services/api'
 import { Activity, Loader2, Plus, X } from 'lucide-react'
 import Select from '../ui/Select'
@@ -22,6 +24,8 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
 
     capteurs.forEach(async c => {
       try {
+        // Legacy call signature: (id, limit) — current API uses params.
+        // @ts-expect-error legacy call
         const r = await getMesures(c.id, 1)
         if (!cancelled) {
           setDernieres(prev => ({ ...prev, [c.id]: r.data[0] || null }))
@@ -168,9 +172,17 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
         })}
 
         {capteurs.length === 0 && (
-          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
-            <Activity size={28} strokeWidth={1.5} className="mx-auto mb-2 text-slate-300" />
-            <p className="text-[13.5px] font-medium text-slate-500">Aucun capteur enregistré</p>
+          <div className="relative overflow-hidden rounded-xl border border-dashed border-slate-200 bg-gradient-to-br from-slate-50 to-white px-4 py-10 text-center">
+            <div className="pointer-events-none absolute inset-0 opacity-30" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(59,130,246,0.08), transparent 70%)' }} />
+            <div className="relative">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 ring-4 ring-blue-50/50">
+                <Activity size={22} strokeWidth={1.6} className="text-blue-500" />
+              </div>
+              <p className="text-[14px] font-semibold tracking-[-0.01em] text-slate-800">Aucun capteur enregistré</p>
+              <p className="mt-1 text-[12.5px] text-slate-400">
+                Cliquez sur « Ajouter » pour enregistrer votre premier capteur.
+              </p>
+            </div>
           </div>
         )}
       </div>

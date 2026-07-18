@@ -177,16 +177,43 @@ class ChatResponse(BaseModel):
 
 # ─── Alerte ──────────────────────────────────────────────────────
 class AlerteOut(BaseModel):
+    """esp32_id and salle are computed from the alerte → esp32 chain
+    (or from alerte → mesure → esp32 for pre-migration alertes).
+    Requires joinedload on both Alerte.esp32 and Alerte.mesure.esp32."""
+    model_config = {"from_attributes": True}
+
     id: int
-    esp32_id: Optional[int] = None
     type: Optional[SensorType] = None
-    salle: Optional[str] = None
+    mesure_id: Optional[int] = None
     niveau: str
     message: str
     traitee: bool
     cree_le: datetime
-    class Config:
-        from_attributes = True
+    # computed from the alerte's direct esp32 link or the mesure chain
+    esp32_id: Optional[int] = None
+    salle: Optional[str] = None
+
+
+def _alerte_to_out(a) -> AlerteOut:
+    """Map an Alerte ORM row (with eagerly-loaded esp32 and mesure.esp32)
+    to AlerteOut. Prefers the direct Alerte.esp32 link, falls back to the
+    alerte → mesure → esp32 chain."""
+    # Try direct link first (newer alertes), then go through mesure (legacy).
+    direct_esp32 = getattr(a, "esp32", None)
+    mesure = getattr(a, "mesure", None)
+    indirect_esp32 = getattr(mesure, "esp32", None) if mesure else None
+    esp32 = direct_esp32 if direct_esp32 else indirect_esp32
+    return AlerteOut.model_construct(
+        id=a.id,
+        type=getattr(a, "type", None),
+        mesure_id=getattr(a, "mesure_id", None),
+        niveau=a.niveau,
+        message=a.message,
+        traitee=a.traitee,
+        cree_le=a.cree_le,
+        esp32_id=getattr(esp32, "id", None) if esp32 else None,
+        salle=getattr(esp32, "salle", None) if esp32 else None,
+    )
 
 
 # ─── Aggregated views for the salle-grouped dashboard ──────────

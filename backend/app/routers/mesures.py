@@ -23,8 +23,7 @@ def creer(data: schemas.MesureCreate, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=List[schemas.MesureOut])
 def lister(
-    capteur_id: Optional[int] = Query(None, description="Legacy — ignored"),
-    limit: int = Query(100, le=500),
+    limite: int = Query(100, le=500),
     esp32_id: Optional[int] = Query(None),
     type: Optional[str] = Query(None),
     salle: Optional[str] = Query(None),
@@ -33,8 +32,7 @@ def lister(
 ):
     return crud.get_mesures(
         db,
-        capteur_id=capteur_id,
-        limit=limit,
+        limit=limite,
         esp32_id=esp32_id,
         type=type,
         salle=salle,

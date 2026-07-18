@@ -5,6 +5,7 @@ import type {
   UnregisteredSource,
   Alerte,
   Document,
+  Mesure,
 } from '../types'
 
 const api = axios.create({
@@ -62,7 +63,7 @@ export const getMesures = (params?: {
   type?: string
   salle?: string
   limit?: number
-}) => api.get('/api/mesures/', { params: { ...(params || {}) } })
+}) => api.get<Mesure[]>('/api/mesures/', { params: { ...(params || {}) } })
 
 // ─── Alertes ────────────────────────────────────────────────────
 export const getAlertes = (traitee?: boolean) =>

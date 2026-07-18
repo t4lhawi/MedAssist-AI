@@ -131,11 +131,10 @@ def upgrade() -> None:
                     "INSERT INTO esp32_devices (ip, salle, note, actif, cree_le) "
                     "VALUES (:ip, :salle, :note, :actif, :cree_le) "
                     "ON CONFLICT (ip) DO NOTHING"
-                ),
-                {
-                    "ip": ip, "salle": salle, "note": note,
-                    "actif": r.actif, "cree_le": r.cree_le,
-                },
+                ).bindparams(
+                    ip=ip, salle=salle, note=note,
+                    actif=r.actif, cree_le=r.cree_le,
+                )
             )
 
     # 7. Re-point legacy mesures.esp32_id at the new legacy-<id> device.
@@ -154,6 +153,13 @@ def upgrade() -> None:
     # 8. Drop the legacy capteur_id column + capteurs table.
     if _table_exists("mesures") and _column_exists("mesures", "capteur_id"):
         op.drop_column("mesures", "capteur_id")
+    # Drop FK from alertes.capteur_id before dropping capteurs.
+    if _table_exists("alertes") and _column_exists("alertes", "capteur_id"):
+        try:
+            op.drop_constraint("alertes_capteur_id_fkey", "alertes", type_="foreignkey")
+        except Exception:
+            pass  # constraint may not exist in some DB states
+        op.drop_column("alertes", "capteur_id")
     if _table_exists("capteurs"):
         op.drop_table("capteurs")
 

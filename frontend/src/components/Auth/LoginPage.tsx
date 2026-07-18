@@ -1,8 +1,9 @@
 /* const LOGO_SRC = "/img/favicon.ico" */
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, Loader2, Lock, Mail, ShieldCheck, ImagePlus } from 'lucide-react'
+import { Loader2, Mail, Lock, ShieldCheck, ImagePlus } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { TextField } from '../ui/Field'
 
 // ─────────────────────────────────────────────────────────────
 // LOGO — drop the CHU logo file into src/assets and point this
@@ -62,7 +63,6 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('admin@medassist.ma')
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -162,62 +162,34 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={submit} className="space-y-3.5">
-            <label className="reveal block" style={{ animationDelay: '180ms' }}>
-              <div className="group relative flex items-center gap-2.5 overflow-hidden rounded-xl bg-slate-100 px-3.5 pb-2 pt-5 transition-all duration-200 ease-out focus-within:bg-white focus-within:shadow-[0_6px_20px_-6px_rgba(46,99,255,0.28)]">
-                <Mail size={16} className="shrink-0 text-slate-400 transition-colors duration-200 group-focus-within:text-[--signal]" />
-                <div className="relative min-w-0 flex-1">
-                  <input
-                    id="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    type="email"
-                    placeholder=" "
-                    autoComplete="email"
-                    required
-                    className="peer w-full border-0 bg-transparent p-0 text-[13.5px] text-slate-800 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                  />
-                  <span className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-[13.5px] text-slate-400 transition-all duration-200 ease-out peer-focus:-top-[15px] peer-focus:translate-y-0 peer-focus:text-[10.5px] peer-focus:font-medium peer-focus:text-[--signal] peer-[:not(:placeholder-shown)]:-top-[15px] peer-[:not(:placeholder-shown)]:translate-y-0 peer-[:not(:placeholder-shown)]:text-[10.5px] peer-[:not(:placeholder-shown)]:font-medium peer-[:not(:placeholder-shown)]:text-slate-500">
-                    Email
-                  </span>
-                </div>
-                <span className="pointer-events-none absolute inset-x-0 bottom-0 h-[2.5px] origin-center scale-x-0 bg-gradient-to-r from-[--signal] to-[--signal-deep] transition-transform duration-300 ease-out group-focus-within:scale-x-100" />
-              </div>
-            </label>
+            <TextField
+              type="email"
+              autoComplete="email"
+              required
+              placeholder="nom@chu.ma"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              leadingIcon={<Mail size={15} strokeWidth={2.2} />}
+              containerClassName="!mb-0"
+            />
 
-            <label className="reveal block" style={{ animationDelay: '230ms' }}>
-              <div className="group relative flex items-center gap-2.5 overflow-hidden rounded-xl bg-slate-100 px-3.5 pb-2 pt-5 transition-all duration-200 ease-out focus-within:bg-white focus-within:shadow-[0_6px_20px_-6px_rgba(46,99,255,0.28)]">
-                <Lock size={16} className="shrink-0 text-slate-400 transition-colors duration-200 group-focus-within:text-[--signal]" />
-                <div className="relative min-w-0 flex-1">
-                  <input
-                    id="password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder=" "
-                    autoComplete="current-password"
-                    required
-                    className="peer w-full border-0 bg-transparent p-0 text-[13.5px] text-slate-800 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                  />
-                  <span className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-[13.5px] text-slate-400 transition-all duration-200 ease-out peer-focus:-top-[15px] peer-focus:translate-y-0 peer-focus:text-[10.5px] peer-focus:font-medium peer-focus:text-[--signal] peer-[:not(:placeholder-shown)]:-top-[15px] peer-[:not(:placeholder-shown)]:translate-y-0 peer-[:not(:placeholder-shown)]:text-[10.5px] peer-[:not(:placeholder-shown)]:font-medium peer-[:not(:placeholder-shown)]:text-slate-500">
-                    Mot de passe
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(v => !v)}
-                  className="shrink-0 text-slate-400 transition-colors duration-150 hover:text-slate-600"
-                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-                <span className="pointer-events-none absolute inset-x-0 bottom-0 h-[2.5px] origin-center scale-x-0 bg-gradient-to-r from-[--signal] to-[--signal-deep] transition-transform duration-300 ease-out group-focus-within:scale-x-100" />
-              </div>
+            <div>
+              <TextField
+                type="password"
+                autoComplete="current-password"
+                required
+                placeholder="Mot de passe"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                leadingIcon={<Lock size={15} strokeWidth={2.2} />}
+                containerClassName="!mb-0"
+              />
               <div className="mt-1.5 text-right">
                 <a href="#" className="text-[11.5px] font-medium text-[--signal] transition-colors hover:text-[--signal-deep]">
                   Oublié ?
                 </a>
               </div>
-            </label>
+            </div>
 
             {error && (
               <p className="animate-[shakeIn_0.4s_ease-out] rounded-xl bg-red-50 px-3.5 py-2.5 text-[13px] font-medium text-[--alert]" role="alert">

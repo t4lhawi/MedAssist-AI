@@ -102,12 +102,12 @@ class Conversation(Base):
 class Alerte(Base):
     __tablename__ = "alertes"
     id         = Column(Integer, primary_key=True, index=True)
-    # Alertes are tied to a specific (esp32, type) pair so the dashboard can
-    # group by salle without an extra join. mesure_id remains for traceability.
+    # optional direct esp32 link (may be null; esp32 reached via mesure chain instead)
     esp32_id   = Column(Integer, ForeignKey("esp32_devices.id"), nullable=True, index=True)
-    type       = Column(String(30), nullable=True)
+    # alerte is always linked to a mesure (which carries esp32 via mesures.esp32_id).
     mesure_id  = Column(Integer, ForeignKey("mesures.id"), nullable=True)
     niveau     = Column(String(20), nullable=False)   # info | attention | critique
+    type       = Column(String(30), nullable=True)    # sensor type (temperature, etc.)
     message    = Column(Text, nullable=False)
     traitee    = Column(Boolean, default=False)
     cree_le    = Column(DateTime(timezone=True), server_default=func.now())

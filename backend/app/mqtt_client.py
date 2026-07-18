@@ -130,11 +130,13 @@ class MqttIngestClient:
         if not topic.startswith(prefix + "/"):
             logger.warning("MQTT topic hors-prefixe: %s", topic)
             return
-        parts = topic[len(prefix) + 1:].split("/")
-        if len(parts) != 2 or not parts[0] or not parts[1]:
+        topic_rest = topic[len(prefix) + 1:].split("/")
+        # Topic shape: medassist/salle/<salle>/<type> (2 parts: salle, type)
+        if len(topic_rest) != 2 or not topic_rest[0] or not topic_rest[1]:
             logger.warning("MQTT topic mal forme: %s (attendu: <salle>/<type>)", topic)
             return
-        topic_salle, topic_type = parts
+        topic_salle = topic_rest[0]
+        topic_type = topic_rest[1]
 
         # ── Payload validation ─────────────────────────────────
         valeur = payload.get("valeur")

@@ -83,7 +83,7 @@ function Layout() {
     <div className="flex h-screen flex-col bg-slate-50">
       <Navbar alertCount={alertCount} />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+        <Sidebar alertCount={alertCount} />
         <main className="flex-1 overflow-y-auto bg-slate-50 pb-20 md:pb-0">
           <AnimatedRoutes />
         </main>

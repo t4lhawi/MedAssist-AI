@@ -17,6 +17,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
+import { SearchField } from '../ui/Field'
 
 const SUGGESTIONS = [
   "Quelle est la température recommandée pour une salle de soins ?",
@@ -259,7 +260,7 @@ function HistoryPanel({
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className={`fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-[1px] transition-opacity duration-300 ${
+        className={`fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-[2px] transition-opacity duration-300 ${
           open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         }`}
       />
@@ -305,24 +306,11 @@ function HistoryPanel({
 
         {history.length > 0 && (
           <div className="shrink-0 border-b border-slate-100 px-4 py-3">
-            <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 focus-within:border-blue-300 focus-within:bg-white">
-              <Search size={14} strokeWidth={2.2} className="shrink-0 text-slate-400" />
-              <input
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="Rechercher dans l'historique..."
-                className="w-full min-w-0 bg-transparent text-[12.5px] text-slate-700 outline-none placeholder:text-slate-400"
-              />
-              {query && (
-                <button
-                  type="button"
-                  onClick={() => setQuery('')}
-                  className="shrink-0 text-slate-400 transition hover:text-slate-600"
-                >
-                  <X size={13} strokeWidth={2.2} />
-                </button>
-              )}
-            </div>
+            <SearchField
+              value={query}
+              onChange={setQuery}
+              placeholder="Rechercher dans l'historique..."
+            />
           </div>
         )}
 
@@ -532,12 +520,21 @@ export default function ChatInterface() {
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col px-4 py-6 sm:px-6">
           {messages.length === 0 ? (
-            <div className="flex flex-1 flex-col justify-center py-8">
-              <div className="mx-auto flex w-full max-w-xl flex-col items-center text-center">
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                  <MessageCircle size={20} strokeWidth={2} />
+            <div className="relative flex flex-1 flex-col justify-center overflow-hidden py-8">
+              {/* Decorative background — soft gradient blobs. */}
+              <div
+                className="pointer-events-none absolute inset-0 opacity-70"
+                style={{
+                  background:
+                    'radial-gradient(circle at 18% 22%, rgba(46,99,255,0.08), transparent 50%), radial-gradient(circle at 82% 78%, rgba(91,140,255,0.06), transparent 55%)',
+                }}
+              />
+
+              <div className="relative mx-auto flex w-full max-w-xl flex-col items-center text-center">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-[0_8px_24px_-8px_rgba(46,99,255,0.5)]">
+                  <MessageCircle size={24} strokeWidth={2.2} className="text-white" />
                 </div>
-                <h2 className="text-[21px] font-semibold tracking-[-0.02em] text-slate-900">
+                <h2 className="text-[24px] font-semibold tracking-[-0.02em] text-slate-900">
                   Comment puis-je vous aider ?
                 </h2>
                 <p className="mt-2 max-w-md text-[13.5px] leading-6 text-slate-500">{WELCOME_MESSAGE}</p>
@@ -548,9 +545,13 @@ export default function ChatInterface() {
                       key={i}
                       type="button"
                       onClick={() => send(suggestion)}
-                      className="min-h-[4rem] rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-left text-[13px] font-medium leading-5 text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 active:scale-[0.99]"
+                      style={{
+                        animation: 'suggestionIn 380ms cubic-bezier(0.16, 1, 0.3, 1) both',
+                        animationDelay: `${200 + i * 60}ms`,
+                      }}
+                      className="group/sugg min-h-[4rem] rounded-xl border border-slate-200 bg-white/80 px-3.5 py-3 text-left text-[13px] font-medium leading-5 text-slate-600 backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:bg-white hover:shadow-[0_4px_16px_-4px_rgba(37,99,235,0.18)] active:scale-[0.99]"
                     >
-                      {suggestion}
+                      <span className="block transition-colors group-hover/sugg:text-slate-900">{suggestion}</span>
                     </button>
                   ))}
                 </div>
@@ -559,7 +560,7 @@ export default function ChatInterface() {
                   <button
                     type="button"
                     onClick={() => setHistoryOpen(true)}
-                    className="mt-6 inline-flex items-center gap-1.5 text-[12.5px] font-medium text-blue-600 transition hover:text-blue-700"
+                    className="mt-6 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium text-blue-600 transition-colors hover:bg-blue-50"
                   >
                     <Clock3 size={13} strokeWidth={2.2} />
                     Reprendre une conversation précédente
@@ -598,8 +599,12 @@ export default function ChatInterface() {
             e.preventDefault()
             send()
           }}
-          className="mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border border-slate-200 bg-white p-2 pl-4 shadow-[0_2px_10px_-4px_rgba(15,23,42,0.08)] transition focus-within:border-slate-300 focus-within:shadow-[0_4px_16px_-4px_rgba(15,23,42,0.12)]"
+          className="group/chat relative mx-auto flex max-w-3xl items-end gap-1.5 rounded-3xl border border-slate-200 bg-white p-2 pl-4 shadow-[0_2px_10px_-4px_rgba(15,23,42,0.08)] transition-all duration-200 ease-out focus-within:border-blue-300 focus-within:bg-white focus-within:shadow-[0_8px_28px_-6px_rgba(46,99,255,0.25),0_0_0_4px_rgba(46,99,255,0.06)]"
         >
+          <span className="pointer-events-none mb-1.5 mr-0.5 hidden shrink-0 items-center gap-1.5 self-end rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-600 sm:inline-flex">
+            <Stethoscope size={10} strokeWidth={2.4} />
+            IA
+          </span>
           <textarea
             ref={inputRef}
             value={input}
@@ -610,17 +615,22 @@ export default function ChatInterface() {
                 send()
               }
             }}
-            placeholder="Posez votre question..."
+            placeholder="Posez votre question…"
             disabled={loading}
             rows={1}
-            className="max-h-40 min-h-[2.25rem] min-w-0 flex-1 resize-none bg-transparent py-1.5 text-[14px] leading-6 text-slate-900 outline-none placeholder:text-slate-400 focus:outline-none focus:ring-0 focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 disabled:cursor-not-allowed disabled:opacity-60"
+            className="max-h-40 min-h-[2.5rem] min-w-0 flex-1 resize-none bg-transparent py-2 text-[14px] leading-6 text-slate-900 outline-none placeholder:text-slate-400 focus:outline-none focus:ring-0 focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 disabled:cursor-not-allowed disabled:opacity-60"
           />
+          {input.trim() && !loading && (
+            <span className="pointer-events-none mb-2 hidden self-end text-[10px] font-medium uppercase tracking-wide text-slate-300 sm:inline">
+              ⏎ pour envoyer
+            </span>
+          )}
           {loading ? (
             <button
               type="button"
               onClick={interrupt}
               title="Arrêter la génération"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white transition hover:bg-slate-700 active:scale-95"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-sm transition hover:bg-slate-700 active:scale-95"
             >
               <Square size={12} strokeWidth={2.4} fill="currentColor" />
             </button>
@@ -629,9 +639,9 @@ export default function ChatInterface() {
               type="submit"
               disabled={!input.trim()}
               title="Envoyer"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white transition hover:bg-slate-700 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-[0_4px_12px_-2px_rgba(46,99,255,0.5)] transition-all duration-200 hover:from-blue-600 hover:to-blue-700 hover:shadow-[0_6px_18px_-2px_rgba(46,99,255,0.55)] active:scale-95 disabled:cursor-not-allowed disabled:from-slate-200 disabled:to-slate-200 disabled:shadow-none disabled:text-slate-400"
             >
-              <ArrowUp size={16} strokeWidth={2.4} />
+              <ArrowUp size={16} strokeWidth={2.6} />
             </button>
           )}
         </form>

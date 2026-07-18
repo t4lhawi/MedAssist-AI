@@ -11,7 +11,7 @@ const char* WIFI_SSID     = "M-LINK";
 const char* WIFI_PASSWORD = "22092005";
 
 // Adresse IP du PC qui fait tourner Mosquitto (sur le même Wi-Fi que l'ESP32)
-const char* MQTT_BROKER     = "192.168.1.100";
+const char* MQTT_BROKER     = "192.168.1.102";
 const int   MQTT_PORT       = 1883;
 const char* MQTT_CLIENT_ID  = "esp32-sensor-1";
 
@@ -21,13 +21,13 @@ const char* MQTT_CLIENT_ID  = "esp32-sensor-1";
 // re-flash the ESP32 with the new value — the topic prefix is baked
 // in at compile time and is the source of truth for salle matching
 // on the backend.
-#define SALLE "chambre-101"
+#define SALLE "salle-1"
 
 // Topic shape (compiled):  medassist/salle/<SALLE>/<type>
 // Where <type> ∈ { temperature, humidite, pression, qualite_air }.
 const char* MQTT_TOPIC_PREFIX = "medassist/salle/" SALLE;
 
-const unsigned long INTERVAL_MS = 3000;
+const unsigned long INTERVAL_MS = 3000; 
 
 // ===============================
 
@@ -150,7 +150,7 @@ void diagnosticReseau() {
   // Résolution broker (littéral IPv4 ou hostname) + test TCP brut
   IPAddress brokerIP;
   if (brokerIP.fromString(MQTT_BROKER)) {
-    // OK — c'était déjà un littéral IPv4 (ex. "192.168.1.100")
+    // OK — c'était déjà un littéral IPv4 (ex. "192.168.1.102")
   } else {
     // Sinon on tente une résolution DNS
     Serial.print("Resolution DNS de "); Serial.print(MQTT_BROKER); Serial.print(" ... ");
