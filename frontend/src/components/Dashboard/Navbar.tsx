@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { Bell, LogOut, User, ChevronDown, Search } from 'lucide-react'
+import { Bell, LogOut, User, ChevronDown, Search, UserCircle } from 'lucide-react'
 
 interface Props {
   alertCount: number
@@ -8,6 +9,7 @@ interface Props {
 
 export default function Navbar({ alertCount }: Props) {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const now = new Date()
@@ -143,6 +145,16 @@ export default function Navbar({ alertCount }: Props) {
                   <p className="truncate capitalize text-[11px]" style={{ color: '#9CA3AF' }}>{user?.role}</p>
                 </div>
                 <div className="p-1.5">
+                  <button
+                    onClick={() => { setMenuOpen(false); navigate('/profile') }}
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition-colors"
+                    style={{ color: '#111111' }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#F5F5F7' }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                  >
+                    <UserCircle size={14} strokeWidth={2.2} style={{ color: '#6B7280' }} />
+                    Mon profil
+                  </button>
                   <button
                     onClick={logout}
                     className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition-colors"

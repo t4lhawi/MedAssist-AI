@@ -11,6 +11,7 @@ import AdminSallesPage from './pages/AdminSallesPage'
 import AlertesPage from './pages/AlertesPage'
 import DocumentsPage from './pages/DocumentsPage'
 import AssistantPage from './pages/AssistantPage'
+import ProfilePage from './pages/ProfilePage'
 import { getAlertes } from './services/api'
 
 function Logo({ size = 24 }: { size?: number }) {
@@ -31,6 +32,7 @@ function AnimatedRoutes() {
         <Route path="/alertes" element={<AlertesPage />} />
         <Route path="/documents" element={<DocumentsPage />} />
         <Route path="/assistant" element={<AssistantPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
       </Routes>
     </div>
   )
@@ -83,7 +85,9 @@ function Layout() {
   return (
     <LiveSocketProvider>
       {/* ── 3-column layout: nav top + [sidebar | main | right panel] ── */}
-      <div className="flex min-h-screen flex-col" style={{ background: '#F5F5F7' }}>
+      {/* h-screen + overflow-hidden on the outer column makes the inner
+          <main> the only vertical scroller, so the navbar stays locked. */}
+      <div className="flex h-screen flex-col overflow-hidden" style={{ background: '#F5F5F7' }}>
         <Navbar alertCount={alertCount} />
         <div className="flex flex-1 overflow-hidden">
           {/* Left: fixed navigation sidebar */}

@@ -97,111 +97,6 @@ function DashHeader({
 
 /* ─── Right Info Panel ──────────────────────────────────────── */
 
-function RightInfoPanel({
-  user,
-  recentAlertes,
-  documents,
-  onlineSalles,
-  registeredSalles,
-}: {
-  user: { nom: string | undefined; role: string | undefined }
-  recentAlertes: Alerte[]
-  documents: Document[]
-  onlineSalles: number
-  registeredSalles: number
-}) {
-  return (
-    <div className="flex flex-col gap-3">
-      {/* Profile Card */}
-      <div
-        className="card rounded-3xl border p-4"
-        style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className="flex h-10 w-10 items-center justify-center rounded-2xl text-white"
-            style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)' }}
-          >
-            <span style={{ fontSize: 16, fontWeight: 600 }}>
-              {(user.nom || 'U').charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[14px] font-semibold" style={{ color: '#111111' }}>
-              {user.nom}
-            </p>
-            <p className="truncate capitalize text-[11.5px]" style={{ color: '#9CA3AF' }}>
-              {user.role}
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <div className="rounded-2xl p-3" style={{ background: '#F5F5F7' }}>
-            <p className="text-[18px] font-semibold" style={{ color: '#111111' }}>{onlineSalles}</p>
-            <p className="text-[10.5px] font-medium" style={{ color: '#9CA3AF' }}>En ligne</p>
-          </div>
-          <div className="rounded-2xl p-3" style={{ background: '#F5F5F7' }}>
-            <p className="text-[18px] font-semibold" style={{ color: '#111111' }}>{documents.length}</p>
-            <p className="text-[10.5px] font-medium" style={{ color: '#9CA3AF' }}>Documents</p>
-          </div>
-        </div>
-
-        <Link
-          to="/assistant"
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl py-2.5 text-[13px] font-semibold transition-all hover:opacity-90"
-          style={{ background: '#111111', color: '#FFFFFF' }}
-        >
-          <MessageCircle size={14} strokeWidth={2} />
-          Poser une question
-        </Link>
-      </div>
-
-      {/* Quick Actions */}
-      <div
-        className="card rounded-3xl border p-4"
-        style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
-      >
-        <h3 className="mb-3 text-[13px] font-semibold" style={{ color: '#111111' }}>
-          Actions rapides
-        </h3>
-        <div className="flex flex-col gap-2">
-          <Link
-            to="/admin/salles"
-            className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-[13px] font-medium transition-colors hover:bg-[#F5F5F7]"
-            style={{ color: '#374151' }}
-          >
-            <span className="flex h-7 w-7 items-center justify-center rounded-xl" style={{ background: '#EEF2FF' }}>
-              <Settings2 size={13} strokeWidth={2} style={{ color: '#4F46E5' }} />
-            </span>
-            Gérer les salles
-          </Link>
-          <Link
-            to="/alertes"
-            className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-[13px] font-medium transition-colors hover:bg-[#F5F5F7]"
-            style={{ color: '#374151' }}
-          >
-            <span className="flex h-7 w-7 items-center justify-center rounded-xl" style={{ background: '#FEF3C7' }}>
-              <Bell size={13} strokeWidth={2} style={{ color: '#D97706' }} />
-            </span>
-            Voir les alertes
-          </Link>
-          <Link
-            to="/documents"
-            className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-[13px] font-medium transition-colors hover:bg-[#F5F5F7]"
-            style={{ color: '#374151' }}
-          >
-            <span className="flex h-7 w-7 items-center justify-center rounded-xl" style={{ background: '#ECFDF5' }}>
-              <FileText size={13} strokeWidth={2} style={{ color: '#059669' }} />
-            </span>
-            Documents
-          </Link>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 /* ─── Live Activity Feed ──────────────────────────────────────── */
 
 function LiveActivityFeed({ mesures, max = 6 }: { mesures: Mesure[]; max?: number }) {
@@ -544,14 +439,6 @@ export default function DashboardPage() {
 
         {/* Right Info Panel */}
         <div className="space-y-3">
-          <RightInfoPanel
-            user={user || { nom: '', role: '' }}
-            recentAlertes={recentAlertes}
-            documents={documents}
-            onlineSalles={onlineSalles}
-            registeredSalles={registeredSalles}
-          />
-
           {/* Recent Alerts */}
           {recentAlertes.length > 0 && (
             <div
@@ -600,44 +487,6 @@ export default function DashboardPage() {
 
           {/* Live Activity Feed */}
           <LiveActivityFeed mesures={mesures} max={5} />
-
-          {/* Quick Summary Stats */}
-          <div
-            className="card rounded-3xl border p-4"
-            style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
-          >
-            <h3 className="mb-3 text-[13px] font-semibold" style={{ color: '#111111' }}>
-              Aperçu des capteurs
-            </h3>
-            <div className="flex flex-col gap-2.5">
-              {MONITORING_TYPES.map(mt => {
-                const count = countByType(mt.type)
-                const pct = registeredSalles > 0 ? Math.round((count / registeredSalles) * 100) : 0
-                const hasData = byType(mt.type).length > 0
-                return (
-                  <div key={mt.type}>
-                    <div className="mb-1 flex items-center justify-between">
-                      <span className="text-[12px] font-medium" style={{ color: '#374151' }}>
-                        {mt.title}
-                      </span>
-                      <span className="text-[11px]" style={{ color: '#9CA3AF' }}>
-                        {count} salle{count !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: '#F5F5F7' }}>
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${pct}%`,
-                          background: hasData ? mt.chart : '#D1D5DB',
-                        }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
         </div>
       </div>
     </div>
