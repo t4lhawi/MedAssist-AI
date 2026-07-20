@@ -12,5 +12,3 @@ uploads/
 *.egg-info/
 .DS_Store
 Thumbs.db
-.agents/
-.claude/

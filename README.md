@@ -46,7 +46,7 @@ docker compose up --build -d
 
 3) Install default models (one-time)
 
-On macOS / Linux:
+On macOS / Linux (or WSL):
 
 ```bash
 chmod +x setup_ollama.sh
@@ -58,6 +58,13 @@ On Windows (PowerShell), wait for the Ollama container to be ready, then run:
 ```powershell
 docker exec medassist_ollama ollama pull llama3.2
 docker exec medassist_ollama ollama pull nomic-embed-text
+```
+
+The default admin account is created automatically the first time the
+backend container starts (via `backend/entrypoint.sh`). You can re-run
+the seeder manually with:
+
+```bash
 docker exec medassist_api python seed_admin.py
 ```
 

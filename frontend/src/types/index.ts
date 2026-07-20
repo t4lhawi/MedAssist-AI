@@ -68,6 +68,11 @@ export interface Alerte {
   message: string;
   traitee: boolean;
   cree_le: string;
+  // IA-generated explanation (markdown). `null` while the LLM is generating
+  // it, or if generation failed. The back-end only ever returns null/empty
+  // for legacy alertes created before the feature shipped.
+  explication: string | null;
+  explication_cree_le: string | null;
 }
 
 // ─── Documents ──────────────────────────────────────────────────
@@ -81,4 +86,31 @@ export interface ChatMessage {
 }
 export interface Source {
   document: string; page: string | number; score: number;
+}
+
+// ─── Realtime WebSocket events (see services/realtime.ts) ───────
+// Shape mirrors the backend's make_mesure_event / make_alerte_event.
+export interface LiveMesureEventData {
+  id: number;
+  type: string;
+  valeur: number;
+  unite: string | null;
+  timestamp: string | null;
+  esp32_id: number | null;
+  salle: string | null;
+  source_ip: string | null;
+  topic_salle: string | null;
+}
+export interface LiveAlerteEventData {
+  id: number;
+  type: string | null;
+  mesure_id: number | null;
+  niveau: 'info' | 'attention' | 'critique' | string;
+  message: string;
+  traitee: boolean;
+  cree_le: string;
+  esp32_id: number | null;
+  salle: string | null;
+  explication: string | null;
+  explication_cree_le: string | null;
 }

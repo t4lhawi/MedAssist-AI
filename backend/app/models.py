@@ -111,6 +111,9 @@ class Alerte(Base):
     message    = Column(Text, nullable=False)
     traitee    = Column(Boolean, default=False)
     cree_le    = Column(DateTime(timezone=True), server_default=func.now())
+    # IA-generated explanation (RAG + LLM). Generated once in background after creation.
+    explication = Column(Text, nullable=True)
+    explication_cree_le = Column(DateTime(timezone=True), nullable=True)
 
     esp32  = relationship("Esp32Device", back_populates="alertes")
     mesure = relationship("Mesure", back_populates="alertes")

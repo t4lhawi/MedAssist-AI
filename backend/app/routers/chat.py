@@ -17,7 +17,9 @@ def chat(
     try:
         reponse, sources = repondre(data.question, data.historique)
     except Exception as e:
-        raise HTTPException(500, f"Erreur IA : {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(500, f"Erreur IA : {type(e).__name__}: {e}")
 
     crud.save_conversation(db, user.id, data.question, reponse, sources)
     return ChatResponse(reponse=reponse, sources=sources)
@@ -65,4 +67,6 @@ def interpreter(
         explication = interpreter_mesure(capteur_type, valeur, unite, emplacement)
         return {"explication": explication}
     except Exception as e:
-        raise HTTPException(500, f"Erreur IA : {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(500, f"Erreur IA : {type(e).__name__}: {e}")

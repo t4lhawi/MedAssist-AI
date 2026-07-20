@@ -11,7 +11,7 @@ Concepts:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy import desc, func, and_
@@ -42,6 +42,12 @@ LIBELLES_TYPES: Dict[str, str] = {
 # has arrived in the last N seconds. Default 60s — adjust in tests via
 # get_salles_status(offline_threshold_seconds=...).
 OFFLINE_THRESHOLD_SECONDS: int = 60
+
+# Alertes older than this are filtered out of every read. The row stays
+# in the DB (we don't physically delete it) — the API just never returns
+# it. Keeps the alertes list self-cleaning without a background sweeper,
+# and the dashboard's 5s polling picks up the change automatically.
+ALERTE_RETENTION_HOURS: int = 24
 
 
 # ─── Utilisateurs ────────────────────────────────────────────────
@@ -146,15 +152,30 @@ def update_esp32(
 
 
 def delete_esp32(db: Session, esp32_id: int) -> bool:
-    """Delete a device and NULL its ``mesures.esp32_id`` so the historical
-    data survives in the unregistered bucket. Alertes are kept and remain
-    linked via ``mesure_id``. Returns True if a row was deleted."""
+    """Delete the device and cascade-delete its historical mesures and the
+    alertes that reference them. Order is alertes → mesures → device so
+    every FK stays satisfied:
+      - alertes.mesure_id → mesures.id
+      - alertes.esp32_id  → esp32_devices.id
+      - mesures.esp32_id  → esp32_devices.id
+    Returns True if a row was deleted."""
     d = get_esp32(db, esp32_id)
     if d is None:
         return False
+
+    # 1) Alertes that point at any of this device's mesures (via mesure_id).
+    db.query(models.Alerte).filter(
+        models.Alerte.mesure_id.in_(
+            db.query(models.Mesure.id).filter(models.Mesure.esp32_id == esp32_id)
+        ),
+    ).delete(synchronize_session='fetch')
+
+    # 2) The mesures themselves.
     db.query(models.Mesure).filter(
         models.Mesure.esp32_id == esp32_id,
-    ).update({models.Mesure.esp32_id: None}, synchronize_session='fetch')
+    ).delete(synchronize_session='fetch')
+
+    # 3) The device row.
     db.flush()
     db.delete(d)
     db.commit()
@@ -294,7 +315,46 @@ def _verifier_seuil(
             niveau=niveau,
             message=msg,
         )
-        db.add(alerte); db.commit()
+        db.add(alerte); db.commit(); db.refresh(alerte)
+        # Génération de l'explication IA en arrière-plan. On utilise un thread
+        # daemon pour ne pas bloquer l'ingestion MQTT si le LLM est lent.
+        _schedule_explication(alerte.id)
+        # Broadcast to WebSocket subscribers so the dashboard and admin
+        # grid show the new alerte immediately, without waiting for the
+        # safety poll.
+        try:
+            from . import realtime
+            realtime.publish(realtime.make_alerte_event(alerte))
+        except Exception:
+            logger.exception("realtime: échec publication alerte %d", alerte.id)
+
+
+def _schedule_explication(alerte_id: int) -> None:
+    """Lance la génération de l'explication IA dans un thread daemon.
+
+    L'alerte est déjà persistée à ce stade ; un échec de l'IA ne doit jamais
+    bloquer l'ingestion ni supprimer l'alerte. Toute exception est loggée.
+    """
+    import threading
+    thread = threading.Thread(
+        target=_run_explication,
+        args=(alerte_id,),
+        daemon=True,
+    )
+    thread.start()
+
+
+def _run_explication(alerte_id: int) -> None:
+    """Wrapper thread-safe : capture toute exception, ne propage jamais."""
+    try:
+        from .rag.pipeline import expliquer_alerte
+        explication = expliquer_alerte(alerte_id)
+        if explication:
+            logger.info("Explication IA générée pour alerte %d (%d caractères)", alerte_id, len(explication))
+        else:
+            logger.info("Explication IA vide pour alerte %d (LLM a renvoyé un texte vide)", alerte_id)
+    except Exception as exc:
+        logger.warning("Échec génération explication IA pour alerte %d : %s: %s", alerte_id, type(exc).__name__, exc)
 
 
 # ─── Salles (aggregated view) ───────────────────────────────────
@@ -462,6 +522,12 @@ def get_alertes(
         joinedload(models.Alerte.esp32),
         joinedload(models.Alerte.mesure).joinedload(models.Mesure.esp32),
     )
+    # Self-cleaning filter: alertes older than ALERTE_RETENTION_HOURS are
+    # never returned. Applied unconditionally so both active and history
+    # views stay bounded. ``cree_le`` is timezone-aware; compare with a
+    # tz-aware now() (matches the pattern in get_salles_status).
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=ALERTE_RETENTION_HOURS)
+    q = q.filter(models.Alerte.cree_le >= cutoff)
     if traitee is not None:
         q = q.filter(models.Alerte.traitee == traitee)
     if esp32_id is not None:

@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,7 +8,14 @@ html {
 }
 
 body {
-  @apply bg-slate-100 text-slate-900 font-sans antialiased;
+  @apply bg-[#F5F5F7] text-[#111111] font-sans antialiased;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ─── Custom Selection & Focus ─────────────────────────────── */
+::selection {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: #111111;
 }
 
 button,
@@ -19,24 +27,24 @@ textarea {
 
 button:focus-visible,
 a:focus-visible {
-  @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-white;
+  @apply outline-none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
 }
 
-/* Custom Field components manage their own focus ring; bare inputs/selects
- * still get a subtle one. */
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
   outline: none;
 }
 
+/* ─── Scrollbar ─────────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-slate-100;
+  @apply bg-transparent;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -49,12 +57,24 @@ textarea:focus-visible {
 
 
 :root {
+  /* ─── Design Tokens ─────────────────────────────────────── */
+  --color-primary: #3B82F6;
+  --bg-main: #F5F5F7;
+  --bg-card: #FFFFFF;
+  --border-color: #ECECEC;
+  --text-primary: #111111;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+
   /* Apple-style easing: quick to respond, gentle to settle */
   --ease-out: cubic-bezier(0.25, 0.1, 0.25, 1);
   --ease-spring: cubic-bezier(0.34, 1.35, 0.64, 1);
   --dur-fast: 120ms;
   --dur-base: 200ms;
-  --dur-slow: 320ms;
+  --dur-slow: 300ms;
 }
 
 /* Respect users who've asked for less motion */
@@ -67,11 +87,7 @@ textarea:focus-visible {
   }
 }
 
-/*
- * Baseline smoothing for buttons/links that don't already carry an explicit
- * Tailwind transition-* utility. Elements with their own transition duration
- * classes keep those values untouched (Tailwind utilities win via source order).
- */
+/* Baseline smoothing for buttons/links that don't already carry an explicit transition */
 button,
 a {
   transition-property: transform, background-color, border-color, color, box-shadow, opacity;
@@ -79,12 +95,12 @@ a {
   transition-timing-function: var(--ease-out);
 }
 
-button:active,
-a:active {
+button:active:not(:disabled) {
+  transform: scale(0.97);
   transition-duration: var(--dur-fast);
 }
 
-/* Route-level page transition (paired with the .page-transition wrapper in App.tsx) */
+/* Route-level page transition */
 .page-transition {
   animation: pageIn var(--dur-slow) var(--ease-out) both;
 }
@@ -115,23 +131,25 @@ a:active {
   }
 }
 
-/* SalleCard animations */
-@keyframes pulseRing {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-  50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-}
-.animate-pulse-ring {
-  animation: pulseRing 2s ease-out infinite;
+/* ─── Card surfaces ─────────────────────────────────────────── */
+/* Resting depth so white cards lift off the #F5F5F7 page background
+   instead of reading as flat rectangles. */
+.card {
+  box-shadow: 0 1px 2px rgba(17, 17, 17, 0.04), 0 6px 18px -10px rgba(17, 17, 17, 0.10);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* Card hover lift effect (rests on the same shadow baseline as .card) */
+.card-lift {
+  box-shadow: 0 1px 2px rgba(17, 17, 17, 0.04), 0 6px 18px -10px rgba(17, 17, 17, 0.10);
+  transition: transform 200ms cubic-bezier(0.25, 0.1, 0.25, 1),
+              box-shadow 200ms cubic-bezier(0.25, 0.1, 0.25, 1);
 }
-.animate-fade-in {
-  animation: fadeIn 150ms ease-out;
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px -8px rgba(17, 17, 17, 0.16);
 }
 
+/* Slide animations */
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -140,21 +158,22 @@ a:active {
   animation: slideUp 200ms ease-out;
 }
 
-@keyframes slideDown {
-  from { opacity: 0; max-height: 0; }
-  to { opacity: 1; max-height: 500px; }
+/* Fade in animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
-.animate-slide-down {
-  animation: slideDown 250ms ease-out forwards;
+.animate-fade-in {
+  animation: fadeIn 150ms ease-out;
 }
 
-/* Toast animations */
+/* Toast slide animations */
 @keyframes slideInRight {
   from { opacity: 0; transform: translateX(100%); }
   to { opacity: 1; transform: translateX(0); }
 }
 .animate-slide-in-right {
-  animation: slideInRight 300ms ease-out;
+  animation: slideInRight 250ms ease-out;
 }
 
 @keyframes slideOutRight {
@@ -165,45 +184,21 @@ a:active {
   animation: slideOutRight 200ms ease-in forwards;
 }
 
-/* Suggestion card reveal (used by the Chat empty state) */
-@keyframes suggestionIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* ─────────────────────────────────────────────────────────────
- *  Field / FieldShell — focus state (Tailwind JIT can't generate
- *  dynamic focus-within: classes for arbitrary shadows, so we
- *  wire them up here. The `data-state` attribute on FieldShell
- *  is set by the parent when needed.)
- * ───────────────────────────────────────────────────────────── */
-
-/* Default variant — blue */
+/* Field focus variants — custom shadows for focus-within */
 .group\/field:focus-within {
-  box-shadow:
-    inset 0 0 0 1.5px rgba(46, 99, 255, 0.55),
-    0 0 0 4px rgba(46, 99, 255, 0.08);
+  box-shadow: inset 0 0 0 1.5px rgba(59, 130, 246, 0.5), 0 0 0 4px rgba(59, 130, 246, 0.08);
 }
-/* Amber variant (UnregisteredList claim input) */
 .group\/field[data-variant="amber"]:focus-within {
-  box-shadow:
-    inset 0 0 0 1.5px rgba(217, 119, 6, 0.55),
-    0 0 0 4px rgba(217, 119, 6, 0.08);
+  box-shadow: inset 0 0 0 1.5px rgba(245, 158, 11, 0.5), 0 0 0 4px rgba(245, 158, 11, 0.08);
 }
-/* Ghost variant — slightly subtler blue */
 .group\/field[data-variant="ghost"]:focus-within {
-  box-shadow:
-    inset 0 0 0 1.5px rgba(46, 99, 255, 0.5),
-    0 0 0 4px rgba(46, 99, 255, 0.06);
+  box-shadow: inset 0 0 0 1.5px rgba(59, 130, 246, 0.4), 0 0 0 4px rgba(59, 130, 246, 0.06);
 }
-/* Error state — red ring */
 .group\/field[data-error="true"]:focus-within {
-  box-shadow:
-    inset 0 0 0 1.5px rgba(220, 38, 38, 0.6),
-    0 0 0 4px rgba(220, 38, 38, 0.08);
+  box-shadow: inset 0 0 0 1.5px rgba(239, 68, 68, 0.5), 0 0 0 4px rgba(239, 68, 68, 0.08);
 }
 
-/* Field arrival — subtle slide+fade so the form doesn't feel static */
+/* Field entrance animation */
 @keyframes fieldIn {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
@@ -212,12 +207,8 @@ a:active {
   animation: fieldIn 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Dropdown panel — slide + scale on open, faster close */
+/* Dropdown panel animation */
 @keyframes dropIn {
   from { opacity: 0; transform: translateY(-6px) scale(0.96); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-@keyframes dropOut {
-  from { opacity: 1; transform: translateY(0) scale(1); }
-  to   { opacity: 0; transform: translateY(-4px) scale(0.98); }
 }

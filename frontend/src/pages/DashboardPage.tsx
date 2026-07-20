@@ -1,265 +1,313 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Activity,
   AlertCircle,
   Bell,
   CheckCircle2,
   FileText,
-  HeartPulse,
   RefreshCw,
   Settings2,
   Sparkles,
-  TrendingUp,
+  ShieldCheck,
+  MessageCircle,
+  Plus,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import StatCard from '../components/Dashboard/StatCard'
-import LineChart from '../components/Charts/LineChart'
+import SallesOverview from '../components/Dashboard/SallesOverview'
+import CombinedChart from '../components/Charts/CombinedChart'
 import AlertsList from '../components/Alerts/AlertsList'
 import { getAlertes, getDocuments, getMesures, getSallesStatus } from '../services/api'
 import { useAuth } from '../context/AuthContext'
-import { Alerte, Document, Mesure, SalleStatus } from '../types'
+import { useLiveSocket } from '../context/LiveSocketContext'
+import { Alerte, Document, Mesure, SalleStatus, LiveMesureEventData, LiveAlerteEventData } from '../types'
 import { MONITORING_TYPES, getMonitoringType } from '../monitoring'
 import PageHeader from '../components/ui/PageHeader'
 
-/* ─── System health hero ──────────────────────────────────────── */
+/* ─── Premium Dashboard Welcome Header ──────────────────────── */
 
-function SystemHealthHero({
+function DashHeader({
+  loading,
+  onRefresh,
   onlineSalles,
   registeredSalles,
-  activeAlerts,
-  indexedDocs,
-  totalDocs,
 }: {
+  loading: boolean
+  onRefresh: () => void
   onlineSalles: number
   registeredSalles: number
-  activeAlerts: number
-  indexedDocs: number
-  totalDocs: number
 }) {
-  // Simple health score: penalize offline rooms and active alerts.
-  const baseScore = registeredSalles > 0 ? (onlineSalles / registeredSalles) * 100 : 0
-  const alertPenalty = activeAlerts * 8
-  const score = Math.max(0, Math.min(100, Math.round(baseScore - alertPenalty)))
-
-  const scoreTone =
-    score >= 85
-      ? { color: 'text-emerald-500', label: 'Opérationnel', bg: 'from-emerald-500/10 via-emerald-400/5', ring: 'stroke-emerald-500' }
-      : score >= 60
-      ? { color: 'text-amber-500', label: 'À surveiller', bg: 'from-amber-500/10 via-amber-400/5', ring: 'stroke-amber-500' }
-      : { color: 'text-red-500', label: 'Critique', bg: 'from-red-500/10 via-red-400/5', ring: 'stroke-red-500' }
-
-  const ringDash = 2 * Math.PI * 36 // r=36 → circumference ≈ 226
-  const ringOffset = ringDash * (1 - score / 100)
+  const now = new Date()
+  const dateStr = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
   return (
-    <div className={`relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br ${scoreTone.bg} to-white p-5 shadow-sm`}>
-      {/* decorative pulse circles */}
-      <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/30 blur-3xl" />
-      <div className="pointer-events-none absolute -right-8 bottom-0 h-32 w-32 rounded-full bg-white/20 blur-2xl" />
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p className="text-[12px] font-medium uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
+          Bienvenue
+        </p>
+        <h1
+          className="mt-0.5 text-[28px] font-semibold tracking-tight"
+          style={{ color: '#111111' }}
+        >
+          Tableau de bord
+        </h1>
+        <p className="mt-1 text-[13px]" style={{ color: '#6B7280' }}>
+          Surveillance en temps réel · {dateStr}
+        </p>
+      </div>
 
-      <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-        {/* Left: title + score */}
-        <div className="flex items-center gap-5">
-          <div className="relative h-24 w-24 shrink-0">
-            <svg viewBox="0 0 80 80" className="h-full w-full -rotate-90">
-              <circle
-                cx="40"
-                cy="40"
-                r="36"
-                fill="none"
-                className="stroke-slate-200"
-                strokeWidth="6"
-              />
-              <circle
-                cx="40"
-                cy="40"
-                r="36"
-                fill="none"
-                className={scoreTone.ring}
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray={ringDash}
-                strokeDashoffset={ringOffset}
-                style={{ transition: 'stroke-dashoffset 800ms cubic-bezier(0.16, 1, 0.3, 1)' }}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className={`text-[24px] font-semibold leading-none tracking-tight ${scoreTone.color}`}>
-                {score}
-              </span>
-              <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">/ 100</span>
-            </div>
+      <div className="flex items-center gap-2">
+        {/* Live indicator */}
+        <div className="flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: '#F5F5F7' }}>
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" style={{ animationDuration: '2s' }} />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+          </span>
+          <span className="text-[12px] font-medium" style={{ color: '#6B7280' }}>
+            <span className="font-semibold" style={{ color: '#111111' }}>{onlineSalles}</span>
+            <span style={{ color: '#9CA3AF' }}>/{registeredSalles} en ligne</span>
+          </span>
+        </div>
+
+        {/* Refresh button */}
+        <button
+          onClick={onRefresh}
+          disabled={loading}
+          className="flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium transition-all"
+          style={{
+            background: '#111111',
+            color: '#FFFFFF',
+            boxShadow: '0 2px 8px -2px rgba(17,17,17,0.25)',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.background = '#374151'
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.background = '#111111'
+          }}
+        >
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} strokeWidth={2} />
+          Actualiser
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Right Info Panel ──────────────────────────────────────── */
+
+function RightInfoPanel({
+  user,
+  recentAlertes,
+  documents,
+  onlineSalles,
+  registeredSalles,
+}: {
+  user: { nom: string | undefined; role: string | undefined }
+  recentAlertes: Alerte[]
+  documents: Document[]
+  onlineSalles: number
+  registeredSalles: number
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Profile Card */}
+      <div
+        className="card rounded-3xl border p-4"
+        style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="flex h-10 w-10 items-center justify-center rounded-2xl text-white"
+            style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)' }}
+          >
+            <span style={{ fontSize: 16, fontWeight: 600 }}>
+              {(user.nom || 'U').charAt(0).toUpperCase()}
+            </span>
           </div>
-
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className={`flex h-2 w-2 rounded-full ${scoreTone.color.replace('text-', 'bg-')} animate-pulse`} />
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                Santé du système
-              </p>
-            </div>
-            <h3 className="mt-1 text-[22px] font-semibold tracking-[-0.02em] text-slate-900">
-              {scoreTone.label}
-            </h3>
-            <p className="mt-1 text-[12.5px] text-slate-500">
-              Surveillance temps réel · rafraîchissement 5 s
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[14px] font-semibold" style={{ color: '#111111' }}>
+              {user.nom}
+            </p>
+            <p className="truncate capitalize text-[11.5px]" style={{ color: '#9CA3AF' }}>
+              {user.role}
             </p>
           </div>
         </div>
 
-        {/* Right: mini stats grid */}
-        <div className="grid grid-cols-3 gap-3 md:gap-4">
-          <HeroStat
-            icon={Activity}
-            label="En ligne"
-            value={`${onlineSalles}/${registeredSalles}`}
-            color="text-emerald-600"
-            bg="bg-emerald-50"
-          />
-          <HeroStat
-            icon={Bell}
-            label="Alertes"
-            value={String(activeAlerts)}
-            color={activeAlerts > 0 ? 'text-amber-600' : 'text-slate-500'}
-            bg={activeAlerts > 0 ? 'bg-amber-50' : 'bg-slate-100'}
-          />
-          <HeroStat
-            icon={FileText}
-            label="Indexés"
-            value={`${indexedDocs}/${totalDocs}`}
-            color="text-indigo-600"
-            bg="bg-indigo-50"
-          />
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="rounded-2xl p-3" style={{ background: '#F5F5F7' }}>
+            <p className="text-[18px] font-semibold" style={{ color: '#111111' }}>{onlineSalles}</p>
+            <p className="text-[10.5px] font-medium" style={{ color: '#9CA3AF' }}>En ligne</p>
+          </div>
+          <div className="rounded-2xl p-3" style={{ background: '#F5F5F7' }}>
+            <p className="text-[18px] font-semibold" style={{ color: '#111111' }}>{documents.length}</p>
+            <p className="text-[10.5px] font-medium" style={{ color: '#9CA3AF' }}>Documents</p>
+          </div>
+        </div>
+
+        <Link
+          to="/assistant"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl py-2.5 text-[13px] font-semibold transition-all hover:opacity-90"
+          style={{ background: '#111111', color: '#FFFFFF' }}
+        >
+          <MessageCircle size={14} strokeWidth={2} />
+          Poser une question
+        </Link>
+      </div>
+
+      {/* Quick Actions */}
+      <div
+        className="card rounded-3xl border p-4"
+        style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
+      >
+        <h3 className="mb-3 text-[13px] font-semibold" style={{ color: '#111111' }}>
+          Actions rapides
+        </h3>
+        <div className="flex flex-col gap-2">
+          <Link
+            to="/admin/salles"
+            className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-[13px] font-medium transition-colors hover:bg-[#F5F5F7]"
+            style={{ color: '#374151' }}
+          >
+            <span className="flex h-7 w-7 items-center justify-center rounded-xl" style={{ background: '#EEF2FF' }}>
+              <Settings2 size={13} strokeWidth={2} style={{ color: '#4F46E5' }} />
+            </span>
+            Gérer les salles
+          </Link>
+          <Link
+            to="/alertes"
+            className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-[13px] font-medium transition-colors hover:bg-[#F5F5F7]"
+            style={{ color: '#374151' }}
+          >
+            <span className="flex h-7 w-7 items-center justify-center rounded-xl" style={{ background: '#FEF3C7' }}>
+              <Bell size={13} strokeWidth={2} style={{ color: '#D97706' }} />
+            </span>
+            Voir les alertes
+          </Link>
+          <Link
+            to="/documents"
+            className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-[13px] font-medium transition-colors hover:bg-[#F5F5F7]"
+            style={{ color: '#374151' }}
+          >
+            <span className="flex h-7 w-7 items-center justify-center rounded-xl" style={{ background: '#ECFDF5' }}>
+              <FileText size={13} strokeWidth={2} style={{ color: '#059669' }} />
+            </span>
+            Documents
+          </Link>
         </div>
       </div>
     </div>
   )
 }
 
-function HeroStat({
-  icon: Icon,
-  label,
-  value,
-  color,
-  bg,
-}: {
-  icon: React.ElementType
-  label: string
-  value: string
-  color: string
-  bg: string
-}) {
-  return (
-    <div className="flex min-w-[100px] flex-col gap-1.5 rounded-xl border border-white/60 bg-white/70 p-3 backdrop-blur-sm">
-      <div className="flex items-center gap-1.5">
-        <span className={`flex h-5 w-5 items-center justify-center rounded-md ${bg} ${color}`}>
-          <Icon size={11} strokeWidth={2.4} />
-        </span>
-        <p className="text-[10.5px] font-medium uppercase tracking-wide text-slate-500">{label}</p>
-      </div>
-      <p className={`text-[18px] font-semibold leading-none tracking-tight tabular-nums ${color}`}>{value}</p>
-    </div>
-  )
-}
+/* ─── Live Activity Feed ──────────────────────────────────────── */
 
-/* ─── Live activity feed ──────────────────────────────────────── */
-
-function LiveActivityFeed({ mesures, max = 8 }: { mesures: Mesure[]; max?: number }) {
-  // Mesures arrive in DESC timestamp order from the API. We reverse the
-  // first `max` for the feed (newest on top) and animate each row in.
+function LiveActivityFeed({ mesures, max = 6 }: { mesures: Mesure[]; max?: number }) {
   const items = mesures.slice(0, max)
 
   if (items.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-          <Sparkles size={20} strokeWidth={1.6} className="text-slate-400" />
+      <div
+        className="card flex flex-col items-center justify-center rounded-3xl border p-8 text-center"
+        style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
+      >
+        <div
+          className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl"
+          style={{ background: '#F5F5F7' }}
+        >
+          <Sparkles size={20} strokeWidth={1.6} style={{ color: '#D1D5DB' }} />
         </div>
-        <p className="text-[13.5px] font-semibold text-slate-700">En attente de mesures</p>
-        <p className="mt-1 text-[12px] text-slate-400">
-          Les mesures MQTT apparaîtront ici dès qu'elles arriveront.
+        <p className="text-[13.5px] font-semibold" style={{ color: '#6B7280' }}>
+          En attente de mesures
+        </p>
+        <p className="mt-1 text-[12px]" style={{ color: '#9CA3AF' }}>
+          Les mesures MQTT apparaîtront ici.
         </p>
       </div>
     )
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+    <div
+      className="card overflow-hidden rounded-3xl border"
+      style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
+    >
+      <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: '#F5F5F7' }}>
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" style={{ animationDuration: '2s' }} />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
           </span>
-          <h3 className="text-[13.5px] font-semibold tracking-[-0.01em] text-slate-900">
+          <h3 className="text-[13.5px] font-semibold tracking-tight" style={{ color: '#111111' }}>
             Activité en direct
           </h3>
         </div>
-        <p className="text-[11px] text-slate-400">
+        <p className="text-[11px]" style={{ color: '#9CA3AF' }}>
           {items.length} dernière{items.length > 1 ? 's' : ''} mesure{items.length > 1 ? 's' : ''}
         </p>
       </div>
-      <ul className="divide-y divide-slate-100">
+
+      <div className="divide-y" style={{ borderColor: '#F5F5F7' }}>
         {items.map((m, idx) => {
           const mt = (m.type && getMonitoringType(m.type)) || MONITORING_TYPES[0]
           const Icon = mt.icon
           const salle = m.salle || m.topic_salle || '—'
+
           return (
-            <li
+            <div
               key={m.id}
-              className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-slate-50/60"
+              className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-[#FAFAFA]"
               style={{
-                animation: `slideInRight 320ms cubic-bezier(0.16, 1, 0.3, 1) both`,
-                animationDelay: `${idx * 30}ms`,
+                animation: 'slideUp 200ms ease-out both',
+                animationDelay: `${idx * 25}ms`,
               }}
             >
               <span
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white shadow-sm"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl text-white"
                 style={{ background: mt.chart }}
               >
                 <Icon size={13} strokeWidth={2.4} />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[12.5px] font-medium text-slate-800">
-                  <span className="text-slate-900">{mt.title}</span>
-                  <span className="mx-1.5 text-slate-300">·</span>
-                  <span className="text-slate-500">{salle}</span>
+                <p className="truncate text-[13px] font-medium" style={{ color: '#374151' }}>
+                  <span style={{ color: '#111111' }}>{mt.title}</span>
+                  <span className="mx-1.5" style={{ color: '#D1D5DB' }}>·</span>
+                  <span style={{ color: '#6B7280' }}>{salle}</span>
                 </p>
-                <p className="text-[10.5px] text-slate-400">
+                <p className="text-[10.5px]" style={{ color: '#9CA3AF' }}>
                   {new Date(m.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-[14px] font-semibold leading-none tracking-tight tabular-nums text-slate-900">
+                <p className="text-[15px] font-semibold leading-none tracking-tight tabular-nums" style={{ color: '#111111' }}>
                   {Number(m.valeur).toFixed(m.type === 'pression' ? 0 : 1)}
-                  <span className="ml-0.5 text-[10.5px] font-medium text-slate-400">{m.unite || mt.unit}</span>
+                  <span className="ml-0.5 text-[10.5px] font-medium" style={{ color: '#9CA3AF' }}>
+                    {m.unite || mt.unit}
+                  </span>
                 </p>
               </div>
-            </li>
+            </div>
           )
         })}
-      </ul>
+      </div>
     </div>
   )
 }
 
-/* ─── Dashboard page ──────────────────────────────────────────── */
+/* ─── Dashboard Page ──────────────────────────────────────────── */
 
 export default function DashboardPage() {
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
+  const { onMesure, onAlerte } = useLiveSocket()
   const [salles, setSalles] = useState<SalleStatus[]>([])
   const [mesures, setMesures] = useState<Mesure[]>([])
   const [alertes, setAlertes] = useState<Alerte[]>([])
   const [documents, setDocuments] = useState<Document[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  // Track "freshly arrived" mesures to animate them. We keep a Set of
-  // ids that arrived in the latest fetch — entries leave the set on
-  // the next tick so the flash plays once.
-  const freshIdsRef = useRef<Set<number>>(new Set())
-  const prevIdsRef = useRef<Set<number>>(new Set())
-  const [flashIds, setFlashIds] = useState<Set<number>>(new Set())
 
   const load = useCallback(async () => {
     setError('')
@@ -270,22 +318,12 @@ export default function DashboardPage() {
         getAlertes(false),
         getDocuments(),
       ])
-      const newIds = new Set(m.data.map(x => x.id))
-      const fresh = new Set<number>()
-      newIds.forEach(id => {
-        if (!prevIdsRef.current.has(id)) fresh.add(id)
-      })
-      prevIdsRef.current = newIds
-      freshIdsRef.current = fresh
       setSalles(s.data)
       setMesures(m.data)
       setAlertes(a.data)
       setDocuments(d.data)
-      setFlashIds(fresh)
-      // Clear the flash after the animation finishes.
-      window.setTimeout(() => setFlashIds(new Set()), 1200)
     } catch {
-      setError('Impossible de charger les données du tableau de bord.')
+      setError('Impossible de charger les données.')
     } finally {
       setLoading(false)
     }
@@ -293,33 +331,77 @@ export default function DashboardPage() {
 
   useEffect(() => {
     load()
-    const id = setInterval(load, 5000)
+    const id = setInterval(load, 30000)
     return () => clearInterval(id)
   }, [load])
 
-  const byType = (type: string) => mesures.filter(m => m.type === type)
+  useEffect(() => {
+    const offMesure = onMesure((data: LiveMesureEventData) => {
+      setMesures(prev => {
+        if (prev.some(m => m.id === data.id)) return prev
+        const next: Mesure = {
+          id: data.id, esp32_id: data.esp32_id, type: data.type as any,
+          source_ip: data.source_ip, salle: data.salle, topic_salle: data.topic_salle,
+          valeur: data.valeur, unite: data.unite, timestamp: data.timestamp || new Date().toISOString(),
+        }
+        return [next, ...prev].slice(0, 80)
+      })
+      setSalles(prev => prev.map(s => {
+        if (data.esp32_id != null && s.esp32_id === data.esp32_id) {
+          const sensors = s.sensors.map(sn =>
+            sn.type === data.type
+              ? { ...sn, state: 'active' as const, last_value: data.valeur,
+                  last_unite: data.unite, last_timestamp: data.timestamp,
+                  last_seen_label: "à l'instant" }
+              : sn
+          )
+          return { ...s, sensors, online: true, derniere_mesure_le: data.timestamp || s.derniere_mesure_le }
+        }
+        if (s.esp32_id === null && s.salle === 'ESP32 non enregistrés') {
+          const sensors = s.sensors.map(sn =>
+            sn.type === data.type
+              ? { ...sn, state: 'active' as const, last_value: data.valeur,
+                  last_unite: data.unite, last_timestamp: data.timestamp,
+                  last_seen_label: "à l'instant" }
+              : sn
+          )
+          return { ...s, sensors, derniere_mesure_le: data.timestamp || s.derniere_mesure_le }
+        }
+        return s
+      }))
+    })
 
+    const offAlerte = onAlerte((data: LiveAlerteEventData) => {
+      setAlertes(prev => {
+        if (prev.some(a => a.id === data.id)) return prev
+        const next: Alerte = {
+          id: data.id, esp32_id: data.esp32_id, type: data.type as any,
+          salle: data.salle, niveau: data.niveau as any, message: data.message,
+          traitee: data.traitee, cree_le: data.cree_le,
+          explication: data.explication, explication_cree_le: data.explication_cree_le,
+        }
+        return [next, ...prev]
+      })
+    })
+
+    return () => { offMesure(); offAlerte() }
+  }, [onMesure, onAlerte])
+
+  const byType = (type: string) => mesures.filter(m => m.type === type)
   const latestValue = (type: string) => {
     const m = byType(type)[0]
     return m ? `${m.valeur}` : '--'
   }
-
   const countByType = (type: string) => salles.filter(s =>
     s.sensors.some(x => x.type === type && x.state === 'active'),
   ).length
 
-  // Build sparkline series (last 12 values, oldest → newest) for each
-  // sensor type. The LineChart consumes DESC; we reverse for the chart.
   const sparklineFor = useCallback(
     (type: string) => byType(type).slice(0, 12).reverse().map(m => m.valeur),
-    // byType would re-create the array every render, so we depend on
-    // the `mesures` reference itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [mesures],
   )
 
-  // Compute a simple trend (delta between most recent and 5-prior)
-  // expressed as a fraction of the older value, used by StatCard.
   const trendFor = useCallback(
     (type: string) => {
       const series = byType(type)
@@ -336,164 +418,228 @@ export default function DashboardPage() {
   const activeAlerts = alertes.filter(a => !a.traitee).length
   const indexedDocuments = documents.filter(d => d.indexe).length
   const activeMonitoringFamilies = MONITORING_TYPES.filter(t => countByType(t.type) > 0).length
-  const chartTypes = MONITORING_TYPES.filter(t => countByType(t.type) > 0)
   const registeredSalles = salles.filter(s => s.esp32_id !== null).length
   const onlineSalles = salles.filter(s => s.online).length
+  const recentAlertes = alertes.filter(a => !a.traitee).slice(0, 4)
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4 p-3 md:p-5">
-      <PageHeader
-        category="Vue temps réel"
-        title="Tableau de bord"
-        subtitle="Surveillance température, humidité, pression, et qualité d'air."
-        liveCount={{
-          value: `${onlineSalles}/${registeredSalles}`,
-          label: 'salles en ligne',
-          tone: onlineSalles > 0 ? 'good' : 'warning',
-        }}
-        actions={
-          <button
-            onClick={load}
-            disabled={loading}
-            className="inline-flex w-fit items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-100 disabled:opacity-60"
-          >
-            <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
-            Actualiser
-          </button>
-        }
+    <div className="mx-auto max-w-7xl space-y-5 p-4 md:space-y-5 md:px-6">
+      {/* Welcome Header */}
+      <DashHeader
+        loading={loading}
+        onRefresh={load}
+        onlineSalles={onlineSalles}
+        registeredSalles={registeredSalles}
       />
 
       {error && (
-        <div className="flex items-center gap-2 rounded-xl bg-red-50 px-4 py-3 text-[13px] font-medium text-red-600">
+        <div
+          className="flex items-center gap-2 rounded-2xl border px-4 py-3 text-[13px] font-medium"
+          style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626' }}
+        >
           <AlertCircle size={15} />
           {error}
         </div>
       )}
 
-      <SystemHealthHero
-        onlineSalles={onlineSalles}
-        registeredSalles={registeredSalles}
-        activeAlerts={activeAlerts}
-        indexedDocs={indexedDocuments}
-        totalDocs={documents.length}
-      />
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          title="Salles surveillées"
-          value={onlineSalles}
-          icon={Activity}
-          color="bg-gradient-to-b from-blue-400 to-blue-600"
-          sub={`${registeredSalles} enregistrée(s)`}
-          tone="neutral"
-          sparkline={useMemoSparkline(salles.length ? onlineSalles : 0)}
-        />
-        <StatCard
-          title="Alertes actives"
-          value={activeAlerts}
-          icon={Bell}
-          color={activeAlerts > 0 ? 'bg-gradient-to-b from-amber-400 to-amber-500' : 'bg-gradient-to-b from-emerald-400 to-emerald-500'}
-          sub={activeAlerts > 0 ? 'À traiter en priorité' : 'Situation stable'}
-          tone={activeAlerts > 0 ? 'warning' : 'good'}
-        />
-        <StatCard
-          title="Documents"
-          value={documents.length}
-          icon={FileText}
-          color="bg-gradient-to-b from-indigo-400 to-indigo-500"
-          sub={`${indexedDocuments} indexé(s)`}
-          tone={indexedDocuments === documents.length && documents.length > 0 ? 'good' : 'neutral'}
-        />
-        <StatCard
-          title="Familles actives"
-          value={activeMonitoringFamilies}
-          icon={Settings2}
-          color="bg-gradient-to-b from-violet-400 to-violet-500"
-          sub={`sur ${MONITORING_TYPES.length}`}
-          tone="neutral"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {MONITORING_TYPES.map(item => {
-          const sparkline = sparklineFor(item.type)
-          const trend = trendFor(item.type)
-          const hasData = sparkline.length > 0
-          return (
+      {/* 2-Column Layout: Main (left) + Right Panel (~330–360px) */}
+      <div className="grid gap-5 lg:grid-cols-[1fr_21rem] xl:grid-cols-[1fr_22rem]">
+        <div className="space-y-5">
+          {/* Top Stats Row */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
-              key={item.type}
-              title={item.title}
-              value={latestValue(item.type)}
-              unit={item.unit}
-              icon={item.icon}
-              color={item.color}
-              sub={hasData ? `${countByType(item.type)} salle(s) active(s)` : 'Aucune mesure reçue'}
-              tone={hasData ? 'good' : 'warning'}
-              sparkline={sparkline}
-              trend={trend}
+              title="Salles en ligne"
+              value={onlineSalles}
+              icon={Activity}
+              accent="#3B82F6"
+              sub={`${registeredSalles} enregistrée(s)`}
+              tone="neutral"
             />
-          )
-        })}
-      </div>
+            <StatCard
+              title="Alertes actives"
+              value={activeAlerts}
+              icon={Bell}
+              accent={activeAlerts > 0 ? '#F59E0B' : '#10B981'}
+              sub={activeAlerts > 0 ? 'À traiter' : 'Situation stable'}
+              tone={activeAlerts > 0 ? 'warning' : 'good'}
+            />
+            <StatCard
+              title="Documents"
+              value={documents.length}
+              icon={FileText}
+              accent="#8B5CF6"
+              sub={`${indexedDocuments} indexé(s)`}
+              tone={indexedDocuments === documents.length && documents.length > 0 ? 'good' : 'neutral'}
+            />
+            <StatCard
+              title="Capteurs actifs"
+              value={activeMonitoringFamilies}
+              icon={Settings2}
+              accent="#EC4899"
+              sub={`sur ${MONITORING_TYPES.length} types`}
+              tone="neutral"
+            />
+          </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {(chartTypes.length > 0 ? chartTypes : MONITORING_TYPES.slice(0, 2)).map(item => (
-          <LineChart
-            key={item.type}
-            mesures={byType(item.type)}
-            title={`${item.title} (${item.unit})`}
-            color={item.chart}
-          />
-        ))}
-      </div>
+          {/* Sensor Type Stats */}
+          {MONITORING_TYPES.filter(t => countByType(t.type) > 0).length > 0 && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {MONITORING_TYPES.map(item => {
+                const hasData = byType(item.type).length > 0
+                const sparkline = sparklineFor(item.type)
+                const trend = trendFor(item.type)
+                return hasData ? (
+                  <StatCard
+                    key={item.type}
+                    title={item.title}
+                    value={latestValue(item.type)}
+                    unit={item.unit}
+                    icon={item.icon}
+                    accent={item.chart}
+                    sub={`${countByType(item.type)} salle(s)`}
+                    tone="good"
+                    sparkline={sparkline}
+                    trend={trend}
+                  />
+                ) : null
+              })}
+            </div>
+          )}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        {isAdmin ? (
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          {/* Charts Section — single chart with all measure types */}
+          <CombinedChart mesures={mesures} />
+
+          {/* Admin Section */}
+          {isAdmin && (
+            <div
+              className="card rounded-3xl border p-5"
+              style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
+            >
               <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                  <Settings2 size={14} strokeWidth={2.2} />
+                <span
+                  className="flex h-7 w-7 items-center justify-center rounded-xl"
+                  style={{ background: '#EEF2FF' }}
+                >
+                  <Settings2 size={14} strokeWidth={2.2} style={{ color: '#4F46E5' }} />
                 </span>
-                <h3 className="text-[15px] font-semibold text-slate-900">Salles &amp; ESP32</h3>
+                <h3 className="text-[15px] font-semibold" style={{ color: '#111111' }}>
+                  Salles & ESP32
+                </h3>
               </div>
-              <p className="mt-2 text-[12.5px] text-slate-500">
-                {registeredSalles} salle(s) enregistrée(s), {onlineSalles} en ligne. Réclamez les IP non reconnues et renommez vos salles depuis l'administration.
+              <p className="mt-2 text-[13px]" style={{ color: '#6B7280' }}>
+                {registeredSalles} salle(s) enregistrée(s), {onlineSalles} en ligne.
+                Gérez vos équipements et IP non reconnues.
               </p>
               <Link
                 to="/admin/salles"
-                className="mt-4 inline-flex items-center gap-2 rounded-full bg-blue-600 px-3.5 py-2 text-[13px] font-medium text-white shadow-sm transition-colors hover:bg-blue-700 active:scale-95"
+                className="mt-3 inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-[13px] font-semibold text-white transition-all hover:opacity-90"
+                style={{ background: '#111111' }}
               >
-                Ouvrir l'administration
-                <TrendingUp size={14} />
+                Administration
+                <Sparkles size={13} strokeWidth={2} />
               </Link>
             </div>
-            <LiveActivityFeed mesures={mesures} />
-          </div>
-        ) : (
-          <LiveActivityFeed mesures={mesures} />
-        )}
-        <AlertsList alertes={alertes} onRefresh={load} variant="active" />
-      </div>
+          )}
+        </div>
 
-      <style>{`
-        @keyframes slideInRight {
-          from { opacity: 0; transform: translateX(12px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-      `}</style>
+        {/* Right Info Panel */}
+        <div className="space-y-3">
+          <RightInfoPanel
+            user={user || { nom: '', role: '' }}
+            recentAlertes={recentAlertes}
+            documents={documents}
+            onlineSalles={onlineSalles}
+            registeredSalles={registeredSalles}
+          />
+
+          {/* Recent Alerts */}
+          {recentAlertes.length > 0 && (
+            <div
+              className="card rounded-3xl border p-4"
+              style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-[13px] font-semibold" style={{ color: '#111111' }}>
+                  Alertes récentes
+                </h3>
+                <Link
+                  to="/alertes"
+                  className="text-[11.5px] font-medium transition-colors hover:underline"
+                  style={{ color: '#3B82F6' }}
+                >
+                  Tout voir
+                </Link>
+              </div>
+              <div className="flex flex-col gap-2">
+                {recentAlertes.map(a => {
+                  const colors: Record<string, { bg: string; text: string }> = {
+                    critique: { bg: '#FEF2F2', text: '#DC2626' },
+                    attention: { bg: '#FFFBEB', text: '#D97706' },
+                    info: { bg: '#EFF6FF', text: '#2563EB' },
+                  }
+                  const c = colors[a.niveau] || colors.info
+                  return (
+                    <div
+                      key={a.id}
+                      className="flex items-center gap-2 rounded-2xl px-3 py-2.5"
+                      style={{ background: c.bg }}
+                    >
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ background: c.text }}
+                      />
+                      <p className="min-w-0 flex-1 truncate text-[12px] font-medium" style={{ color: c.text }}>
+                        {a.message}
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Live Activity Feed */}
+          <LiveActivityFeed mesures={mesures} max={5} />
+
+          {/* Quick Summary Stats */}
+          <div
+            className="card rounded-3xl border p-4"
+            style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
+          >
+            <h3 className="mb-3 text-[13px] font-semibold" style={{ color: '#111111' }}>
+              Aperçu des capteurs
+            </h3>
+            <div className="flex flex-col gap-2.5">
+              {MONITORING_TYPES.map(mt => {
+                const count = countByType(mt.type)
+                const pct = registeredSalles > 0 ? Math.round((count / registeredSalles) * 100) : 0
+                const hasData = byType(mt.type).length > 0
+                return (
+                  <div key={mt.type}>
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className="text-[12px] font-medium" style={{ color: '#374151' }}>
+                        {mt.title}
+                      </span>
+                      <span className="text-[11px]" style={{ color: '#9CA3AF' }}>
+                        {count} salle{count !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: '#F5F5F7' }}>
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${pct}%`,
+                          background: hasData ? mt.chart : '#D1D5DB',
+                        }}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
-}
-
-// Tiny inline hook helper so we can build a synthetic sparkline for the
-// "Salles surveillées" stat without recomputing it elsewhere. Returns
-// a 12-point series of the current value (so the line is flat until
-// the next refresh shows real change).
-function useMemoSparkline(value: number): number[] {
-  return React.useMemo(() => {
-    const arr: number[] = []
-    for (let i = 0; i < 12; i++) arr.push(value)
-    return arr
-  }, [value])
 }

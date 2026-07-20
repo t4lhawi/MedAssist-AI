@@ -1,13 +1,13 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
 import {
-  Activity,
   Bell,
   FileText,
-  HeartPulse,
   LayoutDashboard,
   MessageCircle,
+  Power,
   Settings2,
+  HelpCircle,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
@@ -15,8 +15,20 @@ interface NavItem {
   to: string
   icon: React.ElementType
   label: string
+  short: string
   adminOnly?: boolean
   badge?: number
+}
+
+/** Shared nav items — used by both the desktop Sidebar and the mobile MobileNav. */
+function navItems(role: string | undefined, alertCount: number): NavItem[] {
+  return [
+    { to: '/', icon: LayoutDashboard, label: 'Tableau de bord', short: 'Accueil' },
+    { to: '/admin/salles', icon: Settings2, label: 'Salles & ESP32', short: 'Salles', adminOnly: true },
+    { to: '/alertes', icon: Bell, label: 'Alertes', short: 'Alertes', badge: alertCount },
+    { to: '/documents', icon: FileText, label: 'Documents', short: 'Docs' },
+    { to: '/assistant', icon: MessageCircle, label: 'Assistant IA', short: 'Assistant' },
+  ].filter(n => !n.adminOnly || role === 'admin')
 }
 
 interface Props {
@@ -24,65 +36,153 @@ interface Props {
 }
 
 export default function Sidebar({ alertCount = 0 }: Props) {
-  const { user } = useAuth()
-  const items: NavItem[] = [
-    { to: '/', icon: LayoutDashboard, label: 'Tableau' },
-    { to: '/admin/salles', icon: Settings2, label: 'Salles', adminOnly: true },
-    { to: '/alertes', icon: Bell, label: 'Alertes', badge: alertCount },
-    { to: '/documents', icon: FileText, label: 'Docs' },
-    { to: '/assistant', icon: MessageCircle, label: 'Assistant' },
-  ].filter(n => !n.adminOnly || user?.role === 'admin')
+  const { user, logout } = useAuth()
+  const items = navItems(user?.role, alertCount)
 
   return (
-    <aside className="fixed inset-x-0 bottom-0 z-30 border-t border-black/5 bg-white/80 backdrop-blur-xl md:static md:inset-auto md:flex md:w-60 md:flex-col md:border-r md:border-t-0 md:bg-slate-50/60">
-      <nav className="flex items-center justify-around gap-1 px-3 py-2 md:flex-1 md:flex-col md:items-stretch md:justify-start md:gap-0.5 md:p-3 md:pt-5">
+    <aside
+      className="hidden w-60 shrink-0 flex-col md:flex"
+      style={{
+        background: '#FFFFFF',
+        borderRight: '1px solid #ECECEC',
+      }}
+    >
+      <nav className="flex flex-1 flex-col gap-0.5 p-3 pt-4">
         {items.map(({ to, icon: Icon, label, badge }) => (
           <NavLink
             key={to}
             to={to}
             end={to === '/'}
             className={({ isActive }) =>
-              `group relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[10.5px] font-medium transition-all duration-200 ease-out md:flex-none md:flex-row md:justify-start md:gap-3 md:px-3 md:py-2.5 md:text-[13.5px] ${
+              `group relative flex items-center gap-3 rounded-2xl px-4 py-2.5 text-[13.5px] font-medium transition-all duration-200 ${
                 isActive
-                  ? 'text-blue-600 md:bg-white md:text-slate-900 md:shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_8px_-2px_rgba(0,0,0,0.06)]'
-                  : 'text-slate-400 hover:text-slate-700 md:hover:bg-black/[0.03]'
+                  ? 'text-[#111111]'
+                  : 'text-[#6B7280] hover:text-[#111111] hover:bg-[#F5F5F7]'
               }`
             }
           >
             {({ isActive }) => (
               <>
+                {/* Active pill background */}
+                {isActive && (
+                  <span
+                    className="absolute inset-0 rounded-2xl"
+                    style={{
+                      background: '#FFFFFF',
+                      boxShadow: '0 1px 2px rgba(17,17,17,0.06), 0 1px 8px -2px rgba(17,17,17,0.08)',
+                    }}
+                  />
+                )}
                 <span
-                  className={`relative flex h-6 w-6 items-center justify-center rounded-md transition-colors duration-200 ease-out md:h-7 md:w-7 ${
-                    isActive ? 'bg-blue-50 text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
+                  className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl transition-colors duration-200 ${
+                    isActive ? '' : 'group-hover:bg-[#F5F5F7]'
                   }`}
+                  style={isActive ? { color: '#3B82F6' } : { color: '#6B7280' }}
                 >
-                  <Icon size={16} strokeWidth={2.2} />
+                  <Icon size={16} strokeWidth={2} />
                   {badge !== undefined && badge > 0 && (
-                    <span className="absolute -right-1 -top-1 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-none text-white ring-2 ring-white">
+                    <span
+                      className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold text-white"
+                      style={{ background: '#3B82F6' }}
+                    >
                       {badge > 9 ? '9+' : badge}
                     </span>
                   )}
                 </span>
-                <span className="truncate">{label}</span>
+                <span className="relative z-10 truncate">{label}</span>
               </>
             )}
           </NavLink>
         ))}
       </nav>
 
-      <div className="hidden border-t border-black/5 px-4 py-4 md:block">
-        <div className="rounded-xl bg-white px-3 py-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-          <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center">
-              <img src="/img/favicon.ico" alt="CHU Mohammed VI Oujda" className="h-full w-full object-contain" />
-            </span>
-            <div>
-              <p className="text-[11px] font-semibold text-slate-700">MedAssist AI</p>
-              <p className="text-[10px] text-slate-400">v1.0 · CHU Mohammed VI</p>
-            </div>
-          </div>
-        </div>
+      {/* Bottom: Help, Settings, Logout */}
+      <div className="border-t p-3" style={{ borderColor: '#F5F5F7' }}>
+        <NavLink
+          to="/assistant"
+          className="mb-2 flex items-center gap-3 rounded-2xl px-4 py-2.5 text-[13px] font-medium text-[#6B7280] transition-colors hover:bg-[#F5F5F7] hover:text-[#111111]"
+        >
+          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#F5F5F7]">
+            <HelpCircle size={15} strokeWidth={2} />
+          </span>
+          Aide & Support
+        </NavLink>
+
+        <button
+          onClick={logout}
+          className="flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-[13px] font-medium text-[#EF4444] transition-colors hover:bg-red-50"
+        >
+          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-red-50">
+            <Power size={15} strokeWidth={2} />
+          </span>
+          Déconnexion
+        </button>
       </div>
     </aside>
+  )
+}
+
+/* ─── Mobile bottom navigation ────────────────────────────────────
+   Companion to the desktop Sidebar. Shown only below the md
+   breakpoint (the sidebar is `hidden md:flex`). Reuses the same
+   nav items so routes / badges / admin-gating stay in sync. */
+
+export function MobileNav({ alertCount = 0 }: Props) {
+  const { user, logout } = useAuth()
+  const items = navItems(user?.role, alertCount)
+
+  return (
+    <nav
+      className="fixed inset-x-0 bottom-0 z-30 border-t md:hidden"
+      style={{
+        background: 'rgba(255,255,255,0.86)',
+        backdropFilter: 'blur(20px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        borderColor: '#ECECEC',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      }}
+    >
+      <div className="mx-auto flex max-w-md items-stretch justify-around px-1.5 py-1.5">
+        {items.map(({ to, icon: Icon, short, badge }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={to === '/'}
+            className={({ isActive }) =>
+              `relative flex flex-1 flex-col items-center gap-0.5 rounded-2xl px-1 py-1.5 transition-colors duration-200 active:scale-95 ${
+                isActive ? 'text-[#111111]' : 'text-[#9CA3AF]'
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <span className="relative">
+                  <Icon size={20} strokeWidth={isActive ? 2.4 : 2} style={isActive ? { color: '#3B82F6' } : undefined} />
+                  {badge !== undefined && badge > 0 && (
+                    <span
+                      className="absolute -right-2 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-0.5 text-[8px] font-bold text-white ring-2 ring-white"
+                      style={{ background: '#EF4444' }}
+                    >
+                      {badge > 9 ? '9+' : badge}
+                    </span>
+                  )}
+                </span>
+                <span className="max-w-full truncate text-[9.5px] font-medium">{short}</span>
+              </>
+            )}
+          </NavLink>
+        ))}
+
+        {/* Logout — kept compact so mobile users can sign out without the sidebar */}
+        <button
+          onClick={logout}
+          title="Déconnexion"
+          className="flex flex-1 flex-col items-center gap-0.5 rounded-2xl px-1 py-1.5 text-[#9CA3AF] transition-colors duration-200 active:scale-95 hover:text-[#EF4444]"
+        >
+          <Power size={20} strokeWidth={2} />
+          <span className="text-[9.5px] font-medium">Quitter</span>
+        </button>
+      </div>
+    </nav>
   )
 }

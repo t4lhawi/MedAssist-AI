@@ -192,6 +192,10 @@ class AlerteOut(BaseModel):
     # computed from the alerte's direct esp32 link or the mesure chain
     esp32_id: Optional[int] = None
     salle: Optional[str] = None
+    # IA-generated explanation (markdown). NULL while being generated or
+    # if the LLM call failed.
+    explication: Optional[str] = None
+    explication_cree_le: Optional[datetime] = None
 
 
 def _alerte_to_out(a) -> AlerteOut:
@@ -213,6 +217,8 @@ def _alerte_to_out(a) -> AlerteOut:
         cree_le=a.cree_le,
         esp32_id=getattr(esp32, "id", None) if esp32 else None,
         salle=getattr(esp32, "salle", None) if esp32 else None,
+        explication=getattr(a, "explication", None),
+        explication_cree_le=getattr(a, "explication_cree_le", None),
     )
 
 

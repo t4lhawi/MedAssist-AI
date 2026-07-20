@@ -33,7 +33,7 @@ from typing import Dict, List, Optional
 
 import paho.mqtt.client as mqtt
 
-from . import crud, schemas
+from . import crud, models, schemas
 from .config import settings
 from .database import SessionLocal
 
@@ -57,10 +57,15 @@ class MqttIngestClient:
     """
 
     def __init__(self) -> None:
-        self._client = mqtt.Client(
-            client_id=settings.MQTT_CLIENT_ID,
-            callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
-        )
+        # paho-mqtt 1.x: pas de paramètre callback_api_version (API v1 par défaut)
+        # paho-mqtt 2.x: il faut explicitement passer CallbackAPIVersion.VERSION2
+        if hasattr(mqtt, "CallbackAPIVersion"):
+            self._client = mqtt.Client(
+                client_id=settings.MQTT_CLIENT_ID,
+                callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
+            )
+        else:
+            self._client = mqtt.Client(client_id=settings.MQTT_CLIENT_ID)
 
         if settings.MQTT_USERNAME:
             self._client.username_pw_set(
@@ -100,19 +105,26 @@ class MqttIngestClient:
             logger.warning("MQTT stop: %s", exc)
 
     # ── paho callbacks ───────────────────────────────────────────
-    def _on_connect(self, client, userdata, flags, reason_code, properties=None):
-        if reason_code != 0:
-            logger.warning("MQTT connexion refusée (reason_code=%s)", reason_code)
+    def _on_connect(self, client, userdata, flags, reason_code=None, properties=None):
+        # paho-mqtt 1.x: _on_connect(client, userdata, flags, rc)
+        # paho-mqtt 2.x: _on_connect(client, userdata, flags, reason_code, properties)
+        rc = 0 if reason_code is None else reason_code
+        if rc != 0:
+            logger.warning("MQTT connexion refusée (reason_code=%s)", rc)
             return
         topic = f"{settings.MQTT_TOPIC_PREFIX}/+/+"
         client.subscribe(topic, qos=0)
         logger.info("MQTT connecté, abonnement à %s", topic)
 
-    def _on_disconnect(self, client, userdata, flags, reason_code, properties=None):
-        if reason_code != 0:
-            logger.warning(
-                "MQTT déconnecté (reason_code=%s) — reconnexion…", reason_code,
-            )
+    def _on_disconnect(self, client, userdata, *args):
+        # Compatible paho-mqtt 1.x (rc) et 2.x (flags, reason_code, properties)
+        rc = args[-1] if args else 0
+        try:
+            rc = int(rc)
+        except (TypeError, ValueError):
+            rc = 0
+        if rc != 0:
+            logger.warning("MQTT déconnecté (rc=%s) — reconnexion…", rc)
 
     # ── message handler ──────────────────────────────────────────
     def _on_message(self, client, userdata, msg):
@@ -206,6 +218,22 @@ class MqttIngestClient:
                 topic_salle, source_ip, type_, valeur_f, unite,
                 esp32 is not None,
             )
+
+            # Broadcast to WebSocket subscribers. We re-query the row
+            # so the payload carries the server-stamped id + timestamp;
+            # the ingester's own context has neither.
+            from . import realtime as _rt
+            try:
+                fresh = (
+                    db.query(models.Mesure)
+                    .filter(models.Mesure.source_ip == source_ip)
+                    .order_by(models.Mesure.id.desc())
+                    .first()
+                )
+                if fresh is not None:
+                    _rt.publish(_rt.make_mesure_event(fresh))
+            except Exception:
+                logger.exception("realtime: échec publication mesure")
         except Exception:
             logger.exception("MQTT insert mesure échoué (topic=%s)", topic)
         finally:

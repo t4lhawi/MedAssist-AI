@@ -6,73 +6,66 @@ interface Props {
   value: string | number
   unit?: string
   icon: LucideIcon
-  color: string
+  /** Hex accent, e.g. "#3B82F6" — drives the icon tint, sparkline, and trend color. */
+  accent: string
   sub?: string
   tone?: 'neutral' | 'good' | 'warning' | 'danger'
-  /** Optional mini sparkline — last N data points. */
   sparkline?: number[]
-  /** Optional trend vs the previous value (positive = up). */
   trend?: number
 }
 
 const TONE: Record<NonNullable<Props['tone']>, string> = {
-  neutral: 'bg-slate-100 text-slate-500',
-  good: 'bg-emerald-50 text-emerald-600',
-  warning: 'bg-amber-50 text-amber-600',
-  danger: 'bg-red-50 text-red-500',
+  neutral: 'bg-[#F5F5F7] text-[#6B7280]',
+  good: 'bg-emerald-50 text-emerald-700',
+  warning: 'bg-amber-50 text-amber-700',
+  danger: 'bg-red-50 text-red-600',
 }
 
 const DOT: Record<NonNullable<Props['tone']>, string> = {
-  neutral: 'bg-slate-400',
+  neutral: 'bg-[#9CA3AF]',
   good: 'bg-emerald-500',
   warning: 'bg-amber-500',
   danger: 'bg-red-500',
 }
 
-/**
- * Tiny sparkline rendered with SVG <path>. We pre-compute the polyline
- * from the input array; the path is also re-fed as <linearGradient>
- * fill so each card has its own accent color matching `color`.
- */
+/** Normalize any hex (#rgb / #rrggbb) to an rgba() string. Falls back to neutral grey. */
+function hexToRgba(hex: string, alpha: number): string {
+  let h = hex.replace('#', '').trim()
+  if (h.length === 3) h = h.split('').map(c => c + c).join('')
+  if (h.length !== 6 || /[^0-9a-fA-F]/.test(h)) return `rgba(107, 114, 128, ${alpha})`
+  const r = parseInt(h.slice(0, 2), 16)
+  const g = parseInt(h.slice(2, 4), 16)
+  const b = parseInt(h.slice(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+/** Full-width sparkline rendered with the card's accent color. */
 function Sparkline({ values, color }: { values: number[]; color: string }) {
-  if (values.length < 2) {
-    return <div className="h-10 w-full" />
-  }
+  if (values.length < 2) return null
   const W = 100
   const H = 28
   const min = Math.min(...values)
   const max = Math.max(...values)
   const range = max - min || 1
   const step = W / (values.length - 1)
-  const points = values
+  const pts = values
     .map((v, i) => `${(i * step).toFixed(2)},${(H - ((v - min) / range) * H).toFixed(2)}`)
     .join(' ')
-  const areaPoints = `0,${H} ${points} ${W},${H}`
-
-  // Pick a stroke color that matches the card's gradient. We extract a
-  // recognizable tail by sampling `color` for known hex tokens.
-  const stroke = color.match(/#[0-9A-Fa-f]{6}/)?.[0] ?? '#3b82f6'
-  const gradientId = `sg-${stroke.replace('#', '')}`
-
+  const gId = `sg-${color.replace('#', '')}`
   return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      preserveAspectRatio="none"
-      className="h-10 w-full overflow-visible"
-      aria-hidden="true"
-    >
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-10 w-full overflow-visible" aria-hidden="true">
       <defs>
-        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={stroke} stopOpacity="0.35" />
-          <stop offset="100%" stopColor={stroke} stopOpacity="0" />
+        <linearGradient id={gId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={0.28} />
+          <stop offset="100%" stopColor={color} stopOpacity={0} />
         </linearGradient>
       </defs>
-      <polygon points={areaPoints} fill={`url(#${gradientId})`} />
+      <polygon points={`0,${H} ${pts} ${W},${H}`} fill={`url(#${gId})`} />
       <polyline
-        points={points}
+        points={pts}
         fill="none"
-        stroke={stroke}
-        strokeWidth="1.5"
+        stroke={color}
+        strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
         vectorEffect="non-scaling-stroke"
@@ -81,12 +74,7 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
   )
 }
 
-/**
- * Count-up animation that smoothly transitions the displayed value
- * to a new one. Re-runs on every prop change. We parse the value as
- * a number (ignoring the unit) when possible so the animation feels
- * physical — e.g. "21.4" → "21.7" glides instead of jumping.
- */
+/** Smooth count-up animation matching the premium feel */
 function useCountUp(value: string | number, duration = 600) {
   const [display, setDisplay] = useState<string>(String(value))
   const fromRef = useRef<number | null>(null)
@@ -95,40 +83,27 @@ function useCountUp(value: string | number, duration = 600) {
 
   useEffect(() => {
     const target = typeof value === 'number' ? value : parseFloat(String(value))
-    if (Number.isNaN(target)) {
-      setDisplay(String(value))
-      return
-    }
+    if (Number.isNaN(target)) { setDisplay(String(value)); return }
     const from = fromRef.current ?? target
     fromRef.current = target
     startRef.current = performance.now()
-    const initialDisplay = String(value).match(/^-?\d*\.?\d+/)
-      ? parseFloat(String(display))
-      : target
-    fromRef.current = Number.isFinite(initialDisplay) ? initialDisplay : from
 
     const tick = (now: number) => {
-      const elapsed = now - startRef.current
-      const t = Math.min(1, elapsed / duration)
-      // ease-out cubic — settles nicely without overshoot
+      const t = Math.min(1, (now - startRef.current) / duration)
       const eased = 1 - Math.pow(1 - t, 3)
-      const from = fromRef.current ?? 0
       const current = from + (target - from) * eased
-      // Preserve the original formatting (decimals, unit, etc.)
-      const fmt = String(value)
-      const decimals = (fmt.match(/\.(\d+)/)?.[1] ?? '').length
+      const decimals = (String(value).match(/\.(\d+)/)?.[1] ?? '').length
       setDisplay(decimals > 0 ? current.toFixed(decimals) : current.toFixed(0))
       if (t < 1) {
         rafRef.current = requestAnimationFrame(tick)
       } else {
-        // Snap to exact source string when finished so the final value is
-        // byte-identical to what the caller asked for.
-        setDisplay(fmt)
+        setDisplay(String(value))
       }
     }
     rafRef.current = requestAnimationFrame(tick)
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      const id = rafRef.current
+      if (id) cancelAnimationFrame(id)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, duration])
@@ -141,67 +116,81 @@ export default function StatCard({
   value,
   unit,
   icon: Icon,
-  color,
+  accent,
   sub,
   tone = 'neutral',
   sparkline,
   trend,
 }: Props) {
   const animated = useCountUp(value)
-  const TrendIcon =
-    trend === undefined ? null : trend > 0.05 ? TrendingUp : trend < -0.05 ? TrendingDown : Minus
-  const trendColor =
-    trend === undefined
-      ? ''
-      : trend > 0.05
-      ? 'text-emerald-600'
-      : trend < -0.05
-      ? 'text-red-500'
-      : 'text-slate-400'
+  const hasTrend = trend !== undefined
+  const TrendIcon = !hasTrend ? null : trend > 0.05 ? TrendingUp : trend < -0.05 ? TrendingDown : Minus
+  const trendTone = !hasTrend
+    ? ''
+    : trend > 0.05
+    ? 'text-emerald-600'
+    : trend < -0.05
+    ? 'text-red-500'
+    : 'text-[#9CA3AF]'
+  const hasSpark = !!sparkline && sparkline.length >= 2
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
-      {/* Subtle gradient halo on hover, drawn behind content via absolute positioning */}
-      <div
-        className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-30"
-        style={{ background: color.match(/#[0-9A-Fa-f]{6}/)?.[0] ?? '#3b82f6' }}
-      />
-
-      <div className="relative">
-        <div className="mb-3 flex items-start justify-between gap-3">
-          <p className="truncate text-[13px] font-medium text-slate-500">{title}</p>
+    <div
+      className="card-lift group relative flex flex-col overflow-hidden rounded-3xl border p-4 pl-4 pr-4"
+      style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
+    >
+      {/* Header: icon chip + title, trend on the right */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2.5">
           <div
-            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${color} shadow-[0_2px_6px_-1px_rgba(0,0,0,0.15)] transition-transform duration-200 group-hover:scale-110 group-hover:rotate-3`}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl"
+            style={{ background: hexToRgba(accent, 0.12) }}
           >
-            <Icon size={16} strokeWidth={2.2} className="text-white" />
+            <Icon size={18} strokeWidth={2.2} style={{ color: accent }} />
           </div>
-        </div>
-
-        <div className="flex items-end gap-1.5">
-          <p className="text-[26px] font-semibold leading-none tracking-[-0.02em] text-slate-900 tabular-nums">
-            {animated}
+          <p className="truncate text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>
+            {title}
           </p>
-          {unit && <span className="text-[13px] font-medium text-slate-400">{unit}</span>}
-          {TrendIcon && (
-            <span className={`mb-0.5 inline-flex items-center gap-0.5 text-[11px] font-semibold ${trendColor}`}>
-              <TrendIcon size={11} strokeWidth={2.4} />
-            </span>
-          )}
         </div>
-
-        {sub && (
-          <div className={`mt-2.5 inline-flex max-w-full items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-medium ${TONE[tone]}`}>
-            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[tone]}`} />
-            <span className="truncate">{sub}</span>
-          </div>
-        )}
-
-        {sparkline && sparkline.length >= 2 && (
-          <div className="mt-3 -mb-1">
-            <Sparkline values={sparkline} color={color} />
-          </div>
+        {hasTrend && TrendIcon && (
+          <span className={`inline-flex shrink-0 items-center gap-0.5 text-[11px] font-semibold ${trendTone}`}>
+            <TrendIcon size={12} strokeWidth={2.4} />
+            {Math.abs(Math.round((trend ?? 0) * 100))}%
+          </span>
         )}
       </div>
+
+      {/* Value */}
+      <div className="mt-3 flex items-end gap-1.5">
+        <p
+          className="text-[26px] font-semibold leading-none tracking-tight tabular-nums"
+          style={{ color: '#111111' }}
+        >
+          {animated}
+        </p>
+        {unit && (
+          <span className="mb-0.5 text-[12px] font-medium" style={{ color: '#9CA3AF' }}>
+            {unit}
+          </span>
+        )}
+      </div>
+
+      {/* Sub pill */}
+      {sub && (
+        <div
+          className={`mt-2.5 inline-flex max-w-full items-center gap-1.5 self-start rounded-full px-2.5 py-1 text-[11px] font-medium ${TONE[tone]}`}
+        >
+          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[tone]}`} />
+          <span className="truncate">{sub}</span>
+        </div>
+      )}
+
+      {/* Sparkline footer */}
+      {hasSpark && (
+        <div className="mt-3 -mb-1 h-10 w-full">
+          <Sparkline values={sparkline as number[]} color={accent} />
+        </div>
+      )}
     </div>
   )
 }

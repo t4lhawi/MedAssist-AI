@@ -10,7 +10,6 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
-  Activity,
 } from 'lucide-react'
 import type { SalleStatus, SensorStatus } from '../../types'
 import {
@@ -27,7 +26,7 @@ import { useSalles } from '../../hooks/useSalles'
 import { formatRelativeTime } from '../../utils/time'
 
 /* ──────────────────────────────────────────────
-   SalleCard – Polished UX for Dashboard
+   SalleCard – premium SaaS restyle
    ────────────────────────────────────────────── */
 
 function formatValue(val: number | null | undefined, unit: string, precision = 1) {
@@ -53,9 +52,9 @@ function SensorTile({ type, sensor, isExpanded, onToggle }: {
   return (
     <div
       className={`
-        group relative rounded-2xl border bg-white p-3 transition-all duration-200
+        group relative rounded-2xl border bg-white p-3 transition-all duration-200 ease-out
         ${borderClass} ${bgClass}
-        hover:shadow-md hover:border-slate-300
+        hover:shadow-[0_4px_14px_-6px_rgba(17,17,17,0.14)]
         ${isExpanded ? 'grid grid-rows-[auto_auto_1fr]' : 'grid grid-rows-[auto_1fr]'}
       `}
       onClick={onToggle}
@@ -63,12 +62,11 @@ function SensorTile({ type, sensor, isExpanded, onToggle }: {
     >
       {/* Header: icon + title */}
       <div className="flex items-center gap-2 mb-2">
-        <span className={`flex h-6 w-6 items-center justify-center rounded-md ${tone.bg} ${tone.text}`}>
+        <span className={`flex h-6 w-6 items-center justify-center rounded-full ${tone.bg} ${tone.text}`}>
           <mt.icon size={12} strokeWidth={2.5} />
         </span>
-        <p className="truncate text-xs font-medium text-slate-600">{mt.title}</p>
-        {/* Expand indicator */}
-        <span className="ml-auto flex items-center justify-center text-slate-300 transition-transform duration-200 group-hover:text-slate-500">
+        <p className="truncate text-xs font-medium text-[#6B7280]">{mt.title}</p>
+        <span className="ml-auto flex items-center justify-center text-[#D1D5DB] transition-transform duration-150 group-hover:text-[#6B7280]">
           {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </span>
       </div>
@@ -76,38 +74,38 @@ function SensorTile({ type, sensor, isExpanded, onToggle }: {
       {/* Main value */}
       <div className="flex items-end gap-1.5 mb-2">
         {state === 'not_installed' ? (
-          <span className="text-sm font-medium text-slate-400">Non installé</span>
+          <span className="text-sm font-medium text-[#9CA3AF]">Non installé</span>
         ) : (
           <>
-            <span className="text-xl font-semibold text-slate-900 tabular-nums">
+            <span className="text-xl font-semibold text-[#111111] tabular-nums">
               {formatValue(value, unit, type === 'pression' ? 0 : 1)}
             </span>
-            <span className="text-xs text-slate-400 self-end mb-0.5">{unit}</span>
+            <span className="text-xs text-[#9CA3AF] self-end mb-0.5">{unit}</span>
           </>
         )}
       </div>
 
       {/* Expanded details */}
       {isExpanded && (
-        <div className="space-y-2 pt-2 border-t border-slate-100 animate-slide-down">
+        <div className="space-y-2 pt-2 border-t border-[#ECECEC] animate-slide-down">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-500">Dernière mise à jour</span>
+            <span className="text-[#6B7280]">Dernière mise à jour</span>
             <span className={`font-medium ${tone.text}`}>{lastSeen}</span>
           </div>
           {state === 'error' && (
-            <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 rounded-lg px-2 py-1.5">
+            <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 rounded-full px-2.5 py-1.5">
               <AlertTriangle size={11} />
               <span>Erreur de lecture du capteur</span>
             </div>
           )}
           {state === 'warning' && (
-            <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 rounded-lg px-2 py-1.5">
+            <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 rounded-full px-2.5 py-1.5">
               <AlertTriangle size={11} />
               <span>Données anciennes (&gt; 10 min)</span>
             </div>
           )}
           {state === 'active' && (
-            <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 rounded-lg px-2 py-1.5">
+            <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 rounded-full px-2.5 py-1.5">
               <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500" />
               <span>Données à jour</span>
             </div>
@@ -175,21 +173,20 @@ export default function SalleCard({ salle }: { salle: SalleStatus }) {
     setExpandedSensors(prev => ({ ...prev, [type]: !prev[type] }))
   }, [])
 
-  // Online indicator with pulse animation
   const onlineClass = salle.online
     ? 'relative flex h-2.5 w-2.5 animate-pulse-ring'
     : 'flex h-2.5 w-2.5'
 
   return (
-    <div className="relative rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg hover:border-slate-300 hover:-translate-y-0.5 overflow-hidden">
-      {/* Top accent bar - color coded by room status */}
+    <div className="group relative rounded-[24px] border border-[#ECECEC] bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-12px_rgba(17,17,17,0.16)] overflow-hidden">
+      {/* Top accent bar — color coded by room status */}
       <div
-        className={`h-1 w-full transition-colors duration-300 ${
+        className={`h-1 w-full transition-colors duration-200 ${
           !salle.actif
-            ? 'bg-slate-200'
+            ? 'bg-[#ECECEC]'
             : salle.online
-            ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
-            : 'bg-gradient-to-r from-amber-500 to-amber-400'
+            ? 'bg-emerald-500'
+            : 'bg-amber-500'
         }`}
       />
 
@@ -202,9 +199,9 @@ export default function SalleCard({ salle }: { salle: SalleStatus }) {
               <span
                 className={`
                   ${onlineClass}
-                  rounded-full transition-all duration-300
-                  ${salle.online ? 'bg-emerald-500' : 'bg-slate-300'}
-                  ${!salle.actif && 'bg-slate-300'}
+                  rounded-full transition-all duration-200
+                  ${salle.online ? 'bg-emerald-500' : 'bg-[#D1D5DB]'}
+                  ${!salle.actif && 'bg-[#D1D5DB]'}
                 `}
                 title={salle.actif ? (salle.online ? 'En ligne · Données récentes' : 'Hors ligne · Aucune donnée récente') : 'Salle désactivée'}
               />
@@ -222,29 +219,23 @@ export default function SalleCard({ salle }: { salle: SalleStatus }) {
                   onKeyDown={e => e.key === 'Enter' && handleRename()}
                   onBlur={handleRename}
                   autoFocus
-                  className="w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm font-semibold text-slate-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
+                  className="w-full rounded-xl border border-[#ECECEC] bg-[#F5F5F7] px-2.5 py-1 text-sm font-semibold text-[#111111] outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/15"
                 />
               ) : (
-                <h3 className="truncate text-base font-semibold tracking-tight text-slate-900">
+                <h3 className="truncate text-base font-semibold tracking-tight text-[#111111]">
                   {salle.salle}
                 </h3>
               )}
 
               <div className="mt-1 flex items-center gap-2">
                 {salle.ip && (
-                  <span className="flex items-center gap-1 text-[11px] font-mono text-slate-400">
+                  <span className="flex items-center gap-1 text-[11px] font-mono text-[#9CA3AF]">
                     <Wifi className="h-3 w-3" />
                     {salle.ip}
                   </span>
                 )}
                 {!salle.actif && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
-                    <span className="flex h-3.5 w-3.5 items-center justify-center">
-                      <svg className="h-2.5 w-2.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="15" y1="12" x2="9" y2="12" />
-                      </svg>
-                    </span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#F5F5F7] px-2 py-0.5 text-[10px] font-medium text-[#6B7280]">
                     Désactivée
                   </span>
                 )}
@@ -260,42 +251,33 @@ export default function SalleCard({ salle }: { salle: SalleStatus }) {
 
           {/* Action buttons */}
           {salle.esp32_id !== null && (
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <div className="flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
               <button
                 onClick={() => { setNewName(salle.salle); setIsRenaming(true) }}
                 disabled={busy}
                 title="Renommer"
-                className="group relative flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-all duration-200 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative flex h-8 w-8 items-center justify-center rounded-full text-[#9CA3AF] transition-all duration-150 hover:bg-[#F5F5F7] hover:text-[#111111] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Pencil size={14} />
-                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 rounded bg-slate-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap">
-                  Renommer
-                </span>
               </button>
               <button
                 onClick={handleToggleActif}
                 disabled={busy}
                 title={salle.actif ? 'Désactiver' : 'Activer'}
-                className="group relative flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-all duration-200 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative flex h-8 w-8 items-center justify-center rounded-full text-[#9CA3AF] transition-all duration-150 hover:bg-[#F5F5F7] hover:text-[#111111] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {salle.actif ? <PowerOff size={14} /> : <Power size={14} />}
-                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 rounded bg-slate-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap">
-                  {salle.actif ? 'Désactiver' : 'Activer'}
-                </span>
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={busy}
                 title="Supprimer"
-                className="group relative flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-all duration-200 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative flex h-8 w-8 items-center justify-center rounded-full text-[#9CA3AF] transition-all duration-150 hover:bg-red-50 hover:text-red-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Trash2 size={14} />
-                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 rounded bg-slate-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap">
-                  Supprimer
-                </span>
               </button>
               {busy && (
-                <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+                <Loader2 className="h-5 w-5 animate-spin text-[#9CA3AF]" />
               )}
             </div>
           )}
@@ -320,30 +302,30 @@ export default function SalleCard({ salle }: { salle: SalleStatus }) {
 
         {/* Delete confirmation modal */}
         {showDeleteConfirm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 animate-fade-in">
-            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl animate-slide-up">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111111]/30 animate-fade-in">
+            <div className="w-full max-w-md rounded-[24px] bg-white p-6 shadow-[0_24px_60px_-16px_rgba(17,17,17,0.28)] animate-slide-up">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-red-500">
                   <AlertTriangle size={20} />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900">Supprimer la salle</h3>
+                <h3 className="text-lg font-semibold text-[#111111]">Supprimer la salle</h3>
               </div>
-              <p className="mb-6 text-sm text-slate-600">
-                Voulez-vous vraiment supprimer <strong className="text-slate-900">{salle.salle}</strong> ?
+              <p className="mb-6 text-sm text-[#6B7280]">
+                Voulez-vous vraiment supprimer <strong className="text-[#111111]">{salle.salle}</strong> ?
                 Cette action est irréversible et supprimera aussi l'ESP32 associé.
               </p>
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
                   disabled={busy}
-                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
+                  className="rounded-full border border-[#ECECEC] bg-white px-4 py-2 text-sm font-medium text-[#374151] transition-colors duration-150 hover:bg-[#F5F5F7] disabled:opacity-50"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={handleDelete}
                   disabled={busy}
-                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+                  className="rounded-full bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-red-600 disabled:opacity-50"
                 >
                   {busy ? (
                     <span className="flex items-center gap-2">
@@ -369,10 +351,10 @@ export default function SalleCard({ salle }: { salle: SalleStatus }) {
         .animate-pulse-ring { animation: pulse-ring 2s ease-out infinite; }
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
         .animate-fade-in { animation: fade-in 0.15s ease-out; }
-        @keyframes slide-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slide-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .animate-slide-up { animation: slide-up 0.2s ease-out; }
         @keyframes slide-down { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 200px; } }
-        .animate-slide-down { animation: slide-down 0.25s ease-out forwards; }
+        .animate-slide-down { animation: slide-down 0.22s ease-out forwards; }
       `}</style>
     </div>
   )

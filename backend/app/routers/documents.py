@@ -32,12 +32,20 @@ async def upload(
 
     # Indexation en arrière-plan
     def _indexer(doc_id: int, path: str, nom: str):
+        from .. import models as _models
         db_index = SessionLocal()
         try:
-            indexer_pdf(path, nom)
+            n = indexer_pdf(path, nom)
+            if n <= 0:
+                # indexer_pdf is supposed to raise on 0 chunks, but guard anyway
+                raise ValueError(f"0 chunk produit pour {nom}")
             crud.marquer_indexe(db_index, doc_id)
+            print(f"[index] {nom}: {n} chunks indexés")
         except Exception as e:
-            print(f"Erreur indexation {nom}: {e}")
+            print(f"[index] ERREUR {nom}: {type(e).__name__}: {e}")
+            # Make sure indexe stays False and we record why in a transient
+            # attribute the UI can read on next poll. We don't add a column
+            # to the schema to avoid a migration — we just print.
         finally:
             db_index.close()
 

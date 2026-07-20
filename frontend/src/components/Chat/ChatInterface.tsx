@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import Markdown from '../ui/Markdown'
 import { deleteChatHistoryItem, getChatHistory, sendChat } from '../../services/api'
 import { ChatMessage } from '../../types'
 import {
@@ -28,6 +29,8 @@ const SUGGESTIONS = [
 
 const WELCOME_MESSAGE =
   "Je peux répondre à vos questions en m'appuyant sur les documents officiels indexés dans MedAssist AI."
+
+// Le mapping des éléments markdown est centralisé dans components/ui/Markdown.
 
 type ConversationHistoryItem = {
   id?: string
@@ -86,7 +89,7 @@ function MessageRow({
 
       <div className="flex min-w-0 max-w-[92%] flex-1 flex-col gap-2.5 sm:max-w-[85%]">
         <div className="text-[14.5px] leading-7 text-slate-800">
-          <p className="whitespace-pre-wrap break-words">{message.content}</p>
+          <Markdown source={message.content} />
         </div>
 
         {message.sources && message.sources.length > 0 && (
