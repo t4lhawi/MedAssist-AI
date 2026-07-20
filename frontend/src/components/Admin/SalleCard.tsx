@@ -1,24 +1,23 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {
-  Pencil,
-  PowerOff,
-  Power,
-  Trash2,
+  Activity,
   Check,
-  X,
   Copy,
-  Loader2,
+  Cpu,
+  MoreHorizontal,
+  Pencil,
+  Power,
+  PowerOff,
   Server,
   ServerOff,
-  AlertCircle,
-  CircleDot,
-  MoreHorizontal,
-  Activity,
+  Trash2,
+  Wifi,
   type LucideIcon,
 } from 'lucide-react'
 import type { SalleStatus } from '../../types'
-import { MONITORING_TYPES, getMonitoringType } from '../../monitoring'
+import { MONITORING_TYPES } from '../../monitoring'
 import { TextField } from '../ui/Field'
+import Modal, { ModalBody, ModalButton, ModalFooter, ModalHeader } from '../ui/Modal'
 
 interface Props {
   salle: SalleStatus
@@ -36,32 +35,28 @@ const CONNECTION_TONE: Record<
     pulse: string
     chip: string
     chipText: string
-    accent: string
     label: string
   }
 > = {
   online: {
     dot: 'bg-emerald-500',
     pulse: 'bg-emerald-400',
-    chip: 'bg-emerald-50 ring-emerald-200/70',
+    chip: 'bg-emerald-50 text-emerald-700',
     chipText: 'text-emerald-700',
-    accent: 'from-emerald-500/15 via-emerald-400/5',
     label: 'En ligne',
   },
   offline: {
     dot: 'bg-amber-500',
     pulse: 'bg-amber-400',
-    chip: 'bg-amber-50 ring-amber-200/70',
+    chip: 'bg-amber-50 text-amber-700',
     chipText: 'text-amber-700',
-    accent: 'from-amber-500/15 via-amber-400/5',
     label: 'Hors ligne',
   },
   inactive: {
-    dot: 'bg-slate-400',
-    pulse: 'bg-slate-300',
-    chip: 'bg-slate-100 ring-slate-200/70',
-    chipText: 'text-slate-600',
-    accent: 'from-slate-300/15 via-slate-200/5',
+    dot: 'bg-[#9CA3AF]',
+    pulse: 'bg-[#9CA3AF]',
+    chip: 'bg-[#F5F5F7] text-[#6B7280]',
+    chipText: 'text-[#6B7280]',
     label: 'Inactive',
   },
 }
@@ -71,100 +66,311 @@ function getConnectionState(salle: SalleStatus): ConnectionState {
   return salle.online ? 'online' : 'offline'
 }
 
+/* ─────────────────────────────────────────────────────────────
+ *  Sensor tile — soft mini widget used in the room card grid
+ * ───────────────────────────────────────────────────────────── */
+
+function SensorTile({
+  type,
+  title,
+  unit,
+  icon: Icon,
+  state,
+  last_value,
+  last_unite,
+  last_seen_label,
+}: {
+  type: string
+  title: string
+  unit: string
+  icon: LucideIcon
+  state: 'active' | 'offline' | 'not_installed'
+  last_value: number | null
+  last_unite: string | null
+  last_seen_label: string | null
+}) {
+  const isActive = state === 'active'
+  const isOffline = state === 'offline'
+
+  return (
+    <div
+      data-sensor={type}
+      className={`group/sensor relative overflow-hidden rounded-2xl border p-3.5 transition-all duration-200 ${
+        isActive
+          ? 'border-[#ECECEC] bg-white hover:border-[#DCDCDC] hover:shadow-[0_4px_14px_-6px_rgba(15,23,42,0.08)]'
+          : isOffline
+          ? 'border-amber-200/70 bg-amber-50/30'
+          : 'border-dashed border-[#E5E5E5] bg-[#FAFAFA]'
+      }`}
+    >
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span
+            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl transition-colors ${
+              isActive
+                ? 'bg-[#EFF4FF] text-[#3B82F6]'
+                : isOffline
+                ? 'bg-amber-100 text-amber-700'
+                : 'bg-[#F5F5F7] text-[#9CA3AF]'
+            }`}
+          >
+            <Icon size={13} strokeWidth={2.2} />
+          </span>
+          <p className="truncate text-[11.5px] font-medium text-[#6B7280]">{title}</p>
+        </div>
+        {isActive && (
+          <span className="relative flex h-1.5 w-1.5 shrink-0" aria-label="Capteur actif">
+            <span className="absolute inset-0 animate-ping rounded-full bg-[#3B82F6] opacity-60" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#3B82F6]" />
+          </span>
+        )}
+      </div>
+
+      {state === 'not_installed' ? (
+        <p className="text-[13px] font-medium text-[#9CA3AF]">Non installé</p>
+      ) : (
+        <>
+          <p
+            className={`text-[18px] font-semibold leading-none tracking-[-0.01em] ${
+              isActive ? 'text-[#111111]' : 'text-[#6B7280]'
+            }`}
+          >
+            {last_value !== null && last_value !== undefined
+              ? Number(last_value).toFixed(last_value % 1 === 0 ? 0 : 1)
+              : '—'}
+            <span className="ml-1 text-[11px] font-medium text-[#9CA3AF]">
+              {last_unite || unit}
+            </span>
+          </p>
+          <p
+            className={`mt-1.5 flex items-center gap-1 truncate text-[10.5px] font-medium ${
+              isActive ? 'text-emerald-600' : 'text-amber-600'
+            }`}
+          >
+            <Activity size={9} strokeWidth={2.6} />
+            {last_seen_label || (isOffline ? 'Hors ligne' : '—')}
+          </p>
+        </>
+      )}
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────
+ *  Action menu — premium dropdown
+ * ───────────────────────────────────────────────────────────── */
+
+function ActionMenu({
+  salle,
+  onRename,
+  onDelete,
+  onToggleActif,
+  busy,
+}: {
+  salle: SalleStatus
+  onRename: () => void
+  onDelete: () => void
+  onToggleActif: () => void
+  busy?: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Actions"
+        className={`flex h-9 w-9 items-center justify-center rounded-xl text-[#6B7280] transition-all duration-200 hover:bg-[#F5F5F7] hover:text-[#111111] active:scale-95 ${
+          open ? 'bg-[#F5F5F7] text-[#111111]' : ''
+        }`}
+      >
+        <MoreHorizontal size={16} strokeWidth={2.2} />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 top-11 z-20 w-52 origin-top-right overflow-hidden rounded-2xl border border-[#ECECEC] bg-white/95 p-1.5 shadow-[0_18px_40px_-12px_rgba(15,23,42,0.18),0_4px_8px_-2px_rgba(15,23,42,0.04)] backdrop-blur-xl"
+          style={{ animation: 'menuIn 180ms cubic-bezier(0.25, 0.1, 0.25, 1) both' }}
+        >
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false)
+              onRename()
+            }}
+            className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-[#111111] transition-colors duration-150 hover:bg-[#F5F5F7]"
+          >
+            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#F5F5F7] text-[#6B7280]">
+              <Pencil size={12} strokeWidth={2.2} />
+            </span>
+            Renommer
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false)
+              onToggleActif()
+            }}
+            disabled={busy}
+            className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-[#111111] transition-colors duration-150 hover:bg-[#F5F5F7] disabled:opacity-50"
+          >
+            <span
+              className={`flex h-6 w-6 items-center justify-center rounded-md ${
+                salle.actif
+                  ? 'bg-amber-50 text-amber-600'
+                  : 'bg-emerald-50 text-emerald-600'
+              }`}
+            >
+              {salle.actif ? (
+                <PowerOff size={12} strokeWidth={2.2} />
+              ) : (
+                <Power size={12} strokeWidth={2.2} />
+              )}
+            </span>
+            {salle.actif ? 'Désactiver' : 'Activer'}
+          </button>
+          <div className="my-1 h-px bg-[#F0F0F0]" />
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false)
+              onDelete()
+            }}
+            className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-red-600 transition-colors duration-150 hover:bg-red-50"
+          >
+            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-red-50 text-red-600">
+              <Trash2 size={12} strokeWidth={2.2} />
+            </span>
+            Supprimer
+          </button>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes menuIn {
+          from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
+    </div>
+  )
+}
+
 export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
   const sensorByType = Object.fromEntries(salle.sensors.map(s => [s.type, s]))
 
-  const [editingName, setEditingName] = useState(false)
+  const [renaming, setRenaming] = useState(false)
   const [nameDraft, setNameDraft] = useState(salle.salle)
   const [renameError, setRenameError] = useState('')
-  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [renameBusy, setRenameBusy] = useState(false)
+
+  const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
-  const [actionBusy, setActionBusy] = useState(false)
+  const [deleteBusy, setDeleteBusy] = useState(false)
+
   const [copied, setCopied] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
-  const nameInputRef = useRef<HTMLInputElement>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
+  const [toastActif, setToastActif] = useState<null | 'on' | 'off'>(null)
 
-  useEffect(() => {
-    if (editingName) {
-      nameInputRef.current?.focus()
-      nameInputRef.current?.select()
-    }
-  }, [editingName])
+  const state = getConnectionState(salle)
+  const tone = CONNECTION_TONE[state]
+  const StateIcon: LucideIcon = state === 'online' ? Server : ServerOff
+  const activeSensors = salle.sensors.filter(x => x.state === 'active').length
+  const totalSensors = salle.sensors.length
+  const isLive = state === 'online'
+  const canEdit = salle.esp32_id !== null
 
-  // Close overflow menu on outside click
-  useEffect(() => {
-    if (!menuOpen) return
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [menuOpen])
-
-  const startRename = () => {
+  /* ── Rename handlers ─────────────────────────────────────── */
+  const openRename = () => {
     setNameDraft(salle.salle)
     setRenameError('')
-    setConfirmingDelete(false)
-    setMenuOpen(false)
-    setEditingName(true)
+    setRenaming(true)
   }
-
   const cancelRename = () => {
-    setEditingName(false)
+    if (renameBusy) return
+    setRenaming(false)
     setRenameError('')
   }
-
-  const saveRename = async () => {
+  const saveRename = async (e?: React.FormEvent) => {
+    e?.preventDefault()
     const next = nameDraft.trim()
     if (!next || next === salle.salle) {
-      setEditingName(false)
+      setRenaming(false)
       return
     }
-    setActionBusy(true)
+    setRenameBusy(true)
     setRenameError('')
     try {
       await onUpdate(salle.esp32_id!, { salle: next })
-      setEditingName(false)
+      setRenaming(false)
     } catch (err: any) {
       const detail = err?.response?.data?.detail
       setRenameError(typeof detail === 'string' ? detail : 'Renommage impossible.')
     } finally {
-      setActionBusy(false)
+      setRenameBusy(false)
     }
   }
 
-  const handleNameKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') { e.preventDefault(); saveRename() }
-    if (e.key === 'Escape') { e.preventDefault(); cancelRename() }
-  }
-
-  const handleToggleActif = async () => {
-    setMenuOpen(false)
-    await onUpdate(salle.esp32_id!, { actif: !salle.actif })
-  }
-
-  const startDelete = () => {
-    setEditingName(false)
-    setMenuOpen(false)
+  /* ── Delete handlers ─────────────────────────────────────── */
+  const openDelete = () => {
     setDeleteError('')
-    setConfirmingDelete(true)
+    setDeleting(true)
   }
-
+  const cancelDelete = () => {
+    if (deleteBusy) return
+    setDeleting(false)
+    setDeleteError('')
+  }
   const confirmDelete = async () => {
-    setActionBusy(true)
+    setDeleteBusy(true)
     setDeleteError('')
     try {
       await onDelete(salle.esp32_id!)
+      // Modal closes on success because the card unmounts
     } catch (err: any) {
       const detail = err?.response?.data?.detail
       setDeleteError(typeof detail === 'string' ? detail : 'Suppression impossible.')
-      setActionBusy(false)
+      setDeleteBusy(false)
     }
   }
 
+  /* ── Toggle actif with optimistic feedback ──────────────── */
+  const handleToggleActif = async () => {
+    if (!canEdit) return
+    setToastActif(salle.actif ? 'off' : 'on')
+    try {
+      await onUpdate(salle.esp32_id!, { actif: !salle.actif })
+    } finally {
+      setTimeout(() => setToastActif(null), 1500)
+    }
+  }
+
+  /* ── Copy IP ─────────────────────────────────────────────── */
   const copyIp = async () => {
     if (!salle.ip) return
     try {
@@ -176,324 +382,278 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
     }
   }
 
-  const state = getConnectionState(salle)
-  const tone = CONNECTION_TONE[state]
-  const StateIcon: LucideIcon = state === 'online' ? Server : state === 'offline' ? ServerOff : ServerOff
-  const activeSensors = salle.sensors.filter(x => x.state === 'active').length
-  const totalSensors = salle.sensors.length
-  const isLive = state === 'online'
-  const canEdit = salle.esp32_id !== null
+  /* Connection quality derived from activeSensors ratio ───── */
+  const quality: 'good' | 'fair' | 'poor' =
+    totalSensors === 0
+      ? 'fair'
+      : activeSensors === totalSensors
+      ? 'good'
+      : activeSensors > 0
+      ? 'fair'
+      : 'poor'
+
+  const qualityTone =
+    quality === 'good'
+      ? 'text-emerald-600'
+      : quality === 'fair'
+      ? 'text-amber-600'
+      : 'text-[#6B7280]'
 
   return (
-    <div
-      className={`group/card relative overflow-hidden rounded-2xl border bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-12px_rgba(15,23,42,0.15)] ${
-        state === 'inactive' ? 'border-slate-200 opacity-75' : 'border-slate-200'
-      }`}
-    >
-      {/* Decorative gradient strip — only when live */}
-      {isLive && (
-        <div
-          aria-hidden="true"
-          className={`pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b ${tone.accent} to-transparent`}
-        />
-      )}
-
-      {/* ── Header ──────────────────────────────────────────── */}
-      <header className="relative flex items-start justify-between gap-3 px-4 pt-4">
-        <div className="flex min-w-0 items-start gap-3">
-          {/* Status icon — square with live pulse */}
-          <div className="relative shrink-0">
-            <div
-              className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-                state === 'online'
-                  ? 'bg-emerald-500 text-white shadow-[0_4px_10px_-2px_rgba(16,185,129,0.45)]'
-                  : state === 'offline'
-                  ? 'bg-amber-500 text-white shadow-[0_4px_10px_-2px_rgba(245,158,11,0.45)]'
-                  : 'bg-slate-200 text-slate-500'
-              }`}
-            >
-              <StateIcon size={18} strokeWidth={2.2} />
-            </div>
-            {isLive && (
-              <span className="pointer-events-none absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
-                <span className={`absolute inset-0 animate-ping rounded-full ${tone.pulse} opacity-75`} />
-                <span className={`relative inline-flex h-3 w-3 rounded-full ${tone.dot} ring-2 ring-white`} />
-              </span>
-            )}
-          </div>
-
-          <div className="min-w-0 flex-1">
-            {/* Status chip + inactive tag */}
-            <div className="mb-1 flex flex-wrap items-center gap-1.5">
-              <span
-                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold ring-1 ${tone.chip} ${tone.chipText}`}
+    <>
+      <article
+        className={`group/card relative flex flex-col overflow-hidden rounded-3xl border bg-white shadow-[0_1px_2px_rgba(17,17,17,0.04),0_8px_24px_-12px_rgba(17,17,17,0.10)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(17,17,17,0.04),0_18px_40px_-12px_rgba(17,17,17,0.18)] ${
+          state === 'inactive' ? 'border-[#E5E5E5] opacity-80' : 'border-[#ECECEC]'
+        }`}
+      >
+        {/* ── Status header ─────────────────────────────────── */}
+        <header className="flex items-start justify-between gap-3 px-6 pt-6">
+          <div className="flex min-w-0 flex-1 items-start gap-3">
+            {/* Status icon */}
+            <div className="relative shrink-0">
+              <div
+                className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
+                  state === 'online'
+                    ? 'bg-emerald-50 text-emerald-600'
+                    : state === 'offline'
+                    ? 'bg-amber-50 text-amber-600'
+                    : 'bg-[#F5F5F7] text-[#6B7280]'
+                }`}
               >
-                <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
-                {tone.label}
-              </span>
-              {state === 'offline' && salle.actif && (
-                <span className="text-[10.5px] text-amber-600/80">— activité &gt; 5 min</span>
+                <StateIcon size={20} strokeWidth={2} />
+              </div>
+              {isLive && (
+                <span className="pointer-events-none absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
+                  <span className={`absolute inset-0 animate-ping rounded-full ${tone.pulse} opacity-75`} />
+                  <span className={`relative inline-flex h-3 w-3 rounded-full ${tone.dot} ring-2 ring-white`} />
+                </span>
               )}
             </div>
 
-            {editingName ? (
-              <div className="flex items-center gap-1">
-                <div className="min-w-0 flex-1">
-                  <TextField
-                    ref={nameInputRef}
-                    value={nameDraft}
-                    onChange={e => setNameDraft(e.target.value)}
-                    onKeyDown={handleNameKeyDown}
-                    disabled={actionBusy}
-                    fieldSize="sm"
-                    error={renameError || null}
-                    inputClassName="text-[15px] font-semibold tracking-[-0.01em]"
-                    containerClassName="!mb-0"
-                  />
-                </div>
-                <button
-                  onClick={saveRename}
-                  disabled={actionBusy}
-                  title="Enregistrer"
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-white shadow-sm transition hover:bg-emerald-600 active:scale-95 disabled:opacity-50"
-                >
-                  {actionBusy ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} strokeWidth={2.4} />}
-                </button>
-                <button
-                  onClick={cancelRename}
-                  disabled={actionBusy}
-                  title="Annuler"
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 active:scale-95 disabled:opacity-50"
-                >
-                  <X size={13} strokeWidth={2.4} />
-                </button>
-              </div>
-            ) : (
-              <h3 className="truncate text-[15px] font-semibold tracking-[-0.01em] text-slate-900">
-                {salle.salle}
-              </h3>
-            )}
-
-            {salle.ip && !editingName && (
-              <button
-                onClick={copyIp}
-                title="Copier l'adresse IP"
-                className="mt-1 group/ip inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 font-mono text-[11.5px] text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-              >
-                <CircleDot size={9} strokeWidth={3} className="text-slate-300 group-hover/ip:text-blue-400" />
-                {salle.ip}
+            <div className="min-w-0 flex-1 pt-0.5">
+              {/* Status chip */}
+              <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
                 <span
-                  className={`transition-all duration-200 ${
-                    copied ? 'text-emerald-500' : 'text-slate-300 group-hover/ip:text-slate-500'
-                  }`}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10.5px] font-semibold ${tone.chip}`}
                 >
-                  {copied ? <Check size={11} strokeWidth={2.6} /> : <Copy size={11} />}
+                  <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
+                  {tone.label}
                 </span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Overflow menu trigger — visible on hover */}
-        {canEdit && !editingName && !confirmingDelete && (
-          <div ref={menuRef} className="relative shrink-0">
-            <button
-              onClick={() => setMenuOpen(o => !o)}
-              title="Actions"
-              className={`flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-all duration-200 hover:bg-slate-100 hover:text-slate-700 active:scale-95 ${
-                menuOpen ? 'bg-slate-100 text-slate-700' : 'opacity-0 group-hover/card:opacity-100'
-              }`}
-            >
-              <MoreHorizontal size={15} strokeWidth={2.4} />
-            </button>
-            {menuOpen && (
-              <div className="absolute right-0 top-9 z-20 w-44 origin-top-right overflow-hidden rounded-xl border border-slate-200 bg-white/95 p-1 shadow-[0_18px_40px_-12px_rgba(15,23,42,0.2),0_4px_8px_-2px_rgba(15,23,42,0.06)] backdrop-blur-xl animate-field-in">
-                <button
-                  onClick={startRename}
-                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-slate-700 transition-colors hover:bg-slate-100"
-                >
-                  <Pencil size={12} strokeWidth={2.4} className="text-slate-500" />
-                  Renommer
-                </button>
-                <button
-                  onClick={handleToggleActif}
-                  disabled={busy}
-                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-50"
-                >
-                  {salle.actif ? (
-                    <>
-                      <PowerOff size={12} strokeWidth={2.4} className="text-slate-500" />
-                      Désactiver
-                    </>
-                  ) : (
-                    <>
-                      <Power size={12} strokeWidth={2.4} className="text-emerald-600" />
-                      Activer
-                    </>
-                  )}
-                </button>
-                <div className="my-1 h-px bg-slate-100" />
-                <button
-                  onClick={startDelete}
-                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-red-600 transition-colors hover:bg-red-50"
-                >
-                  <Trash2 size={12} strokeWidth={2.4} />
-                  Supprimer
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </header>
-
-      {/* ── Inline delete confirmation ──────────────────────── */}
-      {confirmingDelete && (
-        <div className="relative mx-4 mt-3 overflow-hidden rounded-xl border border-red-200 bg-gradient-to-br from-red-50 to-rose-50/50 p-3 animate-field-in">
-          <div className="flex items-start gap-2">
-            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-red-100 text-red-600">
-              <AlertCircle size={13} strokeWidth={2.4} />
-            </span>
-            <p className="text-[12.5px] leading-relaxed text-red-800">
-              Supprimer <strong>« {salle.salle} »</strong>
-              {salle.ip && <> ({salle.ip})</>} ? Les mesures historiques resteront
-              accessibles et pourront être réclamées à nouveau.
-            </p>
-          </div>
-          {deleteError && <p className="mt-2 text-[12px] font-medium text-red-700">{deleteError}</p>}
-          <div className="mt-3 flex justify-end gap-2">
-            <button
-              onClick={() => setConfirmingDelete(false)}
-              disabled={actionBusy}
-              className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[12.5px] font-medium text-slate-600 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 active:scale-95 disabled:opacity-60"
-            >
-              Annuler
-            </button>
-            <button
-              onClick={confirmDelete}
-              disabled={actionBusy}
-              className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1.5 text-[12.5px] font-medium text-white shadow-sm transition-all duration-200 hover:bg-red-700 active:scale-95 disabled:opacity-60"
-            >
-              {actionBusy && <Loader2 size={12} className="animate-spin" />}
-              Supprimer définitivement
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Sensor tiles ────────────────────────────────────── */}
-      <div className="relative grid grid-cols-2 gap-2 px-4 py-4">
-        {MONITORING_TYPES.map((mt, idx) => {
-          const s = sensorByType[mt.type]
-          const sensorState = s?.state || 'not_installed'
-          const isActive = sensorState === 'active'
-          const isOffline = sensorState === 'offline'
-          const Icon = mt.icon
-
-          return (
-            <div
-              key={mt.type}
-              className={`relative overflow-hidden rounded-xl border p-2.5 transition-all duration-200 ${
-                isActive
-                  ? 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-[0_2px_8px_-2px_rgba(15,23,42,0.08)]'
-                  : isOffline
-                  ? 'border-amber-200/70 bg-amber-50/30'
-                  : 'border-slate-200 border-dashed bg-slate-50/40'
-              }`}
-              style={{
-                animation: 'tileIn 380ms cubic-bezier(0.16, 1, 0.3, 1) both',
-                animationDelay: `${idx * 50}ms`,
-              }}
-            >
-              {/* Top row: icon + label + status dot */}
-              <div className="mb-1.5 flex items-center justify-between gap-1.5">
-                <div className="flex min-w-0 items-center gap-1.5">
-                  <span
-                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${
-                      isActive
-                        ? 'bg-blue-50 text-blue-600'
-                        : isOffline
-                        ? 'bg-amber-100 text-amber-700'
-                        : 'bg-slate-100 text-slate-400'
-                    }`}
-                  >
-                    <Icon size={11} strokeWidth={2.4} />
-                  </span>
-                  <p className="truncate text-[11px] font-medium text-slate-500">{mt.title}</p>
-                </div>
-                {isActive && (
-                  <span className="relative flex h-1.5 w-1.5 shrink-0">
-                    <span className="absolute inset-0 animate-ping rounded-full bg-blue-400 opacity-60" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-blue-500" />
+                {state === 'offline' && salle.actif && (
+                  <span className="text-[10.5px] text-amber-600/80">— activité &gt; 5 min</span>
+                )}
+                {canEdit && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#F5F5F7] px-2 py-0.5 text-[10px] font-medium text-[#6B7280]">
+                    <Cpu size={9} strokeWidth={2.4} />
+                    ESP32
                   </span>
                 )}
               </div>
 
-              {/* Value or "not installed" */}
-              {sensorState === 'not_installed' ? (
-                <p className="text-[12.5px] font-medium text-slate-400">Non installé</p>
-              ) : (
-                <>
-                  <p
-                    className={`text-[15px] font-semibold leading-none tracking-tight ${
-                      isActive ? 'text-slate-900' : 'text-slate-500'
+              <h3 className="truncate text-[17px] font-semibold tracking-[-0.01em] text-[#111111]">
+                {salle.salle}
+              </h3>
+
+              {salle.ip && (
+                <button
+                  type="button"
+                  onClick={copyIp}
+                  title="Copier l'adresse IP"
+                  className="mt-1 group/ip inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 font-mono text-[11.5px] text-[#6B7280] transition-colors hover:bg-[#F5F5F7] hover:text-[#111111]"
+                >
+                  <Wifi size={9} strokeWidth={2.6} className="text-[#9CA3AF] group-hover/ip:text-[#3B82F6]" />
+                  {salle.ip}
+                  <span
+                    className={`transition-all duration-200 ${
+                      copied ? 'text-emerald-500' : 'text-[#9CA3AF] group-hover/ip:text-[#6B7280]'
                     }`}
                   >
-                    {s?.last_value !== null && s?.last_value !== undefined
-                      ? Number(s.last_value).toFixed(s.last_value % 1 === 0 ? 0 : 1)
-                      : '—'}
-                    <span className="ml-0.5 text-[10.5px] font-medium text-slate-400">
-                      {s?.last_unite || mt.unit}
-                    </span>
-                  </p>
-                  <p
-                    className={`mt-1 flex items-center gap-1 truncate text-[10px] font-medium ${
-                      isActive ? 'text-emerald-600' : 'text-amber-600'
-                    }`}
-                  >
-                    <Activity size={9} strokeWidth={2.4} />
-                    {s?.last_seen_label || (isOffline ? 'Hors ligne' : '—')}
-                  </p>
-                </>
+                    {copied ? <Check size={11} strokeWidth={2.6} /> : <Copy size={11} />}
+                  </span>
+                </button>
               )}
             </div>
-          )
-        })}
-      </div>
+          </div>
 
-      {/* ── Footer ──────────────────────────────────────────── */}
-      <footer className="relative flex items-center justify-between border-t border-slate-100 bg-slate-50/40 px-4 py-2.5">
-        <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-          <span
-            className={`flex h-4 w-4 items-center justify-center rounded-full ${
-              activeSensors === totalSensors && totalSensors > 0
-                ? 'bg-emerald-100 text-emerald-600'
-                : activeSensors > 0
-                ? 'bg-amber-100 text-amber-600'
-                : 'bg-slate-100 text-slate-400'
-            }`}
+          {canEdit && (
+            <ActionMenu
+              salle={salle}
+              onRename={openRename}
+              onDelete={openDelete}
+              onToggleActif={handleToggleActif}
+              busy={busy}
+            />
+          )}
+        </header>
+
+        {/* Inline toggle toast (transient feedback) */}
+        {toastActif && (
+          <div
+            role="status"
+            className="mx-6 mt-3 flex items-center gap-2 rounded-xl border border-[#ECECEC] bg-[#FAFAFA] px-3 py-1.5 text-[11.5px] font-medium text-[#374151]"
+            style={{ animation: 'fieldIn 200ms ease-out both' }}
           >
-            <Activity size={9} strokeWidth={2.6} />
-          </span>
-          <span className="font-medium tabular-nums">
-            {activeSensors}
-            <span className="text-slate-300">/{totalSensors}</span>
-          </span>
-          <span className="text-slate-400">capteurs actifs</span>
+            {toastActif === 'on' ? (
+              <>
+                <Power size={11} strokeWidth={2.4} className="text-emerald-600" />
+                Salle activée
+              </>
+            ) : (
+              <>
+                <PowerOff size={11} strokeWidth={2.4} className="text-amber-600" />
+                Salle désactivée
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── Sensor tiles ──────────────────────────────────── */}
+        <div className="grid grid-cols-2 gap-2.5 px-6 py-5">
+          {MONITORING_TYPES.map(mt => {
+            const s = sensorByType[mt.type]
+            return (
+              <SensorTile
+                key={mt.type}
+                type={mt.type}
+                title={mt.title}
+                unit={mt.unit}
+                icon={mt.icon}
+                state={(s?.state as 'active' | 'offline' | 'not_installed') || 'not_installed'}
+                last_value={s?.last_value ?? null}
+                last_unite={s?.last_unite ?? null}
+                last_seen_label={s?.last_seen_label ?? null}
+              />
+            )
+          })}
         </div>
 
-        <span className="text-[10.5px] text-slate-400">
-          {salle.derniere_mesure_le
-            ? `MAJ ${new Date(salle.derniere_mesure_le).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
-            : '— aucune mesure —'}
-        </span>
-      </footer>
+        {/* ── Footer ────────────────────────────────────────── */}
+        <footer className="mt-auto flex items-center justify-between gap-3 border-t border-[#F0F0F0] bg-[#FAFAFA] px-6 py-3.5">
+          <div className="flex items-center gap-1.5 text-[11.5px] text-[#6B7280]">
+            <span
+              className={`flex h-5 w-5 items-center justify-center rounded-full ${
+                activeSensors === totalSensors && totalSensors > 0
+                  ? 'bg-emerald-100 text-emerald-600'
+                  : activeSensors > 0
+                  ? 'bg-amber-100 text-amber-600'
+                  : 'bg-[#F5F5F7] text-[#9CA3AF]'
+              }`}
+            >
+              <Activity size={10} strokeWidth={2.6} />
+            </span>
+            <span className="font-medium tabular-nums text-[#374151]">
+              {activeSensors}
+              <span className="text-[#9CA3AF]">/{totalSensors}</span>
+            </span>
+            <span>capteurs actifs</span>
+          </div>
 
-      <style>{`
-        @keyframes tileIn {
-          from { opacity: 0; transform: translateY(6px) scale(0.98); }
-          to   { opacity: 1; transform: translateY(0) scale(1); }
-        }
-      `}</style>
-    </div>
+          <div className="flex items-center gap-3 text-[11.5px]">
+            <span className={`font-medium ${qualityTone}`}>
+              {quality === 'good' ? 'Excellente' : quality === 'fair' ? 'Moyenne' : 'Faible'}
+            </span>
+            <span className="text-[#D1D5DB]">·</span>
+            <span className="text-[#6B7280]">
+              {salle.derniere_mesure_le
+                ? `MAJ ${new Date(salle.derniere_mesure_le).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+                : 'Aucune mesure'}
+            </span>
+          </div>
+        </footer>
+      </article>
+
+      {/* ── Rename modal ────────────────────────────────────── */}
+      <Modal
+        open={renaming}
+        onClose={cancelRename}
+        size="sm"
+        dismissDisabled={renameBusy}
+        ariaLabel="Renommer la salle"
+      >
+        <form onSubmit={saveRename} className="flex flex-col">
+          <ModalHeader
+            icon={<Pencil size={16} strokeWidth={2.2} />}
+            iconTone="blue"
+            title="Renommer la salle"
+            subtitle="Donnez un nouveau nom à cette salle."
+            onClose={cancelRename}
+            closeDisabled={renameBusy}
+          />
+          <ModalBody>
+            <TextField
+              label="Nouveau nom"
+              value={nameDraft}
+              onChange={e => setNameDraft(e.target.value)}
+              placeholder="Ex. Salle 101"
+              maxLength={100}
+              required
+              autoFocus
+              error={renameError || null}
+              containerClassName="!mb-0"
+            />
+          </ModalBody>
+          <ModalFooter>
+            <ModalButton variant="secondary" onClick={cancelRename} disabled={renameBusy}>
+              Annuler
+            </ModalButton>
+            <ModalButton variant="primary" type="submit" loading={renameBusy} disabled={!nameDraft.trim()}>
+              Enregistrer
+            </ModalButton>
+          </ModalFooter>
+        </form>
+      </Modal>
+
+      {/* ── Delete confirmation modal ───────────────────────── */}
+      <Modal
+        open={deleting}
+        onClose={cancelDelete}
+        size="sm"
+        dismissDisabled={deleteBusy}
+        ariaLabel="Supprimer la salle"
+      >
+        <div className="flex flex-col">
+          <ModalHeader
+            icon={<Trash2 size={16} strokeWidth={2.2} />}
+            iconTone="red"
+            title="Supprimer la salle"
+            subtitle="Cette action est irréversible."
+            onClose={cancelDelete}
+            closeDisabled={deleteBusy}
+          />
+          <ModalBody>
+            <div className="rounded-2xl border border-[#ECECEC] bg-[#FAFAFA] p-4">
+              <p className="text-[13px] leading-relaxed text-[#374151]">
+                Vous allez supprimer définitivement{' '}
+                <strong className="font-semibold text-[#111111]">« {salle.salle} »</strong>
+                {salle.ip && (
+                  <>
+                    {' '}
+                    (<span className="font-mono text-[12.5px]">{salle.ip}</span>)
+                  </>
+                )}
+                . Les mesures historiques resteront accessibles et pourront être
+                réclamées à nouveau.
+              </p>
+            </div>
+            {deleteError && (
+              <div
+                role="alert"
+                className="mt-3 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-[12.5px] font-medium text-red-600"
+              >
+                {deleteError}
+              </div>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <ModalButton variant="secondary" onClick={cancelDelete} disabled={deleteBusy}>
+              Annuler
+            </ModalButton>
+            <ModalButton variant="danger" onClick={confirmDelete} loading={deleteBusy}>
+              {deleteBusy ? 'Suppression…' : 'Supprimer'}
+            </ModalButton>
+          </ModalFooter>
+        </div>
+      </Modal>
+    </>
   )
 }

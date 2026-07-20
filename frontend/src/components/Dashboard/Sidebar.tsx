@@ -24,7 +24,7 @@ interface NavItem {
 function navItems(role: string | undefined, alertCount: number): NavItem[] {
   return [
     { to: '/', icon: LayoutDashboard, label: 'Tableau de bord', short: 'Accueil' },
-    { to: '/admin/salles', icon: Settings2, label: 'Salles & ESP32', short: 'Salles', adminOnly: true },
+    { to: '/admin/salles', icon: Settings2, label: 'Gestion des salles', short: 'Salles', adminOnly: true },
     { to: '/alertes', icon: Bell, label: 'Alertes', short: 'Alertes', badge: alertCount },
     { to: '/documents', icon: FileText, label: 'Documents', short: 'Docs' },
     { to: '/assistant', icon: MessageCircle, label: 'Assistant IA', short: 'Assistant' },

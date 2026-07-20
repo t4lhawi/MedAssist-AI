@@ -1,5 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Loader2, RefreshCw, Search } from 'lucide-react'
+import {
+  AlertTriangle,
+  Loader2,
+  PowerOff,
+  Radio,
+  RefreshCw,
+  Search,
+  Server,
+} from 'lucide-react'
 import {
   getSallesStatus,
   getUnregisteredSources,
@@ -11,7 +19,7 @@ import type { SalleStatus, UnregisteredSource, LiveMesureEventData } from '../ty
 import SalleCard from '../components/Admin/SalleCard'
 import UnregisteredList from '../components/Admin/UnregisteredList'
 import Esp32Form from '../components/Admin/Esp32Form'
-import PageHeader from '../components/ui/PageHeader'
+import StatCard from '../components/ui/StatCard'
 
 type Filter = 'all' | 'online' | 'offline' | 'inactive'
 
@@ -146,112 +154,258 @@ export default function AdminSallesPage() {
   }, [salles])
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4 p-3 md:p-5">
-      <PageHeader
-        category="Infrastructure"
-        title="Salles & ESP32"
-        subtitle={`${salles.length} salle(s) enregistrée(s) · ${unregistered.length} IP non reconnue(s)`}
-        liveCount={{
-          value: `${counts.online}/${salles.length}`,
-          label: 'en ligne',
-          tone: counts.online > 0 ? 'good' : counts.offline > 0 ? 'warning' : 'neutral',
-        }}
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative">
-              <Search
-                size={13}
-                strokeWidth={2.2}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
-                style={{ color: '#9CA3AF' }}
+    <div className="mx-auto max-w-7xl space-y-6 p-3 md:p-6 lg:p-8">
+      {/* ── Page header ──────────────────────────────────────── */}
+      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="min-w-0">
+          <p
+            className="text-[11.5px] font-semibold uppercase tracking-[0.12em]"
+            style={{ color: '#3B82F6' }}
+          >
+            Infrastructure
+          </p>
+          <h1
+            className="mt-1 text-[32px] font-semibold tracking-[-0.02em] text-[#111111]"
+            style={{ fontFeatureSettings: '"ss01"' }}
+          >
+            Gestion des salles
+          </h1>
+          <p className="mt-1.5 text-[13.5px] text-[#6B7280]">
+            <span className="font-medium text-[#374151]">
+              {salles.length} salle{salles.length > 1 ? 's' : ''} enregistrée{salles.length > 1 ? 's' : ''}
+            </span>
+            <span className="mx-1.5 text-[#D1D5DB]">·</span>
+            <span className="font-medium text-[#374151]">
+              {counts.online} connectée{counts.online > 1 ? 's' : ''}
+            </span>
+            <span className="mx-1.5 text-[#D1D5DB]">·</span>
+            <span
+              className={`font-medium ${
+                unregistered.length > 0 ? 'text-amber-600' : 'text-[#374151]'
+              }`}
+            >
+              {unregistered.length} appareil{unregistered.length > 1 ? 's' : ''} inconnu
+              {unregistered.length > 1 ? 's' : ''}
+            </span>
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Live indicator */}
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium ${
+              counts.online > 0
+                ? 'bg-emerald-50 text-emerald-700'
+                : counts.offline > 0
+                ? 'bg-amber-50 text-amber-700'
+                : 'bg-[#F5F5F7] text-[#6B7280]'
+            }`}
+          >
+            <span
+              className={`relative flex h-2 w-2 ${
+                counts.online > 0 ? '' : ''
+              }`}
+            >
+              {counts.online > 0 && (
+                <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-70" />
+              )}
+              <span
+                className={`relative inline-flex h-2 w-2 rounded-full ${
+                  counts.online > 0
+                    ? 'bg-emerald-500'
+                    : counts.offline > 0
+                    ? 'bg-amber-500'
+                    : 'bg-[#9CA3AF]'
+                }`}
               />
-              <input
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="Filtrer par nom ou IP…"
-                className="w-56 rounded-full border border-transparent py-1.5 pl-8 pr-3 text-[12.5px] transition-colors outline-none placeholder:text-[#9CA3AF]"
-                style={{ background: '#F5F5F7', color: '#111111' }}
-                onFocus={(e) => {
-                  e.target.style.background = '#FFFFFF'
-                  e.target.style.borderColor = 'rgba(59, 130, 246, 0.3)'
-                  e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.08)'
-                }}
-                onBlur={(e) => {
-                  e.target.style.background = '#F5F5F7'
-                  e.target.style.borderColor = 'transparent'
-                  e.target.style.boxShadow = 'none'
-                }}
-              />
-            </div>
-            <div className="inline-flex rounded-full p-1" style={{ background: '#F5F5F7' }}>
-              {(Object.keys(FILTER_LABELS) as Filter[]).map(f => (
+            </span>
+            <span className="tabular-nums">
+              {counts.online}
+              <span className="opacity-60">/{salles.length}</span>
+            </span>
+            <span>en direct</span>
+          </span>
+
+          <button
+            type="button"
+            onClick={load}
+            disabled={loading}
+            aria-label="Rafraîchir"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#ECECEC] bg-white px-3.5 py-1.5 text-[12.5px] font-medium text-[#374151] shadow-[0_1px_2px_rgba(17,17,17,0.04)] transition-all duration-200 hover:-translate-y-px hover:bg-[#FAFAFA] active:scale-[0.97] disabled:opacity-60"
+          >
+            <RefreshCw size={12} strokeWidth={2.4} className={loading ? 'animate-spin' : ''} />
+            Rafraîchir
+          </button>
+        </div>
+      </header>
+
+      {/* ── Quick statistics ──────────────────────────────────── */}
+      <section
+        aria-label="Statistiques rapides"
+        className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+      >
+        <StatCard
+          label="Salles connectées"
+          value={counts.online}
+          hint={`/ ${salles.length}`}
+          icon={<Radio size={14} strokeWidth={2.2} />}
+          tone="emerald"
+          trend={counts.online > 0 ? 'up' : 'flat'}
+          trendLabel={counts.online > 0 ? 'Live' : '—'}
+        />
+        <StatCard
+          label="Salles hors ligne"
+          value={counts.offline}
+          hint={counts.offline > 0 ? 'à vérifier' : 'aucune'}
+          icon={<PowerOff size={14} strokeWidth={2.2} />}
+          tone="amber"
+          trend={counts.offline > 0 ? 'down' : 'flat'}
+          trendLabel={counts.offline > 0 ? 'Action' : 'OK'}
+        />
+        <StatCard
+          label="Salles inactives"
+          value={counts.inactive}
+          hint="désactivées"
+          icon={<Server size={14} strokeWidth={2.2} />}
+          tone="slate"
+          trend="flat"
+          trendLabel="Pause"
+        />
+        <StatCard
+          label="ESP32 inconnus"
+          value={unregistered.length}
+          hint="à réclamer"
+          icon={<AlertTriangle size={14} strokeWidth={2.2} />}
+          tone={unregistered.length > 0 ? 'amber' : 'emerald'}
+          trend={unregistered.length > 0 ? 'up' : 'flat'}
+          trendLabel={unregistered.length > 0 ? 'À traiter' : 'OK'}
+        />
+      </section>
+
+      {/* ── Filter toolbar ────────────────────────────────────── */}
+      <section
+        aria-label="Filtres"
+        className="flex flex-col gap-3 rounded-3xl border border-[#ECECEC] bg-white p-3 shadow-[0_1px_2px_rgba(17,17,17,0.04),0_8px_24px_-12px_rgba(17,17,17,0.08)] sm:flex-row sm:items-center sm:justify-between sm:p-4"
+      >
+        {/* Search — Spotlight style */}
+        <div className="relative w-full sm:max-w-xs">
+          <Search
+            size={14}
+            strokeWidth={2.2}
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]"
+          />
+          <input
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Rechercher une salle ou une IP…"
+            aria-label="Rechercher"
+            className="w-full rounded-full border border-transparent bg-[#F5F5F7] py-2 pl-9 pr-3 text-[13px] text-[#111111] outline-none placeholder:text-[#9CA3AF] transition-all duration-200 focus:bg-white focus:border-[#3B82F6]/40 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.10)]"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Segmented filters */}
+          <div
+            role="tablist"
+            aria-label="Filtrer par statut"
+            className="inline-flex rounded-full bg-[#F5F5F7] p-1"
+          >
+            {(Object.keys(FILTER_LABELS) as Filter[]).map(f => {
+              const active = filter === f
+              return (
                 <button
                   key={f}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
                   onClick={() => setFilter(f)}
-                  className="rounded-full px-3 py-1 text-[12px] font-medium transition-all duration-200 active:scale-95"
-                  style={
-                    filter === f
-                      ? { background: '#FFFFFF', color: '#111111', boxShadow: '0 1px 2px rgba(17,17,17,0.08)' }
-                      : { background: 'transparent', color: '#6B7280' }
-                  }
-                  onMouseEnter={(e) => {
-                    if (filter !== f) (e.currentTarget as HTMLElement).style.color = '#111111'
-                  }}
-                  onMouseLeave={(e) => {
-                    if (filter !== f) (e.currentTarget as HTMLElement).style.color = '#6B7280'
-                  }}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-medium transition-all duration-200 active:scale-[0.97] ${
+                    active
+                      ? 'bg-white text-[#111111] shadow-[0_1px_2px_rgba(17,17,17,0.06)]'
+                      : 'text-[#6B7280] hover:text-[#111111]'
+                  }`}
                 >
+                  {f === 'online' && (
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        active ? 'bg-emerald-500' : 'bg-[#9CA3AF]'
+                      }`}
+                    />
+                  )}
+                  {f === 'offline' && (
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        active ? 'bg-amber-500' : 'bg-[#9CA3AF]'
+                      }`}
+                    />
+                  )}
+                  {f === 'inactive' && (
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        active ? 'bg-[#6B7280]' : 'bg-[#9CA3AF]'
+                      }`}
+                    />
+                  )}
                   {FILTER_LABELS[f]}
-                  <span className="ml-1 text-[10.5px] opacity-60">
+                  <span
+                    className={`tabular-nums text-[11px] ${
+                      active ? 'text-[#6B7280]' : 'text-[#9CA3AF]'
+                    }`}
+                  >
                     {counts[f]}
                   </span>
                 </button>
-              ))}
-            </div>
-            <button
-              onClick={load}
-              disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-all active:scale-95 disabled:opacity-60"
-              style={{ background: '#FFFFFF', border: '1px solid #ECECEC', color: '#374151' }}
-              onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.background = '#F5F5F7' }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#FFFFFF' }}
-            >
-              <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-              Actualiser
-            </button>
+              )
+            })}
           </div>
-        }
-      />
 
+          {/* Add ESP32 trigger (opens modal inside Esp32Form) */}
+          <Esp32Form onCreated={load} />
+        </div>
+      </section>
+
+      {/* ── Error banner ─────────────────────────────────────── */}
       {error && (
-        <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-medium text-red-600">
+        <div
+          role="alert"
+          className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-medium text-red-600"
+        >
           {error}
         </div>
       )}
 
+      {/* ── Unknown ESP32 discovery section ──────────────────── */}
       <UnregisteredList sources={unregistered} onClaimed={load} />
 
-      <Esp32Form onCreated={load} />
-
+      {/* ── Room grid ─────────────────────────────────────────── */}
       {loading && salles.length === 0 ? (
         <div
-          className="flex items-center justify-center gap-2 rounded-2xl border border-dashed bg-white py-12 text-[13px]"
-          style={{ borderColor: '#ECECEC', color: '#6B7280' }}
+          className="flex items-center justify-center gap-2 rounded-3xl border border-dashed border-[#ECECEC] bg-white py-16 text-[13px] text-[#6B7280]"
         >
           <Loader2 size={14} className="animate-spin" />
           Chargement des salles…
         </div>
       ) : filteredSalles.length === 0 ? (
-        <div
-          className="rounded-2xl border border-dashed bg-white py-12 text-center text-[13px]"
-          style={{ borderColor: '#ECECEC', color: '#6B7280' }}
-        >
-          {salles.length === 0
-            ? 'Aucune salle enregistrée pour le moment.'
-            : 'Aucune salle ne correspond à votre filtre.'}
+        <div className="rounded-3xl border border-dashed border-[#ECECEC] bg-white py-16 text-center">
+          <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F5F5F7] text-[#6B7280]">
+            <Server size={20} strokeWidth={2} />
+          </span>
+          <p className="text-[13.5px] font-medium text-[#374151]">
+            {salles.length === 0
+              ? 'Aucune salle enregistrée pour le moment.'
+              : 'Aucune salle ne correspond à votre filtre.'}
+          </p>
+          {salles.length === 0 && (
+            <p className="mt-1 text-[12.5px] text-[#6B7280]">
+              Cliquez sur « Enregistrer un ESP32 » pour ajouter votre première salle.
+            </p>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <section
+          aria-label="Grille des salles"
+          className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
+        >
           {filteredSalles.map(s => (
             <SalleCard
               key={s.esp32_id ?? s.salle}
@@ -261,7 +415,7 @@ export default function AdminSallesPage() {
               busy={busyId === s.esp32_id}
             />
           ))}
-        </div>
+        </section>
       )}
     </div>
   )

@@ -418,7 +418,7 @@ export default function DashboardPage() {
                   <Settings2 size={14} strokeWidth={2.2} style={{ color: '#4F46E5' }} />
                 </span>
                 <h3 className="text-[15px] font-semibold" style={{ color: '#111111' }}>
-                  Salles & ESP32
+                  Gestion des salles
                 </h3>
               </div>
               <p className="mt-2 text-[13px]" style={{ color: '#6B7280' }}>

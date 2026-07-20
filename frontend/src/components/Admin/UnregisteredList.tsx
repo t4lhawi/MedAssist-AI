@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Loader2, X, Check, Hash } from 'lucide-react'
+import React, { useMemo, useState } from 'react'
+import { ArrowUpRight, Hash, Radar, Search, Server } from 'lucide-react'
 import type { UnregisteredSource } from '../../types'
 import { claimIp } from '../../services/api'
 import { MONITORING_TYPES, getMonitoringType } from '../../monitoring'
-import { SearchField, TextField } from '../ui/Field'
+import { TextField } from '../ui/Field'
+import Modal, { ModalBody, ModalButton, ModalFooter, ModalHeader } from '../ui/Modal'
 
 interface Props {
   sources: UnregisteredSource[]
@@ -13,28 +14,30 @@ interface Props {
 export default function UnregisteredList({ sources, onClaimed }: Props) {
   const [claimingIp, setClaimingIp] = useState<string | null>(null)
   const [salleDraft, setSalleDraft] = useState('')
+  const [noteDraft, setNoteDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
 
   const filtered = useMemo(() => {
     if (!query.trim()) return sources
     const q = query.trim().toLowerCase()
-    return sources.filter(s => s.ip.toLowerCase().includes(q) || String(s.last_type || '').toLowerCase().includes(q))
+    return sources.filter(
+      s =>
+        s.ip.toLowerCase().includes(q) ||
+        String(s.last_type || '').toLowerCase().includes(q),
+    )
   }, [sources, query])
-
-  useEffect(() => {
-    if (claimingIp) inputRef.current?.focus()
-  }, [claimingIp])
 
   const openClaim = (ip: string) => {
     setClaimingIp(ip)
     setSalleDraft('')
+    setNoteDraft('')
     setError('')
   }
 
   const cancelClaim = () => {
+    if (busy) return
     setClaimingIp(null)
     setError('')
   }
@@ -45,145 +48,227 @@ export default function UnregisteredList({ sources, onClaimed }: Props) {
     setBusy(true)
     setError('')
     try {
-      await claimIp({ ip: claimingIp, salle: salleDraft.trim() })
+      await claimIp({ ip: claimingIp, salle: salleDraft.trim(), note: noteDraft.trim() || undefined })
       setClaimingIp(null)
       onClaimed()
     } catch (err: any) {
       const detail = err?.response?.data?.detail
-      setError(typeof detail === 'string' ? detail : "Réclamation impossible. Vérifiez que le nom correspond à la valeur #define SALLE du firmware.")
+      setError(
+        typeof detail === 'string'
+          ? detail
+          : "Réclamation impossible. Vérifiez que le nom correspond à la valeur #define SALLE du firmware.",
+      )
     } finally {
       setBusy(false)
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') cancelClaim()
-  }
-
+  // Don't render the panel at all when there are no unknown devices
   if (sources.length === 0) return null
 
-  return (
-    <div className="rounded-2xl border border-amber-200 bg-amber-50/40 p-4">
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="h-2 w-2 rounded-full bg-amber-500" />
-        <h3 className="text-[14px] font-semibold text-amber-900">
-          ESP32 non enregistrés
-        </h3>
-        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">
-          {sources.length}
-        </span>
+  const claimingSource = sources.find(s => s.ip === claimingIp) ?? null
 
-        {sources.length > 5 && (
-          <div className="ml-auto">
-            <SearchField
+  return (
+    <section
+      aria-label="ESP32 non enregistrés"
+      className="overflow-hidden rounded-3xl border border-amber-200/70 bg-white shadow-[0_1px_2px_rgba(17,17,17,0.04),0_8px_24px_-12px_rgba(245,158,11,0.18)]"
+    >
+      {/* Header strip — amber accent */}
+      <div className="flex flex-wrap items-center gap-3 border-b border-amber-100 bg-gradient-to-r from-amber-50/80 via-amber-50/40 to-transparent px-6 py-4">
+        <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+          <Radar size={16} strokeWidth={2.2} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-[14px] font-semibold tracking-[-0.01em] text-[#111111]">
+              ESP32 non enregistrés
+            </h3>
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 tabular-nums">
+              {sources.length}
+            </span>
+          </div>
+          <p className="mt-0.5 text-[12.5px] text-[#6B7280]">
+            Ces IP ont publié des mesures mais ne sont pas (ou plus) associées à une salle. Réclamez-les pour
+            afficher leurs données dans la grille.
+          </p>
+        </div>
+
+        {sources.length > 3 && (
+          <div className="relative w-full sm:w-auto sm:min-w-[220px]">
+            <Search
+              size={13}
+              strokeWidth={2.2}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]"
+            />
+            <input
               value={query}
-              onChange={setQuery}
+              onChange={e => setQuery(e.target.value)}
               placeholder="Filtrer par IP ou type…"
-              className="w-56"
+              className="w-full rounded-full border border-transparent bg-[#F5F5F7] py-1.5 pl-8 pr-3 text-[12.5px] text-[#111111] outline-none placeholder:text-[#9CA3AF] transition-colors duration-200 focus:bg-white focus:border-[#FCD34D] focus:shadow-[0_0_0_3px_rgba(245,158,11,0.12)]"
             />
           </div>
         )}
       </div>
-      <p className="mb-3 text-[12.5px] text-amber-800/80">
-        Ces IP ont publié des mesures mais ne sont pas (ou plus) associées à une salle.
-        Réclamez-les pour que leurs données apparaissent dans la grille des salles.
-      </p>
 
-      <div className="overflow-x-auto rounded-xl border border-amber-200/60 bg-white">
-        <table className="w-full min-w-[560px] text-[13px]">
-          <thead className="bg-amber-50/60 text-left text-[11.5px] font-medium uppercase tracking-wide text-amber-900/70">
-            <tr>
-              <th className="px-3 py-2">IP</th>
-              <th className="px-3 py-2">Dernier type</th>
-              <th className="px-3 py-2">Dernière mesure</th>
-              <th className="px-3 py-2">Total</th>
-              <th className="px-3 py-2 text-right">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(s => {
-              const meta = s.last_type ? getMonitoringType(String(s.last_type)) : null
-              const isClaiming = claimingIp === s.ip
-              return (
-                <React.Fragment key={s.ip}>
-                  <tr className={`border-t border-amber-100 ${isClaiming ? 'bg-amber-50/40' : ''}`}>
-                    <td className="px-3 py-2 font-mono text-[12.5px] text-slate-800">{s.ip}</td>
-                    <td className="px-3 py-2 text-slate-600">
-                      {meta ? meta.title : (s.last_type || '—')}
-                    </td>
-                    <td className="px-3 py-2 text-slate-600">
+      {/* Discovery list */}
+      <ul className="divide-y divide-[#F0F0F0]">
+        {filtered.map(s => {
+          const meta = s.last_type ? getMonitoringType(String(s.last_type)) : null
+          const Icon = meta?.icon ?? Server
+          return (
+            <li
+              key={s.ip}
+              className="flex flex-wrap items-center gap-4 px-6 py-4 transition-colors duration-200 hover:bg-[#FAFAFA]"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#F5F5F7] text-[#6B7280]">
+                <Icon size={16} strokeWidth={2.2} />
+              </span>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-[13.5px] font-semibold tracking-tight text-[#111111]">
+                    {s.ip}
+                  </span>
+                  <span className="rounded-full bg-[#F5F5F7] px-2 py-0.5 text-[11px] font-medium text-[#6B7280]">
+                    {meta ? meta.title : (s.last_type || 'Inconnu')}
+                  </span>
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12px] text-[#6B7280]">
+                  <span>
+                    Dernière mesure :{' '}
+                    <span className="font-medium text-[#374151]">
                       {s.last_valeur !== null && s.last_valeur !== undefined
                         ? `${s.last_valeur} ${s.last_unite || ''}`
                         : '—'}
-                    </td>
-                    <td className="px-3 py-2 text-slate-600">{s.measurement_count}</td>
-                    <td className="px-3 py-2 text-right">
-                      {isClaiming ? (
-                        <button
-                          onClick={cancelClaim}
-                          className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-[12px] font-medium text-slate-600 hover:bg-slate-200"
-                        >
-                          <X size={11} />
-                          Annuler
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => openClaim(s.ip)}
-                          className="inline-flex items-center gap-1.5 rounded-full bg-amber-600 px-3 py-1 text-[12px] font-medium text-white shadow-sm transition-colors hover:bg-amber-700"
-                        >
-                          Réclamer
-                        </button>
-                      )}
-                    </td>
-                  </tr>
+                    </span>
+                  </span>
+                  <span className="hidden h-1 w-1 rounded-full bg-[#D1D5DB] sm:inline-block" />
+                  <span>
+                    Total :{' '}
+                    <span className="font-medium text-[#374151] tabular-nums">
+                      {s.measurement_count}
+                    </span>{' '}
+                    mesure{s.measurement_count > 1 ? 's' : ''}
+                  </span>
+                </div>
+              </div>
 
-                  {isClaiming && (
-                    <tr className="border-t border-amber-100 bg-amber-50/40">
-                      <td colSpan={5} className="px-3 py-3">
-                        <form onSubmit={submitClaim} className="flex flex-wrap items-start gap-2">
-                          <div className="min-w-[220px] flex-1">
-                            <TextField
-                              ref={inputRef}
-                              value={salleDraft}
-                              onChange={e => setSalleDraft(e.target.value)}
-                              onKeyDown={handleKeyDown}
-                              disabled={busy}
-                              placeholder="Nom de la salle, ex : Salle 101"
-                              leadingIcon={<Hash size={14} strokeWidth={2.2} />}
-                              variant="amber"
-                              error={error || null}
-                              hint={`Doit correspondre exactement à la valeur #define SALLE du firmware pour l'IP ${s.ip}.`}
-                            />
-                          </div>
-                          <button
-                            type="submit"
-                            disabled={busy || !salleDraft.trim()}
-                            className="mt-[26px] inline-flex items-center gap-1.5 rounded-full bg-amber-600 px-3.5 py-2 text-[12.5px] font-medium text-white shadow-sm transition hover:bg-amber-700 active:scale-95 disabled:opacity-60"
-                          >
-                            {busy ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
-                            Confirmer
-                          </button>
-                        </form>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              )
-            })}
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-3 py-4 text-center text-[12.5px] text-slate-400">
-                  Aucune IP ne correspond à « {query} ».
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              <button
+                type="button"
+                onClick={() => openClaim(s.ip)}
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#111111] px-3.5 py-1.5 text-[12.5px] font-semibold text-white shadow-[0_2px_8px_-2px_rgba(17,17,17,0.35)] transition-all duration-200 hover:-translate-y-px hover:bg-[#1F1F23] active:scale-[0.97]"
+              >
+                Réclamer
+                <ArrowUpRight size={12} strokeWidth={2.6} />
+              </button>
+            </li>
+          )
+        })}
+
+        {filtered.length === 0 && (
+          <li className="px-6 py-8 text-center text-[12.5px] text-[#6B7280]">
+            Aucune IP ne correspond à « {query} ».
+          </li>
+        )}
+      </ul>
+
+      <div className="border-t border-[#F0F0F0] bg-[#FAFAFA] px-6 py-3 text-[11.5px] text-[#6B7280]">
+        Types de capteurs connus :{' '}
+        <span className="font-medium text-[#374151]">
+          {MONITORING_TYPES.map(m => m.title).join(', ')}
+        </span>
+        .
       </div>
 
-      <p className="mt-3 text-[11.5px] text-amber-800/70">
-        Types de capteurs connus : {MONITORING_TYPES.map(m => m.title).join(', ')}.
-      </p>
-    </div>
+      {/* ── Claim modal ─────────────────────────────────────── */}
+      <Modal
+        open={!!claimingSource}
+        onClose={cancelClaim}
+        size="md"
+        dismissDisabled={busy}
+        ariaLabel="Réclamer un ESP32 inconnu"
+      >
+        <form onSubmit={submitClaim} className="flex max-h-[85vh] flex-col">
+          <ModalHeader
+            icon={<Server size={18} strokeWidth={2.2} />}
+            iconTone="amber"
+            title="Réclamer cet ESP32"
+            subtitle="Associez cette IP à une salle pour récupérer ses mesures historiques."
+            onClose={cancelClaim}
+            closeDisabled={busy}
+          />
+
+          <ModalBody>
+            {/* IP summary */}
+            <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-[#ECECEC] bg-[#FAFAFA] px-4 py-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-[#6B7280] shadow-[inset_0_0_0_1px_rgba(15,23,42,0.06)]">
+                <Server size={14} strokeWidth={2.2} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-mono text-[13.5px] font-semibold tracking-tight text-[#111111]">
+                  {claimingSource?.ip}
+                </p>
+                <p className="mt-0.5 text-[12px] text-[#6B7280]">
+                  {claimingSource?.measurement_count ?? 0} mesure
+                  {(claimingSource?.measurement_count ?? 0) > 1 ? 's' : ''} reçue
+                  {(claimingSource?.measurement_count ?? 0) > 1 ? 's' : ''} · dernière valeur :{' '}
+                  <span className="font-medium text-[#374151]">
+                    {claimingSource?.last_valeur !== null && claimingSource?.last_valeur !== undefined
+                      ? `${claimingSource.last_valeur} ${claimingSource.last_unite || ''}`
+                      : '—'}
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <TextField
+                label="Nom de la salle"
+                value={salleDraft}
+                onChange={e => setSalleDraft(e.target.value)}
+                placeholder="Ex. Salle 101"
+                required
+                maxLength={100}
+                leadingIcon={<Hash size={14} strokeWidth={2.2} />}
+                hint={`Doit correspondre exactement à la valeur #define SALLE du firmware pour l'IP ${claimingSource?.ip ?? ''}.`}
+                containerClassName="!mb-0"
+                autoFocus
+              />
+              <TextField
+                label="Note (optionnel)"
+                value={noteDraft}
+                onChange={e => setNoteDraft(e.target.value)}
+                placeholder="Ex. CHIR-2, étage B…"
+                maxLength={200}
+                containerClassName="!mb-0"
+              />
+            </div>
+
+            {error && (
+              <div
+                role="alert"
+                className="mt-4 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-[12.5px] font-medium text-red-600"
+              >
+                {error}
+              </div>
+            )}
+          </ModalBody>
+
+          <ModalFooter>
+            <ModalButton variant="secondary" onClick={cancelClaim} disabled={busy}>
+              Annuler
+            </ModalButton>
+            <ModalButton
+              variant="primary"
+              type="submit"
+              loading={busy}
+              disabled={!salleDraft.trim()}
+            >
+              Réclamer
+            </ModalButton>
+          </ModalFooter>
+        </form>
+      </Modal>
+    </section>
   )
 }
