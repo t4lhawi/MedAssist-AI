@@ -34,6 +34,7 @@ export interface SalleStatus {
   online: boolean;
   sensors: SensorStatus[];
   derniere_mesure_le: string | null;
+  note: string | null;
 }
 
 export interface UnregisteredSource {

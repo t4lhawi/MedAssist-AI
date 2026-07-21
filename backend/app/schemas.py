@@ -86,7 +86,12 @@ class Esp32DeviceCreate(Esp32DeviceBase):
 
 class Esp32DeviceUpdate(BaseModel):
     salle: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    # When set to a string, the note is replaced with that value (including
+    # the empty string ""). When ``clear_note`` is True the note is set to
+    # NULL regardless of ``note``. This disambiguates "leave untouched" from
+    # "wipe", which a single Optional[str] cannot express.
     note: Optional[str] = Field(default=None, max_length=200)
+    clear_note: Optional[bool] = None
     actif: Optional[bool] = None
 
 
@@ -246,6 +251,8 @@ class SalleStatus(BaseModel):
     # The most recent timestamp of any sensor in this salle — used to
     # determine the "online dot" on the card header.
     derniere_mesure_le: Optional[datetime] = None
+    # Free-form internal note attached to the device (étage, service…).
+    note: Optional[str] = None
 
 
 class UnregisteredSource(BaseModel):

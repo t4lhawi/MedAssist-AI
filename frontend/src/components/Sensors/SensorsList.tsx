@@ -93,7 +93,7 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
               />
             </label>
             <label>
-              <span className="mb-1.5 block text-[12px] font-medium text-slate-500">Type</span>
+              <span className="mb-1.5 block text-[12px] font-medium text-slate-500">Type de capteur</span>
               <Select
                 value={form.type}
                 onChange={v => setForm({ ...form, type: v })}

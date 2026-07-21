@@ -7,6 +7,7 @@ import { Capteur, Mesure } from '../types'
 import SensorsList from '../components/Sensors/SensorsList'
 import LineChart from '../components/Charts/LineChart'
 import Select from '../components/ui/Select'
+import PageHeader from '../components/ui/PageHeader'
 import { getMonitoringType } from '../monitoring'
 
 export default function CapteursPage() {
@@ -31,14 +32,12 @@ export default function CapteursPage() {
   const sel = capteurs.find(c => c.id === selected)
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4 p-3 md:p-5">
-      <div className="flex flex-col gap-1">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600">Infrastructure</p>
-        <h2 className="text-[25px] font-semibold tracking-[-0.03em] text-slate-950">Capteurs</h2>
-        <p className="text-[13px] text-slate-500">
-          Configuration, état et historique des mesures environnementales et chambres froides.
-        </p>
-      </div>
+    <div className="mx-auto max-w-7xl space-y-5 p-4 md:px-6">
+      <PageHeader
+        category="Infrastructure"
+        title="Capteurs"
+        subtitle="Configuration, état et historique des mesures environnementales et chambres froides."
+      />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.85fr)]">
         <SensorsList capteurs={capteurs} onRefresh={loadCapteurs} />

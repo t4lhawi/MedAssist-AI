@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { Bell, LogOut, User, ChevronDown, Search, UserCircle } from 'lucide-react'
+import { Bell, LogOut, User, ChevronDown, UserCircle, Clock } from 'lucide-react'
 
 interface Props {
   alertCount: number
@@ -11,9 +11,17 @@ export default function Navbar({ alertCount }: Props) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [now, setNow] = useState(new Date())
   const menuRef = useRef<HTMLDivElement>(null)
-  const now = new Date()
-  const dateStr = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(id)
+  }, [])
+
+  const dateStr = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  const capitalized = dateStr.charAt(0).toUpperCase() + dateStr.slice(1)
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -47,41 +55,22 @@ export default function Navbar({ alertCount }: Props) {
             <h1 className="text-[14px] font-semibold tracking-tight" style={{ color: '#111111' }}>
               MedAssist AI
             </h1>
-            <p className="hidden text-[10.5px] leading-tight" style={{ color: '#9CA3AF' }}>
+            <p className="text-[10.5px] leading-tight" style={{ color: '#9CA3AF' }}>
               CHU Mohammed VI · Oujda
             </p>
           </div>
         </div>
 
-        {/* Center: Date + Search placeholder */}
-        <div className="hidden items-center gap-3 lg:flex">
-          <span className="text-[12px]" style={{ color: '#6B7280' }}>
-            {dateStr.charAt(0).toUpperCase() + dateStr.slice(1)}
+        {/* Center: Date + Time */}
+        <div className="hidden items-center gap-2 rounded-full px-3 py-1.5 lg:flex" style={{ background: '#F5F5F7' }}>
+          <Clock size={13} strokeWidth={2.2} style={{ color: '#6B7280' }} />
+          <span className="text-[12px] font-medium tabular-nums" style={{ color: '#111111' }}>
+            {timeStr}
           </span>
-          <div className="relative">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#9CA3AF' }} />
-            <input
-              type="text"
-              placeholder="Rechercher…"
-              className="h-8 w-56 rounded-full pl-8 pr-3 text-[12.5px] transition-all"
-              style={{
-                background: '#F5F5F7',
-                border: '1px solid transparent',
-                color: '#111111',
-                outline: 'none',
-              }}
-              onFocus={(e) => {
-                e.target.style.background = '#FFFFFF'
-                e.target.style.borderColor = 'rgba(59, 130, 246, 0.3)'
-                e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.08)'
-              }}
-              onBlur={(e) => {
-                e.target.style.background = '#F5F5F7'
-                e.target.style.borderColor = 'transparent'
-                e.target.style.boxShadow = 'none'
-              }}
-            />
-          </div>
+          <span className="h-3 w-px" style={{ background: '#D1D5DB' }} />
+          <span className="text-[12px]" style={{ color: '#6B7280' }}>
+            {capitalized}
+          </span>
         </div>
 
         {/* Right: Notifications + Profile */}

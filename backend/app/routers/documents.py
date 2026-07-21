@@ -1,5 +1,6 @@
 import os, shutil
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, BackgroundTasks
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List, cast
 from ..database import get_db, SessionLocal
@@ -55,6 +56,31 @@ async def upload(
 @router.get("/", response_model=List[DocumentOut])
 def lister(db: Session = Depends(get_db), user=Depends(get_current_user)):
     return crud.get_documents(db)
+
+@router.get("/{doc_id}/file")
+def telecharger(
+    doc_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    """Stream the original PDF for a document so the UI can offer a
+    download action. The file is served with the original filename via
+    Content-Disposition so the browser saves it as `<nom>.pdf`."""
+    doc = crud.get_document(db, doc_id)
+    if not doc:
+        raise HTTPException(404, "Document introuvable")
+    chemin = cast(str, doc.chemin)
+    nom = cast(str, doc.nom)
+    if not os.path.exists(chemin):
+        raise HTTPException(404, "Fichier physique introuvable")
+    return FileResponse(
+        chemin,
+        media_type="application/pdf",
+        filename=nom,
+        # attachment so the browser triggers a save dialog with the
+        # original filename, instead of opening the PDF inline.
+        content_disposition_type="attachment",
+    )
 
 @router.delete("/{doc_id}")
 def supprimer(doc_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):

@@ -1,50 +1,96 @@
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Document } from '../../types'
 import { deleteDocument, uploadDocument } from '../../services/api'
 import {
   AlertCircle,
+  ArrowUpDown,
   CheckCircle2,
   Clock3,
+  Copy,
+  Download,
   FileText,
+  Filter,
+  Grid3x3,
+  LayoutList,
   Loader2,
-  Plus,
+  MoreHorizontal,
+  RefreshCw,
+  Search,
   Trash2,
   UploadCloud,
+  X,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import Modal, {
+  ModalBody,
+  ModalButton,
+  ModalFooter,
+  ModalHeader,
+} from '../ui/Modal'
 
 interface Props {
   documents: Document[]
   onRefresh: () => void
 }
 
+/* ─────────────────────────────────────────────────────────────
+ *  DocumentsManager — hero upload + toolbar + premium cards
+ *
+ *  Kept as the single visual block the page renders below the
+ *  statistics. Owns its own search/filter/sort/view state, so the
+ *  parent only passes `documents` and `onRefresh`.
+ * ───────────────────────────────────────────────────────────── */
+
+type StatusFilter = 'all' | 'indexed' | 'pending'
+type SortKey = 'recent' | 'oldest' | 'name' | 'size'
+type ViewMode = 'list' | 'grid'
+
 function fmt(bytes: number | null) {
-  if (!bytes) return 'Taille inconnue'
+  if (!bytes || bytes <= 0) return '0 o'
   if (bytes < 1024) return `${bytes} o`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`
-  return `${(bytes / 1024 / 1024).toFixed(1)} Mo`
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} Mo`
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} Go`
 }
 
-function StatusBadge({ indexed }: { indexed: boolean }) {
-  return indexed ? (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-      <CheckCircle2 size={12} strokeWidth={2.2} />
-      Indexé
-    </span>
-  ) : (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
-      <Clock3 size={12} strokeWidth={2.2} />
-      En cours
-    </span>
-  )
+function statusMeta(indexed: boolean) {
+  return indexed
+    ? {
+        label: 'Indexé',
+        className: 'bg-emerald-50 text-emerald-700',
+        dot: 'bg-emerald-500',
+        icon: <CheckCircle2 size={12} strokeWidth={2.4} />,
+      }
+    : {
+        label: 'En attente',
+        className: 'bg-amber-50 text-amber-700',
+        dot: 'bg-amber-500',
+        icon: <Clock3 size={12} strokeWidth={2.4} />,
+      }
 }
 
 export default function DocumentsManager({ documents, onRefresh }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Upload state machine
   const [uploading, setUploading] = useState(false)
+  const [uploadName, setUploadName] = useState('')
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadSuccess, setUploadSuccess] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [error, setError] = useState('')
+
+  // Toolbar state
+  const [query, setQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [sortKey, setSortKey] = useState<SortKey>('recent')
+  const [view, setView] = useState<ViewMode>('list')
+  const [refreshing, setRefreshing] = useState(false)
+
+  // Delete modal
+  const [pendingDelete, setPendingDelete] = useState<Document | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const upload = async (file: File) => {
     if (!file.name.toLowerCase().endsWith('.pdf')) {
@@ -54,13 +100,48 @@ export default function DocumentsManager({ documents, onRefresh }: Props) {
 
     setUploading(true)
     setError('')
+    setUploadSuccess(false)
+    setUploadProgress(0)
+    setUploadName(file.name)
     try {
+      // Lightweight fake progress: the backend doesn't expose a stream,
+      // so we animate a smooth ramp that finishes just before the
+      // request resolves. This keeps the progress bar feeling alive
+      // without lying about actual byte progress.
+      const startedAt = performance.now()
+      const target = 650 // ms — perceived upload duration
+      let raf = 0
+      const tick = (now: number) => {
+        const t = Math.min(1, (now - startedAt) / target)
+        const eased = 1 - Math.pow(1 - t, 2.4)
+        setUploadProgress(Math.round(eased * 95))
+        if (t < 1 && uploading !== false /* keep alive */) {
+          raf = requestAnimationFrame(tick)
+        }
+      }
+      raf = requestAnimationFrame(tick)
+
       await uploadDocument(file)
-      onRefresh()
+      cancelAnimationFrame(raf)
+      setUploadProgress(100)
+      setUploadSuccess(true)
+      // Brief success flash before the next refresh
+      setTimeout(() => {
+        onRefresh()
+        // Reset the upload area after the list has updated
+        setTimeout(() => {
+          setUploading(false)
+          setUploadSuccess(false)
+          setUploadProgress(0)
+          setUploadName('')
+        }, 250)
+      }, 350)
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Erreur lors du téléversement.')
-    } finally {
       setUploading(false)
+      setUploadProgress(0)
+      setUploadName('')
+    } finally {
       setDragging(false)
       if (inputRef.current) inputRef.current.value = ''
     }
@@ -73,123 +154,1028 @@ export default function DocumentsManager({ documents, onRefresh }: Props) {
 
   const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
     e.preventDefault()
+    setDragging(false)
     const file = e.dataTransfer.files?.[0]
     if (file && !uploading) upload(file)
   }
 
-  const handleDelete = async (id: number, nom: string) => {
-    if (!confirm(`Supprimer "${nom}" ?`)) return
-    await deleteDocument(id)
-    onRefresh()
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    try {
+      await onRefresh()
+    } finally {
+      setTimeout(() => setRefreshing(false), 300)
+    }
+  }
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return
+    setDeleting(true)
+    try {
+      await deleteDocument(pendingDelete.id)
+      setPendingDelete(null)
+      onRefresh()
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Erreur lors de la suppression.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  /* ─── Filter + sort ───────────────────────────────────────── */
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return documents.filter(d => {
+      if (statusFilter === 'indexed' && !d.indexe) return false
+      if (statusFilter === 'pending' && d.indexe) return false
+
+      if (!q) return true
+      if (d.nom.toLowerCase().includes(q)) return true
+      // Search by status label
+      if (q === 'indexé' || q === 'indexed') return d.indexe
+      if (q === 'en cours' || q === 'pending') return !d.indexe
+      // Search by date (e.g. "2025", "janv", "12")
+      if (d.uploade_le.toLowerCase().includes(q)) return true
+      const dateLabel = format(new Date(d.uploade_le), 'dd MMM yyyy', { locale: fr }).toLowerCase()
+      if (dateLabel.includes(q)) return true
+      return false
+    })
+  }, [documents, query, statusFilter])
+
+  const sorted = useMemo(() => {
+    const arr = [...filtered]
+    switch (sortKey) {
+      case 'recent':
+        return arr.sort(
+          (a, b) => new Date(b.uploade_le).getTime() - new Date(a.uploade_le).getTime(),
+        )
+      case 'oldest':
+        return arr.sort(
+          (a, b) => new Date(a.uploade_le).getTime() - new Date(b.uploade_le).getTime(),
+        )
+      case 'name':
+        return arr.sort((a, b) => a.nom.localeCompare(b.nom))
+      case 'size':
+        return arr.sort((a, b) => (b.taille ?? 0) - (a.taille ?? 0))
+    }
+  }, [filtered, sortKey])
+
+  const counts = {
+    all: documents.length,
+    indexed: documents.filter(d => d.indexe).length,
+    pending: documents.filter(d => !d.indexe).length,
   }
 
   return (
-    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-200 px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-slate-950">Base documentaire</h3>
-            <p className="mt-0.5 text-[12.5px] text-slate-500">PDF utilisés par l'assistant IA</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={uploading}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm transition hover:bg-blue-700 active:scale-95 disabled:bg-slate-300"
-            title="Ajouter un PDF"
-          >
-            {uploading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={18} strokeWidth={2.2} />}
-          </button>
-        </div>
-      </div>
+    <section className="space-y-4">
+      {/* ─── Hero Upload ─────────────────────────────────────── */}
+      <UploadHero
+        inputRef={inputRef}
+        dragging={dragging}
+        uploading={uploading}
+        uploadProgress={uploadProgress}
+        uploadName={uploadName}
+        uploadSuccess={uploadSuccess}
+        error={error}
+        onDragOver={e => {
+          e.preventDefault()
+          if (!uploading) setDragging(true)
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={handleDrop}
+        onPick={() => inputRef.current?.click()}
+        onChange={handleUpload}
+      />
 
-      <div className="grid gap-0 lg:grid-cols-[18rem_1fr]">
-        <div className="border-b border-slate-200 bg-slate-50/70 p-4 lg:border-b-0 lg:border-r">
-          <label
-            onDragOver={(e) => {
-              e.preventDefault()
-              setDragging(true)
-            }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={handleDrop}
-            className={`flex min-h-[13rem] cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-4 py-6 text-center transition ${
-              dragging
-                ? 'border-blue-400 bg-blue-50 text-blue-700'
-                : 'border-slate-300 bg-white text-slate-500 hover:border-blue-300 hover:bg-blue-50/40'
-            } ${uploading ? 'pointer-events-none opacity-70' : ''}`}
-          >
-            <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white">
-              {uploading ? <Loader2 size={20} className="animate-spin" /> : <UploadCloud size={21} strokeWidth={2} />}
-            </span>
-            <span className="text-[13.5px] font-semibold text-slate-800">
-              {uploading ? 'Téléversement...' : 'Déposer un PDF'}
-            </span>
-            <span className="mt-1 text-[12.5px] leading-5 text-slate-500">
-              ou cliquez pour choisir un fichier validé
-            </span>
-            <input ref={inputRef} type="file" accept=".pdf" className="hidden" onChange={handleUpload} disabled={uploading} />
-          </label>
-
-          {error && (
-            <div className="mt-3 flex items-start gap-2 rounded-xl bg-red-50 px-3 py-2.5 text-[12.5px] font-medium text-red-600">
-              <AlertCircle size={14} className="mt-0.5 shrink-0" />
-              <span>{error}</span>
-            </div>
+      {/* ─── Toolbar ─────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[#ECECEC] bg-white p-2 shadow-[0_1px_2px_rgba(17,17,17,0.04),0_4px_14px_-8px_rgba(17,17,17,0.06)]">
+        {/* Search */}
+        <div className="relative min-w-0 flex-1">
+          <Search
+            size={14}
+            strokeWidth={2.2}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+          <input
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Rechercher par nom, statut ou date…"
+            aria-label="Rechercher des documents"
+            className="w-full rounded-xl bg-slate-50 py-2 pl-9 pr-9 text-[13px] text-slate-900 placeholder:text-slate-400 outline-none transition-all duration-200 focus:bg-white focus:shadow-[inset_0_0_0_1.5px_rgba(46,99,255,0.55),0_0_0_4px_rgba(46,99,255,0.08)]"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              aria-label="Effacer la recherche"
+              className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-slate-300 transition-colors hover:bg-slate-100 hover:text-slate-600"
+            >
+              <X size={12} strokeWidth={2.4} />
+            </button>
           )}
         </div>
 
-        <div className="min-w-0">
-          {documents.length === 0 ? (
-            <div className="flex min-h-[18rem] flex-col items-center justify-center px-4 py-12 text-center">
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
-                <FileText size={24} strokeWidth={1.7} />
+        {/* Status filter (segmented) */}
+        <div
+          role="tablist"
+          aria-label="Filtrer par statut"
+          className="flex items-center gap-0.5 rounded-xl bg-slate-100 p-1"
+        >
+          <SegmentButton
+            active={statusFilter === 'all'}
+            onClick={() => setStatusFilter('all')}
+            label="Tous"
+            count={counts.all}
+          />
+          <SegmentButton
+            active={statusFilter === 'indexed'}
+            onClick={() => setStatusFilter('indexed')}
+            label="Indexé"
+            count={counts.indexed}
+            tone="emerald"
+          />
+          <SegmentButton
+            active={statusFilter === 'pending'}
+            onClick={() => setStatusFilter('pending')}
+            label="En attente"
+            count={counts.pending}
+            tone="amber"
+          />
+        </div>
+
+        {/* Sort */}
+        <SortMenu value={sortKey} onChange={setSortKey} />
+
+        {/* View toggle */}
+        <div className="flex items-center gap-0.5 rounded-xl bg-slate-100 p-1" role="group" aria-label="Mode d'affichage">
+          <ViewButton
+            active={view === 'list'}
+            onClick={() => setView('list')}
+            label="Liste"
+            icon={<LayoutList size={13} strokeWidth={2.2} />}
+          />
+          <ViewButton
+            active={view === 'grid'}
+            onClick={() => setView('grid')}
+            label="Grille"
+            icon={<Grid3x3 size={13} strokeWidth={2.2} />}
+          />
+        </div>
+
+        {/* Refresh */}
+        <button
+          type="button"
+          onClick={handleRefresh}
+          disabled={refreshing}
+          aria-label="Actualiser"
+          className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6B7280] transition-all duration-200 hover:bg-slate-100 hover:text-[#111111] active:scale-95 disabled:opacity-50"
+        >
+          <RefreshCw
+            size={14}
+            strokeWidth={2.2}
+            className={refreshing ? 'animate-spin text-blue-500' : ''}
+          />
+        </button>
+
+        {/* Upload button (secondary CTA in the toolbar, hero is primary) */}
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[#111111] px-3.5 py-2 text-[12.5px] font-medium text-white shadow-[0_2px_8px_-2px_rgba(17,17,17,0.35)] transition-all duration-200 hover:bg-[#1F1F23] hover:shadow-[0_6px_18px_-4px_rgba(17,17,17,0.4)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <UploadCloud size={14} strokeWidth={2.2} />
+          <span>Téléverser un PDF</span>
+        </button>
+      </div>
+
+      {/* ─── Documents List / Grid ───────────────────────────── */}
+      {sorted.length === 0 ? (
+        <EmptyState
+          hasQuery={!!query || statusFilter !== 'all'}
+          onReset={() => {
+            setQuery('')
+            setStatusFilter('all')
+          }}
+        />
+      ) : view === 'list' ? (
+        <DocumentsList
+          docs={sorted}
+          onDelete={d => setPendingDelete(d)}
+        />
+      ) : (
+        <DocumentsGrid
+          docs={sorted}
+          onDelete={d => setPendingDelete(d)}
+        />
+      )}
+
+      {/* ─── Delete confirmation modal ────────────────────────── */}
+      <Modal
+        open={pendingDelete !== null}
+        onClose={() => (deleting ? null : setPendingDelete(null))}
+        size="sm"
+        dismissDisabled={deleting}
+        ariaLabel="Supprimer le document"
+      >
+        {pendingDelete && (
+          <>
+            <ModalHeader
+              icon={<Trash2 size={16} strokeWidth={2.2} />}
+              iconTone="red"
+              title="Supprimer ce document ?"
+              subtitle="Cette action est irréversible."
+              onClose={() => (deleting ? null : setPendingDelete(null))}
+              closeDisabled={deleting}
+            />
+            <ModalBody>
+              <div className="flex items-center gap-3 rounded-2xl border border-[#ECECEC] bg-[#FAFAFA] p-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-500 shadow-sm">
+                  <FileText size={18} strokeWidth={2} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13.5px] font-semibold text-[#111111]">
+                    {pendingDelete.nom}
+                  </p>
+                  <p className="mt-0.5 text-[12px] text-[#6B7280]">
+                    {fmt(pendingDelete.taille)} ·{' '}
+                    {format(new Date(pendingDelete.uploade_le), 'dd MMM yyyy', {
+                      locale: fr,
+                    })}
+                  </p>
+                </div>
+                <span
+                  className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${
+                    statusMeta(pendingDelete.indexe).className
+                  }`}
+                >
+                  {statusMeta(pendingDelete.indexe).label}
+                </span>
               </div>
-              <p className="text-[14px] font-semibold text-slate-700">Aucun document</p>
-              <p className="mt-1 max-w-sm text-[12.5px] leading-5 text-slate-400">
-                Ajoutez des protocoles, procédures ou manuels PDF pour alimenter l'assistant IA.
+
+              <p className="mt-3 text-[12.5px] leading-relaxed text-[#6B7280]">
+                Le document sera retiré de la base de connaissances et ne pourra plus
+                être cité par l'assistant IA.
+              </p>
+            </ModalBody>
+            <ModalFooter>
+              <ModalButton
+                variant="secondary"
+                onClick={() => setPendingDelete(null)}
+                disabled={deleting}
+              >
+                Annuler
+              </ModalButton>
+              <ModalButton
+                variant="danger"
+                onClick={confirmDelete}
+                loading={deleting}
+                leadingIcon={<Trash2 size={13} strokeWidth={2.2} />}
+              >
+                Supprimer
+              </ModalButton>
+            </ModalFooter>
+          </>
+        )}
+      </Modal>
+    </section>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────
+ *  UploadHero — drag & drop with rich states
+ *  States: idle | dragging | uploading | success | error
+ * ───────────────────────────────────────────────────────────── */
+
+interface UploadHeroProps {
+  inputRef: React.RefObject<HTMLInputElement>
+  dragging: boolean
+  uploading: boolean
+  uploadProgress: number
+  uploadName: string
+  uploadSuccess: boolean
+  error: string
+  onDragOver: (e: React.DragEvent<HTMLLabelElement>) => void
+  onDragLeave: () => void
+  onDrop: (e: React.DragEvent<HTMLLabelElement>) => void
+  onPick: () => void
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+}
+
+function UploadHero({
+  inputRef,
+  dragging,
+  uploading,
+  uploadProgress,
+  uploadName,
+  uploadSuccess,
+  error,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onPick,
+  onChange,
+}: UploadHeroProps) {
+  // Visual state derived from props
+  const state: 'idle' | 'dragging' | 'uploading' | 'success' | 'error' = error
+    ? 'error'
+    : uploadSuccess
+    ? 'success'
+    : uploading
+    ? 'uploading'
+    : dragging
+    ? 'dragging'
+    : 'idle'
+
+  return (
+    <article
+      className={`relative overflow-hidden rounded-3xl border bg-white transition-all duration-200 ${
+        state === 'dragging'
+          ? 'border-blue-400 shadow-[0_0_0_4px_rgba(59,130,246,0.10),0_12px_32px_-8px_rgba(59,130,246,0.18)]'
+          : 'border-[#ECECEC] shadow-[0_1px_2px_rgba(17,17,17,0.04),0_8px_24px_-12px_rgba(17,17,17,0.10)]'
+      }`}
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_22rem]">
+        {/* ─── Left: drop zone ─────────────────────────────── */}
+        <label
+          htmlFor="documents-upload-input"
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          onDrop={onDrop}
+          className={`relative flex min-h-[14rem] cursor-pointer flex-col items-center justify-center gap-3 px-6 py-8 text-center transition-colors duration-200 ${
+            state === 'dragging'
+              ? 'bg-blue-50/60'
+              : state === 'success'
+              ? 'bg-emerald-50/40'
+              : state === 'error'
+              ? 'bg-red-50/30'
+              : 'bg-white hover:bg-slate-50/40'
+          } ${uploading ? 'pointer-events-none' : ''}`}
+        >
+          {/* Illustration */}
+          <div
+            className={`flex h-16 w-16 items-center justify-center rounded-2xl transition-all duration-200 ${
+              state === 'dragging'
+                ? 'bg-blue-600 text-white scale-105'
+                : state === 'success'
+                ? 'bg-emerald-600 text-white'
+                : state === 'error'
+                ? 'bg-red-100 text-red-600'
+                : 'bg-[#EFF4FF] text-[#3B82F6]'
+            }`}
+          >
+            {state === 'uploading' ? (
+              <Loader2 size={26} strokeWidth={2.2} className="animate-spin" />
+            ) : state === 'success' ? (
+              <CheckCircle2 size={28} strokeWidth={2.2} />
+            ) : state === 'error' ? (
+              <AlertCircle size={26} strokeWidth={2.2} />
+            ) : (
+              <UploadCloud size={28} strokeWidth={1.9} />
+            )}
+          </div>
+
+          <div className="space-y-1">
+            <p
+              className={`text-[15px] font-semibold tracking-[-0.01em] ${
+                state === 'error' ? 'text-red-700' : 'text-[#111111]'
+              }`}
+            >
+              {state === 'uploading'
+                ? 'Téléversement en cours…'
+                : state === 'success'
+                ? 'Document ajouté avec succès'
+                : state === 'error'
+                ? 'Téléversement échoué'
+                : state === 'dragging'
+                ? 'Relâchez pour téléverser'
+                : 'Déposez vos PDF ici'}
+            </p>
+            <p className="text-[12.5px] text-[#6B7280]">
+              {state === 'uploading' && uploadName
+                ? uploadName
+                : state === 'success'
+                ? 'L’indexation automatique démarre dans quelques instants.'
+                : state === 'error'
+                ? error
+                : 'ou cliquez pour choisir un fichier — glisser-déposer accepté'}
+            </p>
+          </div>
+
+          {/* CTA */}
+          <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={e => {
+                e.preventDefault()
+                onPick()
+              }}
+              disabled={uploading}
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#111111] px-4 py-2 text-[12.5px] font-medium text-white shadow-[0_2px_8px_-2px_rgba(17,17,17,0.35)] transition-all duration-200 hover:bg-[#1F1F23] hover:shadow-[0_6px_18px_-4px_rgba(17,17,17,0.4)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <UploadCloud size={14} strokeWidth={2.2} />
+              Choisir un PDF
+            </button>
+            <span className="text-[11.5px] text-[#9CA3AF]">PDF uniquement</span>
+          </div>
+
+          <input
+            id="documents-upload-input"
+            ref={inputRef}
+            type="file"
+            accept=".pdf"
+            className="sr-only"
+            onChange={onChange}
+            disabled={uploading}
+            aria-label="Téléverser un PDF"
+          />
+        </label>
+
+        {/* ─── Right: progress + meta ──────────────────────── */}
+        <div className="flex flex-col gap-4 border-t border-[#F0F0F0] bg-[#FAFAFA]/60 p-5 lg:border-l lg:border-t-0">
+          {/* Progress */}
+          <div>
+            <div className="flex items-center justify-between text-[11.5px] font-medium text-[#6B7280]">
+              <span className="uppercase tracking-wide">
+                {state === 'success' ? 'Complété' : 'Progression'}
+              </span>
+              <span
+                className={`tabular-nums ${
+                  state === 'success'
+                    ? 'text-emerald-600'
+                    : state === 'error'
+                    ? 'text-red-600'
+                    : 'text-[#111111]'
+                }`}
+              >
+                {state === 'success' ? '100%' : `${uploadProgress}%`}
+              </span>
+            </div>
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200/70">
+              <div
+                className={`h-full rounded-full transition-all duration-200 ${
+                  state === 'success'
+                    ? 'bg-emerald-500'
+                    : state === 'error'
+                    ? 'bg-red-500'
+                    : 'bg-blue-500'
+                }`}
+                style={{
+                  width: `${state === 'success' ? 100 : uploadProgress}%`,
+                }}
+              />
+            </div>
+            {state === 'uploading' && uploadName && (
+              <p className="mt-2 truncate text-[11.5px] text-[#6B7280]">
+                <span className="font-medium text-[#374151]">Envoi :</span> {uploadName}
+              </p>
+            )}
+            {state === 'success' && uploadName && (
+              <p className="mt-2 truncate text-[11.5px] text-emerald-700">
+                <span className="font-medium">Ajouté :</span> {uploadName}
+              </p>
+            )}
+          </div>
+
+          {/* Specs */}
+          <div className="grid grid-cols-2 gap-2 text-[11.5px]">
+            <div className="rounded-xl border border-[#ECECEC] bg-white px-3 py-2">
+              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
+                Format
+              </p>
+              <p className="mt-0.5 font-medium text-[#111111]">PDF</p>
+            </div>
+            <div className="rounded-xl border border-[#ECECEC] bg-white px-3 py-2">
+              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
+                Taille max
+              </p>
+              <p className="mt-0.5 font-medium text-[#111111]">20 Mo</p>
+            </div>
+            <div className="col-span-2 rounded-xl border border-[#ECECEC] bg-white px-3 py-2">
+              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
+                Indexation
+              </p>
+              <p className="mt-0.5 font-medium text-[#111111]">
+                Automatique après téléversement
               </p>
             </div>
-          ) : (
-            <div className="max-h-[31rem] overflow-y-auto">
-              <div className="sticky top-0 z-10 grid grid-cols-[1fr_auto_auto] gap-3 border-b border-slate-200 bg-white/95 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 backdrop-blur">
-                <span>Document</span>
-                <span className="hidden sm:block">Statut</span>
-                <span className="sr-only">Actions</span>
-              </div>
-
-              <div className="divide-y divide-slate-100">
-                {documents.map(doc => (
-                  <div key={doc.id} className="group grid grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 transition hover:bg-slate-50">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
-                      <FileText size={18} strokeWidth={2} />
-                    </div>
-
-                    <div className="min-w-0">
-                      <p className="truncate text-[13.5px] font-semibold text-slate-800">{doc.nom}</p>
-                      <p className="mt-0.5 text-[12px] text-slate-400">
-                        {fmt(doc.taille)} · {format(new Date(doc.uploade_le), 'dd MMM yyyy', { locale: fr })}
-                      </p>
-                    </div>
-
-                    <div className="flex shrink-0 items-center gap-2">
-                      <span className="hidden sm:inline-flex">
-                        <StatusBadge indexed={doc.indexe} />
-                      </span>
-                      <button
-                        onClick={() => handleDelete(doc.id, doc.nom)}
-                        title="Supprimer"
-                        className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 opacity-100 transition hover:bg-red-50 hover:text-red-500 md:opacity-0 md:group-hover:opacity-100"
-                      >
-                        <Trash2 size={14} strokeWidth={2.1} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </div>
-    </section>
+    </article>
+  )
+}
+
+/* ─── Toolbar sub-components ───────────────────────────────────── */
+
+function SegmentButton({
+  active,
+  onClick,
+  label,
+  count,
+  tone = 'blue',
+}: {
+  active: boolean
+  onClick: () => void
+  label: string
+  count?: number
+  tone?: 'blue' | 'emerald' | 'amber'
+}) {
+  const activeBg: Record<typeof tone, string> = {
+    blue: 'bg-white text-[#111111] shadow-sm',
+    emerald: 'bg-white text-emerald-700 shadow-sm',
+    amber: 'bg-white text-amber-700 shadow-sm',
+  }
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium transition-all duration-200 ${
+        active
+          ? activeBg[tone]
+          : 'text-[#6B7280] hover:text-[#111111]'
+      }`}
+    >
+      <span>{label}</span>
+      {typeof count === 'number' && (
+        <span
+          className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
+            active
+              ? tone === 'emerald'
+                ? 'bg-emerald-50 text-emerald-700'
+                : tone === 'amber'
+                ? 'bg-amber-50 text-amber-700'
+                : 'bg-slate-100 text-[#374151]'
+              : 'bg-slate-200/70 text-[#6B7280]'
+          }`}
+        >
+          {count}
+        </span>
+      )}
+    </button>
+  )
+}
+
+function ViewButton({
+  active,
+  onClick,
+  label,
+  icon,
+}: {
+  active: boolean
+  onClick: () => void
+  label: string
+  icon: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      aria-pressed={active}
+      className={`flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200 ${
+        active
+          ? 'bg-white text-[#111111] shadow-sm'
+          : 'text-[#6B7280] hover:text-[#111111]'
+      }`}
+    >
+      {icon}
+    </button>
+  )
+}
+
+function SortMenu({
+  value,
+  onChange,
+}: {
+  value: SortKey
+  onChange: (v: SortKey) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e: MouseEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
+
+  const labels: Record<SortKey, string> = {
+    recent: 'Plus récents',
+    oldest: 'Plus anciens',
+    name: 'Nom (A → Z)',
+    size: 'Taille',
+  }
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-transparent bg-slate-100 px-3 text-[12.5px] font-medium text-[#374151] transition-all duration-200 hover:bg-slate-200/70 hover:text-[#111111]"
+      >
+        <ArrowUpDown size={13} strokeWidth={2.2} />
+        <span className="hidden sm:inline">{labels[value]}</span>
+        <span className="sm:hidden">Tri</span>
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 top-full z-20 mt-1.5 w-44 origin-top-right overflow-hidden rounded-xl border border-[#ECECEC] bg-white p-1 shadow-[0_12px_32px_-8px_rgba(15,23,42,0.18)]"
+          style={{ animation: 'dropIn 160ms var(--ease-out) both' }}
+        >
+          {(Object.keys(labels) as SortKey[]).map(k => (
+            <button
+              key={k}
+              role="menuitem"
+              onClick={() => {
+                onChange(k)
+                setOpen(false)
+              }}
+              className={`flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] transition-colors duration-150 ${
+                value === k
+                  ? 'bg-blue-50 text-blue-700 font-medium'
+                  : 'text-[#374151] hover:bg-slate-50'
+              }`}
+            >
+              <span>{labels[k]}</span>
+              {value === k && <CheckCircle2 size={12} className="text-blue-500" strokeWidth={2.4} />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ─── Document list (list view) ────────────────────────────────── */
+
+function DocumentsList({
+  docs,
+  onDelete,
+}: {
+  docs: Document[]
+  onDelete: (d: Document) => void
+}) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-[#ECECEC] bg-white shadow-[0_1px_2px_rgba(17,17,17,0.04),0_4px_14px_-8px_rgba(17,17,17,0.06)]">
+      <ul className="divide-y divide-slate-100">
+        {docs.map(d => (
+          <DocumentListRow key={d.id} doc={d} onDelete={onDelete} />
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function DocumentListRow({
+  doc,
+  onDelete,
+}: {
+  doc: Document
+  onDelete: (d: Document) => void
+}) {
+  const meta = statusMeta(doc.indexe)
+  return (
+    <li className="group flex items-center gap-3 px-4 py-3 transition-colors duration-150 hover:bg-slate-50/70">
+      {/* File icon */}
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-b from-slate-50 to-slate-100 text-slate-500 ring-1 ring-slate-200/70">
+        <FileText size={18} strokeWidth={2} />
+      </div>
+
+      {/* Name + meta */}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[13.5px] font-semibold text-[#111111]">{doc.nom}</p>
+        <p className="mt-0.5 truncate text-[12px] text-[#6B7280]">
+          {fmt(doc.taille)} ·{' '}
+          {format(new Date(doc.uploade_le), 'dd MMM yyyy', { locale: fr })}
+        </p>
+      </div>
+
+      {/* Status badge */}
+      <span
+        className={`hidden shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold sm:inline-flex ${meta.className}`}
+      >
+        {doc.indexe ? null : (
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inset-0 animate-ping rounded-full bg-amber-400 opacity-60" />
+            <span className="relative h-1.5 w-1.5 rounded-full bg-amber-500" />
+          </span>
+        )}
+        {meta.icon}
+        {meta.label}
+      </span>
+
+      {/* Actions */}
+      <div className="flex shrink-0 items-center gap-1 opacity-100 transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100">
+        <DocumentActionsMenu doc={doc} onDelete={onDelete} />
+        <ActionIconButton
+          title="Supprimer"
+          aria-label="Supprimer"
+          tone="red"
+          onClick={() => onDelete(doc)}
+        >
+          <Trash2 size={14} strokeWidth={2.2} />
+        </ActionIconButton>
+      </div>
+    </li>
+  )
+}
+
+function ActionIconButton({
+  children,
+  title,
+  tone = 'slate',
+  onClick,
+  ...rest
+}: {
+  children: React.ReactNode
+  title: string
+  tone?: 'slate' | 'red'
+  onClick?: () => void
+} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  const palette = {
+    slate:
+      'text-[#6B7280] hover:bg-slate-100 hover:text-[#111111]',
+    red: 'text-[#6B7280] hover:bg-red-50 hover:text-red-600',
+  }[tone]
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      {...rest}
+      className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-200 ${palette}`}
+    >
+      {children}
+    </button>
+  )
+}
+
+/* ─── Document grid (grid view) ────────────────────────────────── */
+
+function DocumentsGrid({
+  docs,
+  onDelete,
+}: {
+  docs: Document[]
+  onDelete: (d: Document) => void
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {docs.map(d => (
+        <DocumentCard key={d.id} doc={d} onDelete={onDelete} />
+      ))}
+    </div>
+  )
+}
+
+function DocumentCard({
+  doc,
+  onDelete,
+}: {
+  doc: Document
+  onDelete: (d: Document) => void
+}) {
+  const meta = statusMeta(doc.indexe)
+  return (
+    <article className="group card-lift relative overflow-hidden rounded-2xl border border-[#ECECEC] bg-white p-4">
+      <div className="flex items-start gap-3">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-b from-slate-50 to-slate-100 text-slate-500 ring-1 ring-slate-200/70">
+          <FileText size={22} strokeWidth={1.9} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="line-clamp-2 break-all text-[13.5px] font-semibold leading-snug text-[#111111]">
+            {doc.nom}
+          </p>
+          <p className="mt-1 text-[12px] text-[#6B7280]">{fmt(doc.taille)}</p>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between text-[12px] text-[#6B7280]">
+        <span>{format(new Date(doc.uploade_le), 'dd MMM yyyy', { locale: fr })}</span>
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10.5px] font-semibold ${meta.className}`}
+        >
+          {doc.indexe ? null : (
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inset-0 animate-ping rounded-full bg-amber-400 opacity-60" />
+              <span className="relative h-1.5 w-1.5 rounded-full bg-amber-500" />
+            </span>
+          )}
+          {meta.icon}
+          {meta.label}
+        </span>
+      </div>
+
+      <div className="mt-3 flex items-center justify-end gap-1 border-t border-slate-100 pt-3 opacity-100 transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100">
+        <DocumentActionsMenu doc={doc} onDelete={onDelete} />
+        <ActionIconButton
+          title="Supprimer"
+          aria-label="Supprimer"
+          tone="red"
+          onClick={() => onDelete(doc)}
+        >
+          <Trash2 size={14} strokeWidth={2.2} />
+        </ActionIconButton>
+      </div>
+    </article>
+  )
+}
+
+/* ─── Per-row overflow menu (the "3 dots" button) ──────────────── */
+
+function DocumentActionsMenu({
+  doc,
+  onDelete,
+}: {
+  doc: Document
+  onDelete: (d: Document) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const menuId = useId()
+
+  // Close on outside click + Escape
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e: MouseEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  // Build a download URL for the PDF. Falls back to opening the doc
+  // route on the same origin if a dedicated file endpoint is missing.
+  const apiBase = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'
+  const fileUrl = `${apiBase}/api/documents/${doc.id}/file`
+
+  const handleDownload = () => {
+    setOpen(false)
+    // The backend serves the file with `Content-Disposition: attachment;
+    // filename=<nom>` so navigating to this URL is enough to trigger a
+    // save dialog with the original filename — no <a download> hack or
+    // popup tricks needed.
+    window.location.href = fileUrl
+  }
+
+  const handleCopyName = async () => {
+    setOpen(false)
+    try {
+      await navigator.clipboard.writeText(doc.nom)
+    } catch {
+      // Clipboard may be blocked (insecure context, missing permission);
+      // fall back to a hidden textarea + execCommand which still works
+      // in older browsers.
+      const ta = document.createElement('textarea')
+      ta.value = doc.nom
+      ta.style.position = 'fixed'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.select()
+      try {
+        document.execCommand('copy')
+      } catch {
+        /* swallow — better to do nothing than throw in a UI handler */
+      }
+      document.body.removeChild(ta)
+    }
+  }
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <ActionIconButton
+        title="Plus d'actions"
+        aria-label="Plus d'actions"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={menuId}
+        onClick={() => setOpen(v => !v)}
+      >
+        <MoreHorizontal size={14} strokeWidth={2.2} />
+      </ActionIconButton>
+      {open && (
+        <div
+          id={menuId}
+          role="menu"
+          // The panel is right-aligned to the trigger so it doesn't
+          // overflow the row on small screens.
+          className="absolute right-0 top-full z-30 mt-1.5 w-44 origin-top-right overflow-hidden rounded-xl border border-[#ECECEC] bg-white p-1 shadow-[0_12px_32px_-8px_rgba(15,23,42,0.18)]"
+          style={{ animation: 'dropIn 160ms var(--ease-out) both' }}
+        >
+          <button
+            type="button"
+            role="menuitem"
+            onClick={handleDownload}
+            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#374151] transition-colors duration-150 hover:bg-slate-50"
+          >
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
+              <Download size={12} strokeWidth={2.2} />
+            </span>
+            <span>Télécharger</span>
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={handleCopyName}
+            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#374151] transition-colors duration-150 hover:bg-slate-50"
+          >
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
+              <Copy size={12} strokeWidth={2.2} />
+            </span>
+            <span>Copier le nom</span>
+          </button>
+          <div className="my-1 h-px bg-slate-100" />
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false)
+              onDelete(doc)
+            }}
+            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-red-600 transition-colors duration-150 hover:bg-red-50"
+          >
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-red-50 text-red-500">
+              <Trash2 size={12} strokeWidth={2.2} />
+            </span>
+            <span>Supprimer</span>
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ─── Empty / no-results state ─────────────────────────────────── */
+
+function EmptyState({
+  hasQuery,
+  onReset,
+}: {
+  hasQuery: boolean
+  onReset: () => void
+}) {
+  if (hasQuery) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#ECECEC] bg-white px-4 py-14 text-center">
+        <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 text-slate-400 ring-1 ring-slate-200/70">
+          <Filter size={22} strokeWidth={1.7} />
+        </div>
+        <p className="text-[14.5px] font-semibold tracking-[-0.01em] text-[#111111]">
+          Aucun document correspondant
+        </p>
+        <p className="mt-1 max-w-sm text-[12.5px] leading-relaxed text-[#6B7280]">
+          Essayez d'ajuster votre recherche ou le filtre de statut pour voir plus de résultats.
+        </p>
+        <button
+          type="button"
+          onClick={onReset}
+          className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[#ECECEC] bg-white px-3.5 py-1.5 text-[12.5px] font-medium text-[#374151] transition-all duration-200 hover:bg-slate-50 active:scale-[0.97]"
+        >
+          <RefreshCw size={12} strokeWidth={2.2} />
+          Réinitialiser les filtres
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#ECECEC] bg-white px-4 py-16 text-center">
+      {/* Illustration */}
+      <div className="relative mb-5">
+        <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-b from-slate-50 to-slate-100 text-slate-400 ring-1 ring-slate-200/70">
+          <FileText size={36} strokeWidth={1.4} />
+        </div>
+        <span className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white shadow-[0_4px_12px_-2px_rgba(59,130,246,0.5)]">
+          <UploadCloud size={13} strokeWidth={2.2} />
+        </span>
+      </div>
+
+      <p className="text-[16px] font-semibold tracking-[-0.01em] text-[#111111]">
+        Aucun document pour l'instant.
+      </p>
+      <p className="mt-1.5 max-w-sm text-[12.5px] leading-relaxed text-[#6B7280]">
+        Téléversez des protocoles et manuels PDF pour améliorer l'assistant IA.
+      </p>
+
+      <p className="mt-5 text-[12.5px] font-medium text-[#111111]">
+        Téléversez votre premier document
+      </p>
+    </div>
   )
 }

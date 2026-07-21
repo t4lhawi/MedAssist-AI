@@ -212,3 +212,219 @@ button:active:not(:disabled) {
   from { opacity: 0; transform: translateY(-6px) scale(0.96); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* ─── Assistant thinking-state shimmer ─────────────────────────── */
+/* Premium horizontal sweep used inside the thinking pill that
+   replaces the legacy three-dot animation. The sweep rides on top
+   of a translucent slate plate and is clamped to 1.4s. */
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.shimmer-bar {
+  position: relative;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.06);
+}
+.shimmer-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.85) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.4s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
+}
+
+/* Soft avatar pulse used while the assistant is composing. */
+@keyframes avatarPulse {
+  0%, 100% { opacity: 0.92; }
+  50%      { opacity: 1; }
+}
+.avatar-pulse {
+  animation: avatarPulse 2s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
+}
+
+/* Suggestion card entry — staggered fade-up. */
+@keyframes suggestionIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Premium history panel ─────────────────────────────────────
+   Side panel modeled after ChatGPT / Claude / Linear — soft shadow,
+   rounded leading edge, backdrop blur, and an Apple-feel slide.
+   Duration stays in the 180-220ms band the spec calls for. */
+
+/* Backdrop fade — used by both the panel backdrop and the
+   confirmation modal overlay so they share a single feel. */
+@keyframes historyBackdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Side panel slide — floats in from the right with a tiny
+   scale-up, so the entrance reads as one motion rather than
+   a translation only. */
+@keyframes historyPanelIn {
+  from {
+    opacity: 0;
+    transform: translate3d(24px, 0, 0) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+/* Mobile bottom-sheet rise — used when the panel switches to
+   a full-screen sheet on small viewports. */
+@keyframes historySheetIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+/* Staggered entry for list items. Each card takes a tiny upward
+   step (4px) so the list feels like it materializes rather than
+   mounting all at once. Cap the delay so a long list doesn't
+   drag. */
+@keyframes historyItemIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Skeleton shimmer — the soft sweep reused by conversation card
+   skeletons. Runs on top of a 6% slate plate and clamps to 1.6s. */
+@keyframes historyShimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.history-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.05);
+}
+.history-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.85) 50%,
+    transparent 100%
+  );
+  animation: historyShimmer 1.6s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
+}
+
+/* Hidden scrollbar — keeps the conversation list scrollable
+   without showing a vertical chrome bar. The wrapper still
+   receives wheel/touch events; only the visual chrome is gone. */
+.history-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.history-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* Subtle inner ring drawn on the floating panel edge so the
+   soft shadow doesn't read as a fuzzy line against light
+   backgrounds. The ring is a single hairline at ~6% black. */
+.history-panel-edge {
+  box-shadow:
+    inset 0 0 0 1px rgba(15, 23, 42, 0.05),
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 30px 80px -24px rgba(15, 23, 42, 0.28),
+    0 12px 32px -12px rgba(15, 23, 42, 0.14);
+}
+
+/* Sticky subheader used by the search + filter bar so the
+   frosted plate stays above the list as it scrolls. */
+.history-sticky-top {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: rgba(245, 245, 247, 0.86);
+  backdrop-filter: saturate(180%) blur(10px);
+  -webkit-backdrop-filter: saturate(180%) blur(10px);
+}
+
+/* ─── Alerts incident center ─────────────────────────────────────
+   Visual primitives for the redesigned Alerts page. Reuses the
+   same tokens (severity colors, easing, durations) as the rest of
+   the app so the page reads as one system. */
+
+/* Backdrop for the right-side details drawer. Mirrors the soft,
+   slightly-blurred dim used by the chat history panel. */
+@keyframes alertsBackdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Soft pulse reserved for ACTIVE critical alerts. Long cycle
+   (2.4s) so the strip reads as a beacon, not a loading state.
+   The global prefers-reduced-motion rule already clamps it. */
+@keyframes criticalPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45); }
+  50%      { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+.alerts-critical-pulse {
+  animation: criticalPulse 2.4s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
+}
+
+/* Severity accent strip used on the leading edge of every
+   incident card. The strip is 3px wide and colored per level. */
+.alerts-strip {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-top-left-radius: inherit;
+  border-bottom-left-radius: inherit;
+}
+.alerts-strip-critique { background: #EF4444; }
+.alerts-strip-attention { background: #F59E0B; }
+.alerts-strip-info      { background: #3B82F6; }
+.alerts-strip-processed { background: #10B981; }
+
+/* Skeleton block used inside loading rows. Reuses the
+   historyShimmer sweep defined above for a single visual feel. */
+.alerts-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.05);
+  border-radius: 8px;
+}
+.alerts-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.85) 50%,
+    transparent 100%
+  );
+  animation: historyShimmer 1.6s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
+}
+
+/* Subtle separator dot used inside chip rows so the chips
+   read as a single inline cluster. */
+.alerts-chip-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: #D4D4D8;
+  display: inline-block;
+}

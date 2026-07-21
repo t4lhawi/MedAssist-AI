@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
 /* ─────────────────────────────────────────────────────────────
@@ -136,10 +137,10 @@ export default function Modal({
 
   if (!open) return null
 
-  return (
+  return createPortal(
     <div
       aria-hidden={false}
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6"
     >
       {/* Backdrop */}
       <div
@@ -176,7 +177,8 @@ export default function Modal({
           to   { opacity: 1; transform: translateY(0) scale(1); }
         }
       `}</style>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

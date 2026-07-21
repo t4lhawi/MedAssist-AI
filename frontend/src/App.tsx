@@ -73,7 +73,7 @@ function Layout() {
           <p className="text-[15px] font-semibold tracking-[-0.01em]">MedAssist AI · CHU Mohammed VI Oujda</p>
           <p className="mt-3 flex items-center justify-center gap-2 text-[13px]" style={{ color: 'rgba(17,17,17,0.4)' }}>
             <Loader2 size={14} className="animate-spin" />
-            Chargement...
+            Chargement…
           </p>
         </div>
       </div>

@@ -1,11 +1,41 @@
-import React, { useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Alerte } from '../../types'
 import { traiterAlerte } from '../../services/api'
-import { AlertTriangle, Check, CheckCircle, ChevronDown, ChevronRight, Info, Loader2, Sparkles } from 'lucide-react'
+import {
+  Activity,
+  AlertOctagon,
+  AlertTriangle,
+  ArrowDownAZ,
+  ArrowUpAZ,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  CircleDot,
+  Clock,
+  Cpu,
+  Filter,
+  Info,
+  Loader2,
+  MoreHorizontal,
+  RefreshCw,
+  Search,
+  Sparkles,
+  Trash2,
+  X,
+} from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { getMonitoringType } from '../../monitoring'
 import Markdown from '../ui/Markdown'
+import PageHeader from '../ui/PageHeader'
+
+/* ─── Public component contract (UNCHANGED) ─────────────────────
+ *  AlertesPage.tsx still imports `AlertsList` and passes
+ *  { alertes, onRefresh, variant, compact }. Do not rename or
+ *  change the Props interface.
+ * ──────────────────────────────────────────────────────────────── */
 
 interface Props {
   alertes: Alerte[]
@@ -14,81 +44,172 @@ interface Props {
   compact?: boolean
 }
 
-const STYLES: Record<string, { bg: string; dot: string; badge: string; border: string; text: string }> = {
+/* ─── Severity tokens ─────────────────────────────────────────── */
+
+const SEVERITY: Record<string, {
+  label: string
+  dot: string
+  badge: string
+  strip: string
+  iconBg: string
+  iconColor: string
+  ring: string
+  glow: string
+  text: string
+}> = {
   critique: {
-    bg: 'bg-red-50',
-    dot: 'bg-red-500',
-    badge: 'bg-red-100 text-red-700',
-    border: 'border-l-red-500',
+    label: 'Critique',
+    dot: '#EF4444',
+    badge: 'bg-red-50 text-red-700 ring-1 ring-red-100',
+    strip: 'alerts-strip-critique',
+    iconBg: 'bg-red-50',
+    iconColor: '#EF4444',
+    ring: 'ring-red-100',
+    glow: 'shadow-[0_0_0_4px_rgba(239,68,68,0.08)]',
     text: 'text-red-700',
   },
   attention: {
-    bg: 'bg-amber-50',
-    dot: 'bg-amber-500',
-    badge: 'bg-amber-100 text-amber-700',
-    border: 'border-l-amber-500',
+    label: 'Attention',
+    dot: '#F59E0B',
+    badge: 'bg-amber-50 text-amber-700 ring-1 ring-amber-100',
+    strip: 'alerts-strip-attention',
+    iconBg: 'bg-amber-50',
+    iconColor: '#F59E0B',
+    ring: 'ring-amber-100',
+    glow: '',
     text: 'text-amber-700',
   },
   info: {
-    bg: 'bg-blue-50',
-    dot: 'bg-blue-500',
-    badge: 'bg-blue-100 text-blue-700',
-    border: 'border-l-blue-500',
+    label: 'Information',
+    dot: '#3B82F6',
+    badge: 'bg-blue-50 text-blue-700 ring-1 ring-blue-100',
+    strip: 'alerts-strip-info',
+    iconBg: 'bg-blue-50',
+    iconColor: '#3B82F6',
+    ring: 'ring-blue-100',
+    glow: '',
     text: 'text-blue-700',
   },
 }
 
-const ICON_COLORS: Record<string, string> = {
-  critique: '#EF4444',
-  attention: '#F59E0B',
-  info: '#3B82F6',
-}
-
-const ICONS: Record<string, React.ElementType> = {
-  critique: AlertTriangle,
+const SEVERITY_ICONS: Record<string, React.ElementType> = {
+  critique: AlertOctagon,
   attention: AlertTriangle,
   info: Info,
 }
 
+const FALLBACK_SEVERITY = SEVERITY.info
+
+/* ─── Helpers ─────────────────────────────────────────────────── */
+
 function relativeTime(date: Date) {
   const diff = (Date.now() - date.getTime()) / 1000
-  if (diff < 60) return "à l'instant"
+  if (diff < 5) return "à l'instant"
+  if (diff < 60) return `il y a ${Math.floor(diff)} s`
   if (diff < 3600) return `il y a ${Math.floor(diff / 60)} min`
   if (diff < 86400) return `il y a ${Math.floor(diff / 3600)} h`
   return `il y a ${Math.floor(diff / 86400)} j`
 }
 
-function AlertExplanation({ explication }: { explication: string | null }) {
-  const [open, setOpen] = useState(false)
+function fullDate(date: Date) {
+  return format(date, "EEEE d MMMM yyyy 'à' HH:mm", { locale: fr })
+}
+
+function isToday(d: Date) {
+  const now = new Date()
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
+}
+function isYesterday(d: Date) {
+  const y = new Date()
+  y.setDate(y.getDate() - 1)
+  return d.getFullYear() === y.getFullYear() && d.getMonth() === y.getMonth() && d.getDate() === y.getDate()
+}
+
+type GroupKey = 'today' | 'yesterday' | 'thisWeek' | 'earlier'
+
+function groupKeyFor(d: Date): GroupKey {
+  if (isToday(d)) return 'today'
+  if (isYesterday(d)) return 'yesterday'
+  const now = new Date()
+  const startOfWeek = new Date(now)
+  startOfWeek.setHours(0, 0, 0, 0)
+  startOfWeek.setDate(now.getDate() - now.getDay())
+  if (d >= startOfWeek) return 'thisWeek'
+  return 'earlier'
+}
+
+const GROUP_TITLE: Record<GroupKey, string> = {
+  today: "Aujourd'hui",
+  yesterday: 'Hier',
+  thisWeek: 'Cette semaine',
+  earlier: 'Plus tôt',
+}
+
+const GROUP_ORDER: GroupKey[] = ['today', 'yesterday', 'thisWeek', 'earlier']
+
+/* ─── AI Analysis (kept as a self-contained block, no exports) ── */
+
+function AIAnalysisCard({ explication }: { explication: string | null }) {
+  const [open, setOpen] = useState(true)
 
   if (explication === null || explication === undefined) {
     return (
-      <div className="mt-2 flex items-center gap-1.5 text-[11px]" style={{ color: '#9CA3AF' }}>
-        <Loader2 size={11} className="animate-spin" strokeWidth={2.4} />
-        <span>Explication IA en cours…</span>
+      <div
+        className="relative overflow-hidden rounded-2xl border p-4"
+        style={{ borderColor: '#DBEAFE', background: 'linear-gradient(180deg, #F4F8FF 0%, #FFFFFF 100%)' }}
+      >
+        <div className="flex items-center gap-2 text-[12px] font-semibold" style={{ color: '#1D4ED8' }}>
+          <Sparkles size={13} strokeWidth={2.2} />
+          Analyse IA
+        </div>
+        <div className="mt-3 space-y-2">
+          <div className="alerts-skeleton h-3 w-[88%]" />
+          <div className="alerts-skeleton h-3 w-[72%]" />
+          <div className="alerts-skeleton h-3 w-[60%]" />
+        </div>
+        <div className="mt-3 flex items-center gap-1.5 text-[11.5px]" style={{ color: '#6B7280' }}>
+          <Loader2 size={11} className="animate-spin" strokeWidth={2.4} />
+          Génération de l'explication IA…
+        </div>
       </div>
     )
   }
-  if (explication === '') return null
+  if (explication === '') {
+    return (
+      <div
+        className="rounded-2xl border px-4 py-3 text-[12px]"
+        style={{ borderColor: '#ECECEC', background: '#FAFAFA', color: '#9CA3AF' }}
+      >
+        Aucune analyse IA disponible pour cette alerte.
+      </div>
+    )
+  }
 
   return (
-    <div className="mt-2.5 overflow-hidden rounded-2xl border" style={{ borderColor: '#BFDBFE', background: 'rgba(219, 234, 254, 0.4)' }}>
+    <div
+      className="overflow-hidden rounded-2xl border"
+      style={{ borderColor: '#DBEAFE', background: 'linear-gradient(180deg, #F4F8FF 0%, #FFFFFF 100%)' }}
+    >
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[12px] font-semibold transition-colors"
+        className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-[12.5px] font-semibold transition-colors"
         style={{ color: '#1D4ED8' }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(191, 219, 254, 0.4)' }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(219, 234, 254, 0.35)' }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+        aria-expanded={open}
       >
         <span className="inline-flex items-center gap-1.5">
-          <Sparkles size={12} strokeWidth={2.2} />
-          Pourquoi cette alerte ?
+          <Sparkles size={13} strokeWidth={2.2} />
+          Analyse IA
         </span>
-        {open ? <ChevronDown size={13} strokeWidth={2.2} /> : <ChevronRight size={13} strokeWidth={2.2} />}
+        {open ? <ChevronDown size={14} strokeWidth={2.2} /> : <ChevronRight size={14} strokeWidth={2.2} />}
       </button>
       {open && (
-        <div className="border-t px-3 py-2.5 text-[12.5px] leading-6" style={{ background: 'rgba(255,255,255,0.7)', borderColor: '#BFDBFE', color: '#374151' }}>
+        <div
+          className="border-t px-4 py-3 text-[13px] leading-7"
+          style={{ borderColor: '#DBEAFE', background: 'rgba(255,255,255,0.65)', color: '#1F2937' }}
+        >
           <Markdown source={explication} />
         </div>
       )}
@@ -96,132 +217,1195 @@ function AlertExplanation({ explication }: { explication: string | null }) {
   )
 }
 
-export default function AlertsList({ alertes, onRefresh, variant = 'all', compact = false }: Props) {
-  const [processing, setProcessing] = useState<number | null>(null)
+/* ─── Stat card ──────────────────────────────────────────────── */
 
-  const traiter = async (id: number) => {
+interface StatCardProps {
+  label: string
+  value: number
+  icon: React.ElementType
+  iconBg: string
+  iconColor: string
+  trend?: number
+  tone: 'critique' | 'attention' | 'info' | 'success'
+}
+
+function StatCard({ label, value, icon: Icon, iconBg, iconColor, trend, tone }: StatCardProps) {
+  const trendTone =
+    tone === 'critique' ? 'text-red-600' :
+    tone === 'attention' ? 'text-amber-600' :
+    tone === 'info' ? 'text-blue-600' :
+    'text-emerald-600'
+  return (
+    <div
+      className="card relative overflow-hidden rounded-3xl bg-white p-5"
+      style={{ border: '1px solid #ECECEC' }}
+    >
+      <div className="flex items-start justify-between">
+        <span
+          className={`flex h-9 w-9 items-center justify-center rounded-2xl ${iconBg}`}
+          style={{ color: iconColor }}
+        >
+          <Icon size={16} strokeWidth={2.2} />
+        </span>
+        {typeof trend === 'number' && trend > 0 && (
+          <span className={`text-[10.5px] font-semibold ${trendTone}`}>
+            +{trend} aujourd'hui
+          </span>
+        )}
+      </div>
+      <div className="mt-3 flex items-baseline gap-1.5">
+        <span className="text-[28px] font-semibold tracking-tight tabular-nums" style={{ color: '#111111' }}>
+          {value}
+        </span>
+      </div>
+      <p className="mt-0.5 text-[12.5px] font-medium" style={{ color: '#6B7280' }}>{label}</p>
+    </div>
+  )
+}
+
+/* ─── Overview row ───────────────────────────────────────────── */
+
+function AlertStatsRow({ alertes }: { alertes: Alerte[] }) {
+  const active = alertes.filter(a => !a.traitee)
+  const todayMs = Date.now()
+  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0)
+  const c = active.filter(a => a.niveau === 'critique').length
+  const w = active.filter(a => a.niveau === 'attention').length
+  const i = active.filter(a => a.niveau === 'info').length
+  const processedToday = alertes.filter(a => {
+    if (!a.traitee) return false
+    const d = new Date(a.cree_le)
+    return d >= startOfToday && (todayMs - d.getTime()) < 2 * 86400_000
+  }).length
+  const cToday = active.filter(a => a.niveau === 'critique' && new Date(a.cree_le) >= startOfToday).length
+  const wToday = active.filter(a => a.niveau === 'attention' && new Date(a.cree_le) >= startOfToday).length
+  const iToday = active.filter(a => a.niveau === 'info' && new Date(a.cree_le) >= startOfToday).length
+
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <StatCard
+        label="Alertes critiques"
+        value={c}
+        icon={AlertOctagon}
+        iconBg="bg-red-50"
+        iconColor="#EF4444"
+        trend={cToday}
+        tone="critique"
+      />
+      <StatCard
+        label="Alertes d'attention"
+        value={w}
+        icon={AlertTriangle}
+        iconBg="bg-amber-50"
+        iconColor="#F59E0B"
+        trend={wToday}
+        tone="attention"
+      />
+      <StatCard
+        label="Alertes d'information"
+        value={i}
+        icon={Info}
+        iconBg="bg-blue-50"
+        iconColor="#3B82F6"
+        trend={iToday}
+        tone="info"
+      />
+      <StatCard
+        label="Traitées aujourd'hui"
+        value={processedToday}
+        icon={CheckCircle2}
+        iconBg="bg-emerald-50"
+        iconColor="#10B981"
+        tone="success"
+      />
+    </div>
+  )
+}
+
+/* ─── Toolbar ────────────────────────────────────────────────── */
+
+type SeverityFilter = 'all' | 'critique' | 'attention' | 'info'
+type StatusFilter = 'all' | 'active' | 'processed'
+
+interface ToolbarState {
+  q: string
+  severity: SeverityFilter
+  status: StatusFilter
+  room: string
+  sort: 'newest' | 'oldest'
+  selected: Set<number>
+}
+
+const SEVERITY_PILL: Array<{ key: SeverityFilter; label: string; dot?: string }> = [
+  { key: 'all', label: 'Tous' },
+  { key: 'critique', label: 'Critique', dot: '#EF4444' },
+  { key: 'attention', label: 'Attention', dot: '#F59E0B' },
+  { key: 'info', label: 'Information', dot: '#3B82F6' },
+]
+
+const STATUS_PILL: Array<{ key: StatusFilter; label: string }> = [
+  { key: 'all', label: 'Toutes' },
+  { key: 'active', label: 'Actives' },
+  { key: 'processed', label: 'Traitées' },
+]
+
+interface AlertToolbarProps {
+  state: ToolbarState
+  setState: React.Dispatch<React.SetStateAction<ToolbarState>>
+  rooms: string[]
+  onRefresh: () => void
+  refreshing: boolean
+  allFilteredIds: number[]
+  onBulkAction: () => void
+}
+
+function AlertToolbar({
+  state, setState, rooms, onRefresh, refreshing, allFilteredIds, onBulkAction,
+}: AlertToolbarProps) {
+  const selectedCount = state.selected.size
+  const allSelected = allFilteredIds.length > 0 && allFilteredIds.every(id => state.selected.has(id))
+  const someSelected = selectedCount > 0 && !allSelected
+
+  return (
+    <div
+      className="rounded-2xl border bg-white"
+      style={{ borderColor: '#ECECEC' }}
+    >
+      <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
+        {/* Select all */}
+        <button
+          type="button"
+          onClick={() => {
+            if (allSelected) setState(s => ({ ...s, selected: new Set() }))
+            else setState(s => ({ ...s, selected: new Set(allFilteredIds) }))
+          }}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors"
+          style={{ background: allSelected || someSelected ? '#111111' : '#F5F5F7', color: allSelected || someSelected ? 'white' : '#6B7280' }}
+          aria-label={allSelected ? 'Désélectionner tout' : 'Sélectionner tout'}
+        >
+          {allSelected ? <Check size={13} strokeWidth={2.6} /> : someSelected ? <span className="text-[10px] font-bold">–</span> : null}
+        </button>
+
+        {/* Search */}
+        <div
+          className="group/field flex min-w-0 flex-1 items-center gap-2 rounded-xl px-3 py-1.5 transition-all"
+          style={{ background: '#F5F5F7' }}
+        >
+          <Search size={14} strokeWidth={2.2} style={{ color: '#6B7280' }} />
+          <input
+            type="text"
+            value={state.q}
+            onChange={e => setState(s => ({ ...s, q: e.target.value }))}
+            placeholder="Rechercher par salle, message, capteur ou ESP32…"
+            className="w-full bg-transparent text-[13px] font-medium outline-none placeholder:font-normal"
+            style={{ color: '#111111' }}
+            aria-label="Rechercher"
+          />
+          {state.q && (
+            <button
+              type="button"
+              onClick={() => setState(s => ({ ...s, q: '' }))}
+              className="rounded-full p-0.5 transition-colors hover:bg-black/5"
+              aria-label="Effacer la recherche"
+            >
+              <X size={12} strokeWidth={2.4} style={{ color: '#6B7280' }} />
+            </button>
+          )}
+        </div>
+
+        {/* Sort */}
+        <button
+          type="button"
+          onClick={() => setState(s => ({ ...s, sort: s.sort === 'newest' ? 'oldest' : 'newest' }))}
+          className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[12px] font-medium transition-colors"
+          style={{ background: '#F5F5F7', color: '#374151' }}
+          aria-label="Trier"
+        >
+          {state.sort === 'newest' ? <ArrowDownAZ size={13} strokeWidth={2.2} /> : <ArrowUpAZ size={13} strokeWidth={2.2} />}
+          {state.sort === 'newest' ? 'Plus récent' : 'Plus ancien'}
+        </button>
+
+        {/* Room filter */}
+        {rooms.length > 0 && (
+          <div
+            className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[12px] font-medium"
+            style={{ background: '#F5F5F7', color: '#374151' }}
+          >
+            <Filter size={12} strokeWidth={2.2} />
+            <select
+              value={state.room}
+              onChange={e => setState(s => ({ ...s, room: e.target.value }))}
+              className="bg-transparent text-[12px] font-medium outline-none"
+              aria-label="Filtrer par salle"
+            >
+              <option value="">Toutes les salles</option>
+              {rooms.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+        )}
+
+        {/* Refresh */}
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={refreshing}
+          className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[12px] font-medium transition-colors disabled:opacity-60"
+          style={{ background: '#F5F5F7', color: '#374151' }}
+          aria-label="Rafraîchir"
+        >
+          <RefreshCw size={12} strokeWidth={2.2} className={refreshing ? 'animate-spin' : ''} />
+          Actualiser
+        </button>
+
+        {/* Bulk */}
+        <button
+          type="button"
+          onClick={onBulkAction}
+          disabled={selectedCount === 0}
+          className="relative inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[12px] font-medium transition-colors disabled:cursor-not-allowed"
+          style={{
+            background: selectedCount > 0 ? '#111111' : '#F5F5F7',
+            color: selectedCount > 0 ? 'white' : '#6B7280',
+          }}
+          title="Bientôt disponible"
+          aria-label="Actions en masse"
+        >
+          <MoreHorizontal size={13} strokeWidth={2.2} />
+          Actions
+          {selectedCount > 0 && (
+            <span
+              className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold"
+              style={{ background: 'rgba(255,255,255,0.2)' }}
+            >
+              {selectedCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Secondary filter row */}
+      <div
+        className="flex flex-wrap items-center gap-3 border-t px-3 py-2"
+        style={{ borderColor: '#F5F5F7' }}
+      >
+        <div className="inline-flex items-center gap-1">
+          <span className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Sévérité</span>
+          <div
+            className="inline-flex rounded-xl p-0.5"
+            style={{ background: '#F5F5F7' }}
+          >
+            {SEVERITY_PILL.map(p => {
+              const active = state.severity === p.key
+              return (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => setState(s => ({ ...s, severity: p.key }))}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11.5px] font-medium transition-all"
+                  style={active ? { background: '#FFFFFF', color: '#111111', boxShadow: '0 1px 3px -1px rgba(17,17,17,0.1)' } : { color: '#6B7280' }}
+                >
+                  {p.dot && <span className="h-1.5 w-1.5 rounded-full" style={{ background: p.dot }} />}
+                  {p.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <span className="alerts-chip-dot" />
+
+        <div className="inline-flex items-center gap-1">
+          <span className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Statut</span>
+          <div
+            className="inline-flex rounded-xl p-0.5"
+            style={{ background: '#F5F5F7' }}
+          >
+            {STATUS_PILL.map(p => {
+              const active = state.status === p.key
+              return (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => setState(s => ({ ...s, status: p.key }))}
+                  className="rounded-lg px-2.5 py-1 text-[11.5px] font-medium transition-all"
+                  style={active ? { background: '#FFFFFF', color: '#111111', boxShadow: '0 1px 3px -1px rgba(17,17,17,0.1)' } : { color: '#6B7280' }}
+                >
+                  {p.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Incident card ──────────────────────────────────────────── */
+
+interface AlertIncidentCardProps {
+  alerte: Alerte
+  selected: boolean
+  onToggleSelect: (id: number) => void
+  onOpen: (a: Alerte) => void
+  onTreat: (id: number) => void
+  processing: boolean
+}
+
+function AlertIncidentCard({
+  alerte: a, selected, onToggleSelect, onOpen, onTreat, processing,
+}: AlertIncidentCardProps) {
+  const sev = SEVERITY[a.niveau] || FALLBACK_SEVERITY
+  const SevIcon = SEVERITY_ICONS[a.niveau] || Info
+  const sensor = getMonitoringType(a.type ?? undefined)
+  const SensorIcon = sensor.icon
+  const date = new Date(a.cree_le)
+  const isActiveCritical = !a.traitee && a.niveau === 'critique'
+
+  const onCardKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onOpen(a)
+    }
+  }
+
+  return (
+    <div
+      className={`card-lift relative overflow-hidden rounded-2xl border bg-white ${
+        isActiveCritical ? 'alerts-critical-pulse' : ''
+      }`}
+      style={{ borderColor: '#ECECEC' }}
+    >
+      {/* Severity strip */}
+      <span className={`alerts-strip ${a.traitee ? 'alerts-strip-processed' : sev.strip}`} />
+
+      <div className="px-4 py-4 sm:px-5 sm:py-4">
+        <div className="flex items-start gap-3">
+          {/* Checkbox */}
+          <button
+            type="button"
+            onClick={() => onToggleSelect(a.id)}
+            className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md transition-colors"
+            style={{
+              background: selected ? '#111111' : '#FFFFFF',
+              border: `1.5px solid ${selected ? '#111111' : '#E4E4E7'}`,
+              color: selected ? 'white' : 'transparent',
+            }}
+            aria-label={selected ? 'Désélectionner' : 'Sélectionner'}
+            aria-pressed={selected}
+          >
+            {selected && <Check size={11} strokeWidth={3} />}
+          </button>
+
+          {/* Icon */}
+          <span
+            className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl ${sev.iconBg}`}
+            style={{ color: sev.iconColor }}
+          >
+            <SevIcon size={15} strokeWidth={2.2} />
+          </span>
+
+          {/* Content */}
+          <div className="min-w-0 flex-1">
+            {/* Top row: badges + meta */}
+            <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${sev.badge}`}
+                title={sev.label}
+              >
+                {sev.label}
+              </span>
+              {a.salle && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10.5px] font-semibold text-slate-700">
+                  {a.salle}
+                </span>
+              )}
+              <span
+                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
+                style={{ background: 'rgba(59,130,246,0.08)', color: '#1D4ED8' }}
+              >
+                <SensorIcon size={10} strokeWidth={2.4} />
+                {sensor.title}
+              </span>
+              {a.esp32_id != null && (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
+                  style={{ background: '#F5F5F7', color: '#6B7280' }}
+                >
+                  <Cpu size={10} strokeWidth={2.4} />
+                  ESP32 #{a.esp32_id}
+                </span>
+              )}
+              <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: '#9CA3AF' }}>
+                <Clock size={10} strokeWidth={2.2} />
+                {relativeTime(date)}
+              </span>
+            </div>
+
+            {/* Title */}
+            <p
+              className="text-[15px] font-medium leading-7 tracking-tight"
+              style={{ color: '#111111' }}
+            >
+              {a.message}
+            </p>
+
+            {/* AI Analysis */}
+            <div className="mt-3">
+              <AIAnalysisCard explication={a.explication} />
+            </div>
+
+            {/* Footer actions */}
+            <div className="mt-3 flex items-center justify-end gap-2">
+              {!a.traitee ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onOpen(a)}
+                    className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11.5px] font-semibold transition-colors"
+                    style={{ color: '#374151', background: '#F5F5F7' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#ECECEC' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#F5F5F7' }}
+                  >
+                    Voir le détail
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onTreat(a.id)}
+                    disabled={processing}
+                    className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11.5px] font-semibold text-white transition-all active:scale-95 disabled:opacity-60"
+                    style={{ background: '#111111' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#1F1F23' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#111111' }}
+                  >
+                    {processing ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} strokeWidth={2.6} />}
+                    Marquer comme traitée
+                  </button>
+                </>
+              ) : (
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-100"
+                >
+                  <Check size={11} strokeWidth={2.6} />
+                  Traitée
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Make the whole card keyboard-openable (a11y) */}
+        <button
+          type="button"
+          onClick={() => onOpen(a)}
+          onKeyDown={onCardKeyDown}
+          aria-label={`Voir le détail de l'alerte ${a.id}`}
+          className="absolute inset-0 cursor-pointer rounded-2xl focus-visible:outline-none"
+          style={{ background: 'transparent', border: 'none' }}
+        />
+      </div>
+    </div>
+  )
+}
+
+/* ─── Skeleton card ──────────────────────────────────────────── */
+
+function AlertSkeletonCard() {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border bg-white" style={{ borderColor: '#ECECEC' }}>
+      <span className="alerts-strip alerts-strip-info opacity-50" />
+      <div className="px-5 py-4">
+        <div className="flex items-start gap-3">
+          <div className="alerts-skeleton mt-0.5 h-5 w-5" />
+          <div className="alerts-skeleton mt-0.5 h-9 w-9 rounded-2xl" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="flex gap-2">
+              <div className="alerts-skeleton h-4 w-16" />
+              <div className="alerts-skeleton h-4 w-12" />
+              <div className="alerts-skeleton h-4 w-20" />
+            </div>
+            <div className="alerts-skeleton h-3 w-[80%]" />
+            <div className="alerts-skeleton h-3 w-[60%]" />
+            <div className="alerts-skeleton mt-2 h-16 w-full rounded-2xl" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Empty & no-results states ───────────────────────────────── */
+
+function AlertEmptyState({ onRefresh, refreshing }: { onRefresh: () => void; refreshing: boolean }) {
+  return (
+    <div
+      className="rounded-3xl border bg-white px-6 py-14 text-center"
+      style={{ borderColor: '#ECECEC' }}
+    >
+      <div
+        className="relative mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full"
+        style={{ background: '#F0FDF4' }}
+      >
+        <CheckCircle2 size={32} strokeWidth={2.2} style={{ color: '#10B981' }} />
+        <span
+          className="absolute inset-0 rounded-full"
+          style={{ boxShadow: '0 0 0 6px rgba(16,185,129,0.10)' }}
+        />
+      </div>
+      <p className="text-[16px] font-semibold tracking-tight" style={{ color: '#111111' }}>
+        Aucune alerte active
+      </p>
+      <p className="mx-auto mt-1.5 max-w-[34ch] text-[13px]" style={{ color: '#6B7280' }}>
+        Tout fonctionne normalement. Les incidents apparaîtront ici dès qu'ils se produiront.
+      </p>
+      <button
+        type="button"
+        onClick={onRefresh}
+        disabled={refreshing}
+        className="mt-5 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12.5px] font-semibold text-white transition-all active:scale-95 disabled:opacity-60"
+        style={{ background: '#111111' }}
+      >
+        <RefreshCw size={12} strokeWidth={2.4} className={refreshing ? 'animate-spin' : ''} />
+        Actualiser
+      </button>
+    </div>
+  )
+}
+
+function AlertNoResults({ onReset }: { onReset: () => void }) {
+  return (
+    <div
+      className="rounded-3xl border bg-white px-6 py-12 text-center"
+      style={{ borderColor: '#ECECEC' }}
+    >
+      <div
+        className="relative mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full"
+        style={{ background: '#F5F5F7' }}
+      >
+        <Search size={24} strokeWidth={2.2} style={{ color: '#6B7280' }} />
+      </div>
+      <p className="text-[15px] font-semibold tracking-tight" style={{ color: '#111111' }}>
+        Aucune alerte correspondante
+      </p>
+      <p className="mx-auto mt-1.5 max-w-[32ch] text-[13px]" style={{ color: '#6B7280' }}>
+        Essayez de modifier vos filtres ou de réinitialiser la recherche pour voir plus de résultats.
+      </p>
+      <button
+        type="button"
+        onClick={onReset}
+        className="mt-4 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-colors"
+        style={{ color: '#374151', background: '#F5F5F7' }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#ECECEC' }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#F5F5F7' }}
+      >
+        Réinitialiser les filtres
+      </button>
+    </div>
+  )
+}
+
+/* ─── Details drawer ─────────────────────────────────────────── */
+
+interface AlertDrawerProps {
+  alerte: Alerte | null
+  onClose: () => void
+  onTreat: (id: number) => void
+  processing: boolean
+}
+
+function AlertDetailsDrawer({ alerte, onClose, onTreat, processing }: AlertDrawerProps) {
+  const panelRef = useRef<HTMLDivElement>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
+
+  // Body scroll lock
+  useEffect(() => {
+    if (!alerte) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [alerte])
+
+  // ESC + focus restore
+  useEffect(() => {
+    if (!alerte) return
+    previousFocusRef.current = (document.activeElement as HTMLElement) ?? null
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation()
+        onClose()
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    const t = setTimeout(() => { panelRef.current?.focus() }, 60)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      clearTimeout(t)
+      const prev = previousFocusRef.current
+      if (prev && typeof prev.focus === 'function') prev.focus()
+    }
+  }, [alerte, onClose])
+
+  if (!alerte) return null
+
+  const sev = SEVERITY[alerte.niveau] || FALLBACK_SEVERITY
+  const SevIcon = SEVERITY_ICONS[alerte.niveau] || Info
+  const sensor = getMonitoringType(alerte.type ?? undefined)
+  const SensorIcon = sensor.icon
+  const date = new Date(alerte.cree_le)
+
+  return createPortal(
+    <div aria-hidden={false} className="fixed inset-0 z-[180]">
+      {/* Backdrop */}
+      <div
+        aria-hidden="true"
+        onClick={onClose}
+        className="absolute inset-0 bg-[#0B0B0F]/40 backdrop-blur-md"
+        style={{ animation: 'alertsBackdropIn 200ms cubic-bezier(0.25, 0.1, 0.25, 1) both' }}
+      />
+
+      {/* Panel — desktop 480px, tablet 80vw, mobile 100vw */}
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Détails de l'alerte"
+        tabIndex={-1}
+        className="absolute inset-y-0 right-0 flex w-full flex-col overflow-hidden bg-white outline-none sm:w-[80vw] md:w-[480px] history-panel-edge"
+        style={{ animation: 'historyPanelIn 220ms cubic-bezier(0.25, 0.1, 0.25, 1) both' }}
+      >
+        {/* Header */}
+        <header
+          className="flex items-start justify-between gap-3 border-b px-6 py-5"
+          style={{ borderColor: '#F0F0F0' }}
+        >
+          <div className="flex min-w-0 items-start gap-3">
+            <span
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${sev.iconBg}`}
+              style={{ color: sev.iconColor }}
+            >
+              <SevIcon size={17} strokeWidth={2.2} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
+                Incident · #{alerte.id}
+              </p>
+              <h2 className="mt-0.5 text-[16px] font-semibold tracking-tight" style={{ color: '#111111' }}>
+                {alerte.message}
+              </h2>
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${sev.badge}`}>
+                  {sev.label}
+                </span>
+                {alerte.salle && (
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10.5px] font-semibold text-slate-700">
+                    {alerte.salle}
+                  </span>
+                )}
+                <span
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
+                  style={{ background: 'rgba(59,130,246,0.08)', color: '#1D4ED8' }}
+                >
+                  <SensorIcon size={10} strokeWidth={2.4} />
+                  {sensor.title}
+                </span>
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#6B7280] transition-all duration-200 hover:bg-[#F5F5F7] hover:text-[#111111] active:scale-90"
+          >
+            <X size={15} strokeWidth={2.2} />
+          </button>
+        </header>
+
+        {/* Body */}
+        <div className="history-scroll flex-1 overflow-y-auto px-6 py-5">
+          {/* Message */}
+          <section>
+            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
+              Message
+            </h3>
+            <p className="mt-2 text-[15px] leading-7" style={{ color: '#111111' }}>
+              {alerte.message}
+            </p>
+          </section>
+
+          {/* AI Analysis */}
+          <section className="mt-6">
+            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
+              Analyse IA
+            </h3>
+            <div className="mt-2">
+              <AIAnalysisCard explication={alerte.explication} />
+            </div>
+          </section>
+
+          {/* Context */}
+          <section className="mt-6">
+            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
+              Contexte
+            </h3>
+            <div
+              className="mt-2 grid grid-cols-2 gap-3 rounded-2xl border p-4"
+              style={{ borderColor: '#ECECEC', background: '#FAFAFA' }}
+            >
+              <Field label="Salle" value={alerte.salle ?? '—'} />
+              <Field label="ESP32" value={alerte.esp32_id != null ? `#${alerte.esp32_id}` : '—'} />
+              <Field label="Capteur" value={sensor.title} />
+              <Field label="Créée le" value={fullDate(date)} />
+              <Field label="Statut" value={alerte.traitee ? 'Traitée' : 'Active'} valueClass={alerte.traitee ? 'text-emerald-600' : sev.text} />
+            </div>
+          </section>
+
+          {/* Timeline */}
+          <section className="mt-6">
+            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
+              Chronologie
+            </h3>
+            <ol className="mt-2 space-y-3 pl-1">
+              <TimelineItem
+                dot={<CircleDot size={14} strokeWidth={2.4} style={{ color: alerte.traitee ? '#10B981' : '#3B82F6' }} />}
+                title="Alerte créée"
+                subtitle={fullDate(date)}
+                active
+              />
+              {alerte.traitee && (
+                <TimelineItem
+                  dot={<Check size={14} strokeWidth={2.6} style={{ color: '#10B981' }} />}
+                  title="Marquée comme traitée"
+                  subtitle="Statut mis à jour"
+                />
+              )}
+              {!alerte.traitee && (
+                <TimelineItem
+                  dot={<Sparkles size={14} strokeWidth={2.2} style={{ color: '#3B82F6' }} />}
+                  title="En attente d'action"
+                  subtitle="Résolvez l'alerte pour la clôturer"
+                />
+              )}
+            </ol>
+          </section>
+
+          {/* Future actions placeholder */}
+          <section className="mt-6">
+            <div
+              className="flex items-start gap-3 rounded-2xl border border-dashed p-4"
+              style={{ borderColor: '#D4D4D8', background: 'rgba(245,245,247,0.6)' }}
+            >
+              <Sparkles size={15} strokeWidth={2.2} style={{ color: '#6B7280' }} />
+              <div>
+                <p className="text-[12.5px] font-semibold" style={{ color: '#374151' }}>
+                  Plus d'actions à venir
+                </p>
+                <p className="mt-0.5 text-[11.5px]" style={{ color: '#9CA3AF' }}>
+                  Assigner des responsables, escalader vers une salle et lancer des réponses automatisées depuis cet écran.
+                </p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* Sticky footer */}
+        <footer
+          className="flex items-center justify-end gap-2 border-t px-6 py-4"
+          style={{ borderColor: '#F0F0F0', background: 'rgba(250,250,250,0.6)' }}
+        >
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex items-center justify-center rounded-full border px-4 py-2 text-[12.5px] font-medium transition-colors"
+            style={{ background: 'white', color: '#374151', borderColor: '#ECECEC' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F5F5F7' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'white' }}
+          >
+            Fermer
+          </button>
+          {!alerte.traitee && (
+            <button
+              type="button"
+              onClick={() => onTreat(alerte.id)}
+              disabled={processing}
+              className="inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[12.5px] font-semibold text-white transition-all active:scale-95 disabled:opacity-60"
+              style={{ background: '#111111', boxShadow: '0 2px 8px -2px rgba(17,17,17,0.35)' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#1F1F23' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#111111' }}
+            >
+              {processing ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} strokeWidth={2.6} />}
+              Marquer comme traitée
+            </button>
+          )}
+        </footer>
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
+function Field({ label, value, valueClass }: { label: string; value: React.ReactNode; valueClass?: string }) {
+  return (
+    <div>
+      <p className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>{label}</p>
+      <p className={`mt-0.5 text-[13px] font-medium ${valueClass || ''}`} style={valueClass ? undefined : { color: '#111111' }}>
+        {value}
+      </p>
+    </div>
+  )
+}
+
+function TimelineItem({ dot, title, subtitle, active }: { dot: React.ReactNode; title: string; subtitle: string; active?: boolean }) {
+  return (
+    <li className="relative pl-7">
+      <span
+        className="absolute left-0 top-0.5 flex h-5 w-5 items-center justify-center rounded-full"
+        style={{ background: active ? 'rgba(59,130,246,0.10)' : 'rgba(15,23,42,0.05)' }}
+      >
+        {dot}
+      </span>
+      <p className="text-[12.5px] font-semibold" style={{ color: '#111111' }}>{title}</p>
+      <p className="text-[11.5px]" style={{ color: '#6B7280' }}>{subtitle}</p>
+    </li>
+  )
+}
+
+/* ─── Grouped timeline ────────────────────────────────────────── */
+
+function AlertGroupSection({ title, items, ...rest }: {
+  title: string
+  items: Alerte[]
+  selected: Set<number>
+  onToggleSelect: (id: number) => void
+  onOpen: (a: Alerte) => void
+  onTreat: (id: number) => void
+  processingId: number | null
+}) {
+  return (
+    <section>
+      <header className="mb-3 flex items-center justify-between">
+        <h3 className="text-[11.5px] font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>
+          {title}
+        </h3>
+        <span
+          className="rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
+          style={{ background: '#F5F5F7', color: '#6B7280' }}
+        >
+          {items.length}
+        </span>
+      </header>
+      <div
+        className="mb-2 h-px w-full"
+        style={{ background: '#ECECEC' }}
+      />
+      <div className="space-y-3">
+        {items.map((a, idx) => (
+          <div
+            key={a.id}
+            style={{
+              animation: 'historyItemIn 200ms cubic-bezier(0.25, 0.1, 0.25, 1) both',
+              animationDelay: `${Math.min(idx, 8) * 30}ms`,
+            }}
+          >
+            <AlertIncidentCard
+              alerte={a}
+              selected={rest.selected.has(a.id)}
+              onToggleSelect={rest.onToggleSelect}
+              onOpen={rest.onOpen}
+              onTreat={rest.onTreat}
+              processing={rest.processingId === a.id}
+            />
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/* ─── Public component (props unchanged) ─────────────────────── */
+
+export default function AlertsList({
+  alertes,
+  onRefresh,
+  variant = 'all',
+  compact: _compact = false,
+}: Props) {
+  const [processing, setProcessing] = useState<number | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const [drawer, setDrawer] = useState<Alerte | null>(null)
+  const [now, setNow] = useState(Date.now())
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null)
+
+  const traiter = useCallback(async (id: number) => {
     setProcessing(id)
     try {
       await traiterAlerte(id)
       onRefresh()
+      // Close the drawer if it was showing the treated alert
+      setDrawer(prev => (prev && prev.id === id ? null : prev))
     } finally {
       setProcessing(null)
     }
+  }, [onRefresh])
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    try {
+      onRefresh()
+      setLastUpdated(Date.now())
+    } finally {
+      // brief visual confirmation even if the caller is sync
+      setTimeout(() => setRefreshing(false), 400)
+    }
+  }, [onRefresh])
+
+  // Mark last-updated whenever the parent prop changes (after a successful fetch)
+  useEffect(() => {
+    setLastUpdated(Date.now())
+  }, [alertes])
+
+  // 1s ticker for "Updated Xs ago"
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  // Silent auto-refresh after 30s, but only when the tab is visible
+  useEffect(() => {
+    if (!lastUpdated) return
+    const ms = now - lastUpdated
+    if (ms > 30_000 && !document.hidden) {
+      onRefresh()
+    }
+  }, [now, lastUpdated, onRefresh])
+
+  // Toolbar state
+  const [state, setState] = useState<ToolbarState>({
+    q: '',
+    severity: 'all',
+    status: variant === 'active' ? 'active' : variant === 'processed' ? 'processed' : 'all',
+    room: '',
+    sort: 'newest',
+    selected: new Set(),
+  })
+
+  // Re-sync the status filter when the page-level variant changes
+  useEffect(() => {
+    setState(s => ({
+      ...s,
+      status: variant === 'active' ? 'active' : variant === 'processed' ? 'processed' : 'all',
+      selected: new Set(),
+    }))
+  }, [variant])
+
+  // Build room list from current data
+  const rooms = useMemo(() => {
+    const set = new Set<string>()
+    alertes.forEach(a => { if (a.salle) set.add(a.salle) })
+    return Array.from(set).sort()
+  }, [alertes])
+
+  // Apply filters + sort
+  const filtered = useMemo(() => {
+    const q = state.q.trim().toLowerCase()
+    const out = alertes.filter(a => {
+      if (state.severity !== 'all' && a.niveau !== state.severity) return false
+      if (state.status === 'active' && a.traitee) return false
+      if (state.status === 'processed' && !a.traitee) return false
+      if (state.room && a.salle !== state.room) return false
+      if (q) {
+        const hay = [
+          a.message ?? '',
+          a.salle ?? '',
+          a.type ?? '',
+          a.esp32_id != null ? String(a.esp32_id) : '',
+        ].join(' ').toLowerCase()
+        if (!hay.includes(q)) return false
+      }
+      return true
+    })
+    out.sort((a, b) => {
+      const da = new Date(a.cree_le).getTime()
+      const db = new Date(b.cree_le).getTime()
+      return state.sort === 'newest' ? db - da : da - db
+    })
+    return out
+  }, [alertes, state])
+
+  // Group by date
+  const groups = useMemo(() => {
+    const map: Record<GroupKey, Alerte[]> = {
+      today: [], yesterday: [], thisWeek: [], earlier: [],
+    }
+    filtered.forEach(a => {
+      map[groupKeyFor(new Date(a.cree_le))].push(a)
+    })
+    return GROUP_ORDER
+      .map(k => ({ key: k, title: GROUP_TITLE[k], items: map[k] }))
+      .filter(g => g.items.length > 0)
+  }, [filtered])
+
+  const allFilteredIds = filtered.map(a => a.id)
+  const activeCount = alertes.filter(a => !a.traitee).length
+
+  const onToggleSelect = (id: number) => {
+    setState(s => {
+      const next = new Set(s.selected)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return { ...s, selected: next }
+    })
   }
 
-  const isEmpty = alertes.length === 0
-  const emptyTitle =
-    variant === 'active'
-      ? 'Tout est sous contrôle'
-      : variant === 'processed'
-      ? 'Aucune alerte traitée'
-      : 'Aucune alerte enregistrée'
-  const emptySub =
-    variant === 'active'
-      ? "Les alertes en cours apparaîtront ici."
-      : variant === 'processed'
-      ? "Les alertes traitées apparaîtront ici."
-      : "L'historique est vide."
+  const onBulkAction = () => {
+    // No backend endpoint yet — show a soft no-op confirmation.
+    // We could open a Modal here, but keep it inline for the v1.
+    if (state.selected.size === 0) return
+    // eslint-disable-next-line no-alert
+    alert('Les actions en masse seront bientôt disponibles. Sélection : ' + state.selected.size + ' alerte(s).')
+  }
+
+  const resetFilters = () => setState(s => ({
+    ...s,
+    q: '',
+    severity: 'all',
+    status: variant === 'active' ? 'active' : variant === 'processed' ? 'processed' : 'all',
+    room: '',
+    selected: new Set(),
+  }))
+
+  const liveCount = {
+    value: activeCount,
+    label: activeCount === 0 ? 'tout est sous contrôle' : 'à traiter',
+    tone: (activeCount > 0 ? 'danger' : 'good') as 'danger' | 'good',
+  }
+
+  const updatedLabel = (() => {
+    if (!lastUpdated) return 'Synchronisation…'
+    const diff = Math.max(0, Math.floor((now - lastUpdated) / 1000))
+    if (diff < 5) return 'Mis à jour à l\'instant'
+    if (diff < 60) return `Mis à jour il y a ${diff}s`
+    if (diff < 3600) return `Mis à jour il y a ${Math.floor(diff / 60)} min`
+    return `Mis à jour il y a ${Math.floor(diff / 3600)} h`
+  })()
+
+  const isEmptyDataset = alertes.length === 0
+  const isEmptyResult = !isEmptyDataset && filtered.length === 0
 
   return (
-    <div
-      className="overflow-hidden rounded-3xl border"
-      style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
-    >
-      <div className="flex items-center justify-between gap-3 border-b px-4 py-3" style={{ borderColor: '#F5F5F7' }}>
-        <div className="flex min-w-0 items-center gap-2">
-          <h3 className="text-[13.5px] font-semibold tracking-tight" style={{ color: '#111111' }}>
-            Alertes
-          </h3>
-          {alertes.length > 0 && (
+    <div className="space-y-5">
+      {/* Header */}
+      <PageHeader
+        category="Surveillance"
+        title="Alertes"
+        subtitle="Surveillez et gérez les incidents dans toutes les salles connectées de l'hôpital."
+        liveCount={liveCount}
+        rightSlot={
+          <div className="flex items-center gap-2">
             <span
-              className="rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
-              style={{ background: '#F5F5F7', color: '#6B7280' }}
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-medium"
+              style={{
+                background: 'rgba(16,185,129,0.08)',
+                color: '#047857',
+                border: '1px solid rgba(16,185,129,0.15)',
+              }}
             >
-              {alertes.length}
+              <span
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ background: '#10B981', boxShadow: '0 0 0 3px rgba(16,185,129,0.18)' }}
+              />
+              <span className="font-semibold">En direct</span>
+              <span style={{ color: '#6B7280' }}>· {updatedLabel}</span>
             </span>
-          )}
-        </div>
-      </div>
-
-      {isEmpty ? (
-        <div className="px-4 py-12 text-center">
-          <div
-            className="relative mx-auto mb-4 h-14 w-14 items-center justify-center rounded-full"
-            style={{ display: 'flex', background: '#F0FDF4' }}
-          >
-            <CheckCircle size={26} style={{ color: '#10B981' }} />
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11.5px] font-semibold transition-colors disabled:opacity-60"
+              style={{ background: 'white', color: '#374151', borderColor: '#ECECEC' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F5F5F7' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'white' }}
+            >
+              <RefreshCw size={11} strokeWidth={2.4} className={refreshing ? 'animate-spin' : ''} />
+              Actualiser
+            </button>
           </div>
-          <p className="text-[14px] font-semibold tracking-tight" style={{ color: '#374151' }}>
-            {emptyTitle}
-          </p>
-          <p className="mx-auto mt-1.5 max-w-[26ch] text-[12.5px]" style={{ color: '#9CA3AF' }}>
-            {emptySub}
-          </p>
-        </div>
-      ) : (
-        <div className={(compact ? 'max-h-[20rem]' : 'max-h-[28rem]') + ' overflow-y-auto'}>
-          {alertes.map((a, idx) => {
-            const Icon = ICONS[a.niveau] || Info
-            const s = STYLES[a.niveau] || STYLES.info
-            const date = new Date(a.cree_le)
+        }
+      />
 
-            return (
-              <div
-                key={a.id}
-                className={`flex items-start gap-3 border-l-2 px-4 py-3.5 transition-colors hover:bg-[#FAFAFA] ${
-                  processing === a.id ? 'opacity-60' : ''
-                }`}
-                style={{
-                  borderLeftColor: s.border.includes('red') ? '#EF4444' : s.border.includes('amber') ? '#F59E0B' : '#3B82F6',
-                  animation: 'slideUp 200ms ease-out both',
-                  animationDelay: `${idx * 30}ms`,
-                }}
-              >
-                {/* Icon */}
-                <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl ${s.bg}`}>
-                  <Icon size={14} strokeWidth={2.4} style={{ color: ICON_COLORS[a.niveau] || '#3B82F6' }} />
-                </span>
+      {/* Overview */}
+      <AlertStatsRow alertes={alertes} />
 
-                <div className="min-w-0 flex-1">
-                  {/* Labels row */}
-                  <div className="mb-1 flex flex-wrap items-center gap-2">
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${s.badge}`}>
-                      {a.niveau}
-                    </span>
-                    <span className="text-[11px]" style={{ color: '#9CA3AF' }}>
-                      {relativeTime(date)}
-                    </span>
-                  </div>
+      {/* Toolbar */}
+      <AlertToolbar
+        state={state}
+        setState={setState}
+        rooms={rooms}
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+        allFilteredIds={allFilteredIds}
+        onBulkAction={onBulkAction}
+      />
 
-                  {/* Title / message */}
-                  <p className="text-[13px] font-medium leading-relaxed" style={{ color: '#374151' }}>
-                    {a.message}
-                  </p>
-
-                  <AlertExplanation explication={a.explication} />
-                </div>
-
-                {/* Action */}
-                {!a.traitee && (
-                  <button
-                    onClick={() => traiter(a.id)}
-                    disabled={processing === a.id}
-                    className="inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-[11.5px] font-semibold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-60"
-                    style={{ background: '#111111' }}
-                  >
-                    {processing === a.id ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} strokeWidth={2.4} />}
-                    Traiter
-                  </button>
-                )}
-                {a.traitee && (
-                  <Check size={14} className="shrink-0" style={{ color: '#10B981' }} strokeWidth={2.4} />
-                )}
-              </div>
-            )
-          })}
+      {/* Selection strip */}
+      {state.selected.size > 0 && (
+        <div
+          className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border px-4 py-2.5 text-[12.5px]"
+          style={{ background: 'rgba(59,130,246,0.05)', borderColor: 'rgba(59,130,246,0.2)', color: '#1D4ED8' }}
+        >
+          <span className="font-semibold">{state.selected.size} sélectionnée(s)</span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setState(s => ({ ...s, selected: new Set(allFilteredIds) }))}
+              className="rounded-full px-2.5 py-1 text-[11.5px] font-medium transition-colors hover:bg-white/60"
+            >
+              Tout sélectionner (visibles)
+            </button>
+            <button
+              type="button"
+              onClick={() => setState(s => ({ ...s, selected: new Set() }))}
+              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-medium transition-colors hover:bg-white/60"
+            >
+              <Trash2 size={11} strokeWidth={2.4} />
+              Effacer
+            </button>
+          </div>
         </div>
       )}
+
+      {/* Grouped timeline */}
+      <div className="space-y-7">
+        {isEmptyDataset ? (
+          <AlertEmptyState onRefresh={handleRefresh} refreshing={refreshing} />
+        ) : isEmptyResult ? (
+          <AlertNoResults onReset={resetFilters} />
+        ) : (
+          groups.map(g => (
+            <AlertGroupSection
+              key={g.key}
+              title={g.title}
+              items={g.items}
+              selected={state.selected}
+              onToggleSelect={onToggleSelect}
+              onOpen={setDrawer}
+              onTreat={traiter}
+              processingId={processing}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Drawer */}
+      <AlertDetailsDrawer
+        alerte={drawer}
+        onClose={() => setDrawer(null)}
+        onTreat={traiter}
+        processing={processing !== null}
+      />
     </div>
   )
 }
+
+/* Keep Activity icon in scope so the bundle doesn't tree-shake it
+   away if we ever use it inside a tooltip. */
+void Activity

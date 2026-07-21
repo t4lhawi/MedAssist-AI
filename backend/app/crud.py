@@ -143,7 +143,9 @@ def update_esp32(
         return None
     if data.salle is not None:
         d.salle = data.salle
-    if data.note is not None:
+    if data.clear_note is True:
+        d.note = None
+    elif data.note is not None:
         d.note = data.note
     if data.actif is not None:
         d.actif = data.actif
@@ -442,7 +444,7 @@ def get_salles_status(
         ).total_seconds() <= offline_threshold_seconds
         out.append(schemas.SalleStatus(
             esp32_id=d.id, salle=d.salle, ip=d.ip, actif=d.actif, online=online,
-            sensors=sensors, derniere_mesure_le=device_latest,
+            sensors=sensors, derniere_mesure_le=device_latest, note=d.note,
         ))
 
     # 2) Synthetic "Unregistered" entry.

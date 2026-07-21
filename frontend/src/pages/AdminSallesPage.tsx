@@ -20,6 +20,7 @@ import SalleCard from '../components/Admin/SalleCard'
 import UnregisteredList from '../components/Admin/UnregisteredList'
 import Esp32Form from '../components/Admin/Esp32Form'
 import StatCard from '../components/ui/StatCard'
+import PageHeader from '../components/ui/PageHeader'
 
 type Filter = 'all' | 'online' | 'offline' | 'inactive'
 
@@ -103,11 +104,11 @@ export default function AdminSallesPage() {
   const handleUpdate = useCallback(
     async (
       id: number,
-      data: { actif?: boolean; salle?: string; note?: string },
+      data: { actif?: boolean; salle?: string; note?: string | null; clear_note?: boolean },
     ) => {
       setBusyId(id)
       try {
-        await updateEsp32(id, data)
+        await updateEsp32(id, data as any)
         await load()
       } finally {
         setBusyId(null)
@@ -154,23 +155,13 @@ export default function AdminSallesPage() {
   }, [salles])
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-3 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-7xl space-y-5 p-4 md:px-6">
       {/* ── Page header ──────────────────────────────────────── */}
-      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="min-w-0">
-          <p
-            className="text-[11.5px] font-semibold uppercase tracking-[0.12em]"
-            style={{ color: '#3B82F6' }}
-          >
-            Infrastructure
-          </p>
-          <h1
-            className="mt-1 text-[32px] font-semibold tracking-[-0.02em] text-[#111111]"
-            style={{ fontFeatureSettings: '"ss01"' }}
-          >
-            Gestion des salles
-          </h1>
-          <p className="mt-1.5 text-[13.5px] text-[#6B7280]">
+      <PageHeader
+        category="Infrastructure"
+        title="Gestion des salles"
+        subtitle={
+          <span>
             <span className="font-medium text-[#374151]">
               {salles.length} salle{salles.length > 1 ? 's' : ''} enregistrée{salles.length > 1 ? 's' : ''}
             </span>
@@ -187,45 +178,23 @@ export default function AdminSallesPage() {
               {unregistered.length} appareil{unregistered.length > 1 ? 's' : ''} inconnu
               {unregistered.length > 1 ? 's' : ''}
             </span>
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Live indicator */}
-          <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium ${
-              counts.online > 0
-                ? 'bg-emerald-50 text-emerald-700'
-                : counts.offline > 0
-                ? 'bg-amber-50 text-amber-700'
-                : 'bg-[#F5F5F7] text-[#6B7280]'
-            }`}
-          >
-            <span
-              className={`relative flex h-2 w-2 ${
-                counts.online > 0 ? '' : ''
-              }`}
-            >
-              {counts.online > 0 && (
-                <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-70" />
-              )}
-              <span
-                className={`relative inline-flex h-2 w-2 rounded-full ${
-                  counts.online > 0
-                    ? 'bg-emerald-500'
-                    : counts.offline > 0
-                    ? 'bg-amber-500'
-                    : 'bg-[#9CA3AF]'
-                }`}
-              />
-            </span>
-            <span className="tabular-nums">
-              {counts.online}
-              <span className="opacity-60">/{salles.length}</span>
-            </span>
-            <span>en direct</span>
           </span>
-
+        }
+        liveCount={
+          salles.length > 0
+            ? {
+                value: `${counts.online}/${salles.length}`,
+                label: 'en direct',
+                tone:
+                  counts.online > 0
+                    ? 'good'
+                    : counts.offline > 0
+                    ? 'warning'
+                    : 'neutral',
+              }
+            : undefined
+        }
+        actions={
           <button
             type="button"
             onClick={load}
@@ -236,8 +205,8 @@ export default function AdminSallesPage() {
             <RefreshCw size={12} strokeWidth={2.4} className={loading ? 'animate-spin' : ''} />
             Rafraîchir
           </button>
-        </div>
-      </header>
+        }
+      />
 
       {/* ── Quick statistics ──────────────────────────────────── */}
       <section
@@ -269,7 +238,7 @@ export default function AdminSallesPage() {
           icon={<Server size={14} strokeWidth={2.2} />}
           tone="slate"
           trend="flat"
-          trendLabel="Pause"
+          trendLabel="Inactif"
         />
         <StatCard
           label="ESP32 inconnus"

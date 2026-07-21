@@ -10,6 +10,7 @@ import {
   PowerOff,
   Server,
   ServerOff,
+  StickyNote,
   Trash2,
   Wifi,
   type LucideIcon,
@@ -21,7 +22,10 @@ import Modal, { ModalBody, ModalButton, ModalFooter, ModalHeader } from '../ui/M
 
 interface Props {
   salle: SalleStatus
-  onUpdate: (id: number, data: { actif?: boolean; salle?: string; note?: string }) => Promise<void>
+  onUpdate: (
+    id: number,
+    data: { actif?: boolean; salle?: string; note?: string | null; clear_note?: boolean },
+  ) => Promise<void>
   onDelete: (id: number) => Promise<void>
   busy?: boolean
 }
@@ -95,7 +99,7 @@ function SensorTile({
   return (
     <div
       data-sensor={type}
-      className={`group/sensor relative overflow-hidden rounded-2xl border p-3.5 transition-all duration-200 ${
+      className={`group/sensor relative overflow-hidden rounded-xl border p-2.5 transition-all duration-200 ${
         isActive
           ? 'border-[#ECECEC] bg-white hover:border-[#DCDCDC] hover:shadow-[0_4px_14px_-6px_rgba(15,23,42,0.08)]'
           : isOffline
@@ -103,10 +107,10 @@ function SensorTile({
           : 'border-dashed border-[#E5E5E5] bg-[#FAFAFA]'
       }`}
     >
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
+      <div className="mb-1.5 flex items-center justify-between gap-1.5">
+        <div className="flex min-w-0 items-center gap-1.5">
           <span
-            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl transition-colors ${
+            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg transition-colors ${
               isActive
                 ? 'bg-[#EFF4FF] text-[#3B82F6]'
                 : isOffline
@@ -114,9 +118,9 @@ function SensorTile({
                 : 'bg-[#F5F5F7] text-[#9CA3AF]'
             }`}
           >
-            <Icon size={13} strokeWidth={2.2} />
+            <Icon size={11} strokeWidth={2.2} />
           </span>
-          <p className="truncate text-[11.5px] font-medium text-[#6B7280]">{title}</p>
+          <p className="truncate text-[10.5px] font-medium text-[#6B7280]">{title}</p>
         </div>
         {isActive && (
           <span className="relative flex h-1.5 w-1.5 shrink-0" aria-label="Capteur actif">
@@ -127,27 +131,27 @@ function SensorTile({
       </div>
 
       {state === 'not_installed' ? (
-        <p className="text-[13px] font-medium text-[#9CA3AF]">Non installé</p>
+        <p className="text-[12px] font-medium text-[#9CA3AF]">Non installé</p>
       ) : (
         <>
           <p
-            className={`text-[18px] font-semibold leading-none tracking-[-0.01em] ${
+            className={`text-[15px] font-semibold leading-none tracking-[-0.01em] ${
               isActive ? 'text-[#111111]' : 'text-[#6B7280]'
             }`}
           >
             {last_value !== null && last_value !== undefined
               ? Number(last_value).toFixed(last_value % 1 === 0 ? 0 : 1)
               : '—'}
-            <span className="ml-1 text-[11px] font-medium text-[#9CA3AF]">
+            <span className="ml-1 text-[10px] font-medium text-[#9CA3AF]">
               {last_unite || unit}
             </span>
           </p>
           <p
-            className={`mt-1.5 flex items-center gap-1 truncate text-[10.5px] font-medium ${
+            className={`mt-1 flex items-center gap-1 truncate text-[10px] font-medium ${
               isActive ? 'text-emerald-600' : 'text-amber-600'
             }`}
           >
-            <Activity size={9} strokeWidth={2.6} />
+            <Activity size={8} strokeWidth={2.6} />
             {last_seen_label || (isOffline ? 'Hors ligne' : '—')}
           </p>
         </>
@@ -163,12 +167,14 @@ function SensorTile({
 function ActionMenu({
   salle,
   onRename,
+  onEditNote,
   onDelete,
   onToggleActif,
   busy,
 }: {
   salle: SalleStatus
   onRename: () => void
+  onEditNote: () => void
   onDelete: () => void
   onToggleActif: () => void
   busy?: boolean
@@ -234,6 +240,20 @@ function ActionMenu({
             role="menuitem"
             onClick={() => {
               setOpen(false)
+              onEditNote()
+            }}
+            className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-[#111111] transition-colors duration-150 hover:bg-[#F5F5F7]"
+          >
+            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-50 text-amber-600">
+              <StickyNote size={12} strokeWidth={2.2} />
+            </span>
+            {salle.note ? 'Modifier la note' : 'Ajouter une note'}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false)
               onToggleActif()
             }}
             disabled={busy}
@@ -290,6 +310,11 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
   const [renameError, setRenameError] = useState('')
   const [renameBusy, setRenameBusy] = useState(false)
 
+  const [editingNote, setEditingNote] = useState(false)
+  const [noteDraft, setNoteDraft] = useState(salle.note ?? '')
+  const [noteError, setNoteError] = useState('')
+  const [noteBusy, setNoteBusy] = useState(false)
+
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
   const [deleteBusy, setDeleteBusy] = useState(false)
@@ -333,6 +358,44 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
       setRenameError(typeof detail === 'string' ? detail : 'Renommage impossible.')
     } finally {
       setRenameBusy(false)
+    }
+  }
+
+  /* ── Note handlers ──────────────────────────────────────── */
+  const openEditNote = () => {
+    setNoteDraft(salle.note ?? '')
+    setNoteError('')
+    setEditingNote(true)
+  }
+  const cancelEditNote = () => {
+    if (noteBusy) return
+    setEditingNote(false)
+    setNoteError('')
+  }
+  const saveNote = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    const next = noteDraft.trim()
+    const current = salle.note ?? ''
+    // No-op only when both sides are equal (including both empty).
+    if (next === current) {
+      setEditingNote(false)
+      return
+    }
+    setNoteBusy(true)
+    setNoteError('')
+    try {
+      if (next === '') {
+        // Empty input → explicitly clear the note on the server.
+        await onUpdate(salle.esp32_id!, { note: null, clear_note: true })
+      } else {
+        await onUpdate(salle.esp32_id!, { note: next })
+      }
+      setEditingNote(false)
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail
+      setNoteError(typeof detail === 'string' ? detail : 'Modification de la note impossible.')
+    } finally {
+      setNoteBusy(false)
     }
   }
 
@@ -402,17 +465,17 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
   return (
     <>
       <article
-        className={`group/card relative flex flex-col overflow-hidden rounded-3xl border bg-white shadow-[0_1px_2px_rgba(17,17,17,0.04),0_8px_24px_-12px_rgba(17,17,17,0.10)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(17,17,17,0.04),0_18px_40px_-12px_rgba(17,17,17,0.18)] ${
+        className={`group/card relative flex flex-col overflow-hidden rounded-2xl border bg-white shadow-[0_1px_2px_rgba(17,17,17,0.04),0_8px_24px_-12px_rgba(17,17,17,0.10)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(17,17,17,0.04),0_18px_40px_-12px_rgba(17,17,17,0.18)] ${
           state === 'inactive' ? 'border-[#E5E5E5] opacity-80' : 'border-[#ECECEC]'
         }`}
       >
         {/* ── Status header ─────────────────────────────────── */}
-        <header className="flex items-start justify-between gap-3 px-6 pt-6">
-          <div className="flex min-w-0 flex-1 items-start gap-3">
+        <header className="flex items-start justify-between gap-2.5 px-4 pt-4">
+          <div className="flex min-w-0 flex-1 items-start gap-2.5">
             {/* Status icon */}
             <div className="relative shrink-0">
               <div
-                className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
+                className={`flex h-10 w-10 items-center justify-center rounded-xl ${
                   state === 'online'
                     ? 'bg-emerald-50 text-emerald-600'
                     : state === 'offline'
@@ -420,37 +483,37 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
                     : 'bg-[#F5F5F7] text-[#6B7280]'
                 }`}
               >
-                <StateIcon size={20} strokeWidth={2} />
+                <StateIcon size={17} strokeWidth={2} />
               </div>
               {isLive && (
-                <span className="pointer-events-none absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
+                <span className="pointer-events-none absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
                   <span className={`absolute inset-0 animate-ping rounded-full ${tone.pulse} opacity-75`} />
-                  <span className={`relative inline-flex h-3 w-3 rounded-full ${tone.dot} ring-2 ring-white`} />
+                  <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${tone.dot} ring-2 ring-white`} />
                 </span>
               )}
             </div>
 
             <div className="min-w-0 flex-1 pt-0.5">
               {/* Status chip */}
-              <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+              <div className="mb-1 flex flex-wrap items-center gap-1.5">
                 <span
-                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10.5px] font-semibold ${tone.chip}`}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold ${tone.chip}`}
                 >
                   <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
                   {tone.label}
                 </span>
                 {state === 'offline' && salle.actif && (
-                  <span className="text-[10.5px] text-amber-600/80">— activité &gt; 5 min</span>
+                  <span className="text-[10px] text-amber-600/80">— activité &gt; 5 min</span>
                 )}
                 {canEdit && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#F5F5F7] px-2 py-0.5 text-[10px] font-medium text-[#6B7280]">
-                    <Cpu size={9} strokeWidth={2.4} />
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#F5F5F7] px-1.5 py-0.5 text-[9.5px] font-medium text-[#6B7280]">
+                    <Cpu size={8} strokeWidth={2.4} />
                     ESP32
                   </span>
                 )}
               </div>
 
-              <h3 className="truncate text-[17px] font-semibold tracking-[-0.01em] text-[#111111]">
+              <h3 className="truncate text-[14.5px] font-semibold tracking-[-0.01em] text-[#111111]">
                 {salle.salle}
               </h3>
 
@@ -459,7 +522,7 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
                   type="button"
                   onClick={copyIp}
                   title="Copier l'adresse IP"
-                  className="mt-1 group/ip inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 font-mono text-[11.5px] text-[#6B7280] transition-colors hover:bg-[#F5F5F7] hover:text-[#111111]"
+                  className="mt-0.5 group/ip inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 font-mono text-[10.5px] text-[#6B7280] transition-colors hover:bg-[#F5F5F7] hover:text-[#111111]"
                 >
                   <Wifi size={9} strokeWidth={2.6} className="text-[#9CA3AF] group-hover/ip:text-[#3B82F6]" />
                   {salle.ip}
@@ -468,9 +531,19 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
                       copied ? 'text-emerald-500' : 'text-[#9CA3AF] group-hover/ip:text-[#6B7280]'
                     }`}
                   >
-                    {copied ? <Check size={11} strokeWidth={2.6} /> : <Copy size={11} />}
+                    {copied ? <Check size={10} strokeWidth={2.6} /> : <Copy size={10} />}
                   </span>
                 </button>
+              )}
+
+              {salle.note && (
+                <div
+                  className="mt-1 flex items-start gap-1.5 rounded-md bg-[#FAFAFA] px-1.5 py-1 text-[10.5px] leading-snug text-[#6B7280]"
+                  title={salle.note}
+                >
+                  <StickyNote size={10} strokeWidth={2.2} className="mt-0.5 shrink-0 text-[#9CA3AF]" />
+                  <span className="line-clamp-2">{salle.note}</span>
+                </div>
               )}
             </div>
           </div>
@@ -479,6 +552,7 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
             <ActionMenu
               salle={salle}
               onRename={openRename}
+              onEditNote={openEditNote}
               onDelete={openDelete}
               onToggleActif={handleToggleActif}
               busy={busy}
@@ -490,7 +564,7 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
         {toastActif && (
           <div
             role="status"
-            className="mx-6 mt-3 flex items-center gap-2 rounded-xl border border-[#ECECEC] bg-[#FAFAFA] px-3 py-1.5 text-[11.5px] font-medium text-[#374151]"
+            className="mx-4 mt-2.5 flex items-center gap-2 rounded-xl border border-[#ECECEC] bg-[#FAFAFA] px-3 py-1.5 text-[11px] font-medium text-[#374151]"
             style={{ animation: 'fieldIn 200ms ease-out both' }}
           >
             {toastActif === 'on' ? (
@@ -508,7 +582,7 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
         )}
 
         {/* ── Sensor tiles ──────────────────────────────────── */}
-        <div className="grid grid-cols-2 gap-2.5 px-6 py-5">
+        <div className="grid grid-cols-2 gap-2 px-4 py-3.5">
           {MONITORING_TYPES.map(mt => {
             const s = sensorByType[mt.type]
             return (
@@ -528,10 +602,10 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
         </div>
 
         {/* ── Footer ────────────────────────────────────────── */}
-        <footer className="mt-auto flex items-center justify-between gap-3 border-t border-[#F0F0F0] bg-[#FAFAFA] px-6 py-3.5">
-          <div className="flex items-center gap-1.5 text-[11.5px] text-[#6B7280]">
+        <footer className="mt-auto flex items-center justify-between gap-2.5 border-t border-[#F0F0F0] bg-[#FAFAFA] px-4 py-2.5">
+          <div className="flex items-center gap-1.5 text-[10.5px] text-[#6B7280]">
             <span
-              className={`flex h-5 w-5 items-center justify-center rounded-full ${
+              className={`flex h-4 w-4 items-center justify-center rounded-full ${
                 activeSensors === totalSensors && totalSensors > 0
                   ? 'bg-emerald-100 text-emerald-600'
                   : activeSensors > 0
@@ -539,7 +613,7 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
                   : 'bg-[#F5F5F7] text-[#9CA3AF]'
               }`}
             >
-              <Activity size={10} strokeWidth={2.6} />
+              <Activity size={9} strokeWidth={2.6} />
             </span>
             <span className="font-medium tabular-nums text-[#374151]">
               {activeSensors}
@@ -548,7 +622,7 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
             <span>capteurs actifs</span>
           </div>
 
-          <div className="flex items-center gap-3 text-[11.5px]">
+          <div className="flex items-center gap-2.5 text-[10.5px]">
             <span className={`font-medium ${qualityTone}`}>
               {quality === 'good' ? 'Excellente' : quality === 'fair' ? 'Moyenne' : 'Faible'}
             </span>
@@ -597,6 +671,52 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
               Annuler
             </ModalButton>
             <ModalButton variant="primary" type="submit" loading={renameBusy} disabled={!nameDraft.trim()}>
+              Enregistrer
+            </ModalButton>
+          </ModalFooter>
+        </form>
+      </Modal>
+
+      {/* ── Note edit modal ─────────────────────────────────── */}
+      <Modal
+        open={editingNote}
+        onClose={cancelEditNote}
+        size="sm"
+        dismissDisabled={noteBusy}
+        ariaLabel="Modifier la note"
+      >
+        <form onSubmit={saveNote} className="flex flex-col">
+          <ModalHeader
+            icon={<StickyNote size={16} strokeWidth={2.2} />}
+            iconTone="amber"
+            title={salle.note ? 'Modifier la note' : 'Ajouter une note'}
+            subtitle="Une note interne pour identifier rapidement la salle."
+            onClose={cancelEditNote}
+            closeDisabled={noteBusy}
+          />
+          <ModalBody>
+            <TextField
+              label="Note"
+              value={noteDraft}
+              onChange={e => setNoteDraft(e.target.value)}
+              placeholder="Ex. CHIR-2, étage B, salle d'urgences…"
+              maxLength={200}
+              autoFocus
+              error={noteError || null}
+              hint="200 caractères max. Laissez vide pour supprimer la note."
+              containerClassName="!mb-0"
+            />
+          </ModalBody>
+          <ModalFooter>
+            <ModalButton variant="secondary" onClick={cancelEditNote} disabled={noteBusy}>
+              Annuler
+            </ModalButton>
+            <ModalButton
+              variant="primary"
+              type="submit"
+              loading={noteBusy}
+              disabled={noteDraft.trim() === (salle.note ?? '')}
+            >
               Enregistrer
             </ModalButton>
           </ModalFooter>

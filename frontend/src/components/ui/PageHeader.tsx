@@ -45,13 +45,13 @@ export default function PageHeader({
   const showLive = liveCount != null
 
   return (
-    <div className={`flex flex-col gap-3 md:flex-row md:items-end md:justify-between ${className}`}>
+    <div className={`flex flex-col gap-3 md:flex-row md:items-start md:justify-between ${className}`}>
       <div className="min-w-0">
         <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#3B82F6' }}>
           {category}
         </p>
         <h2
-          className="mt-0.5 text-[24px] font-semibold tracking-tight"
+          className="mt-0.5 text-[28px] font-semibold tracking-tight"
           style={{ color: '#111111' }}
         >
           {title}
@@ -62,7 +62,8 @@ export default function PageHeader({
       </div>
 
       {(showActions || showRight || showLive) && (
-        <div className="flex w-fit flex-wrap items-center gap-2 md:justify-end">
+        <div className="flex w-fit flex-col items-stretch gap-2 md:justify-end md:pt-[13px]">
+          <div className="flex flex-wrap items-center gap-2 md:justify-end">
           {showLive && (() => {
             const tone = liveCount!.tone ?? 'neutral'
             return (
@@ -77,6 +78,7 @@ export default function PageHeader({
           })()}
           {showRight && rightSlot}
           {showActions && actions}
+          </div>
         </div>
       )}
     </div>

@@ -24,79 +24,6 @@ import { Alerte, Document, Mesure, SalleStatus, LiveMesureEventData, LiveAlerteE
 import { MONITORING_TYPES, getMonitoringType } from '../monitoring'
 import PageHeader from '../components/ui/PageHeader'
 
-/* ─── Premium Dashboard Welcome Header ──────────────────────── */
-
-function DashHeader({
-  loading,
-  onRefresh,
-  onlineSalles,
-  registeredSalles,
-}: {
-  loading: boolean
-  onRefresh: () => void
-  onlineSalles: number
-  registeredSalles: number
-}) {
-  const now = new Date()
-  const dateStr = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-
-  return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p className="text-[12px] font-medium uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
-          Bienvenue
-        </p>
-        <h1
-          className="mt-0.5 text-[28px] font-semibold tracking-tight"
-          style={{ color: '#111111' }}
-        >
-          Tableau de bord
-        </h1>
-        <p className="mt-1 text-[13px]" style={{ color: '#6B7280' }}>
-          Surveillance en temps réel · {dateStr}
-        </p>
-      </div>
-
-      <div className="flex items-center gap-2">
-        {/* Live indicator */}
-        <div className="flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: '#F5F5F7' }}>
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" style={{ animationDuration: '2s' }} />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-          </span>
-          <span className="text-[12px] font-medium" style={{ color: '#6B7280' }}>
-            <span className="font-semibold" style={{ color: '#111111' }}>{onlineSalles}</span>
-            <span style={{ color: '#9CA3AF' }}>/{registeredSalles} en ligne</span>
-          </span>
-        </div>
-
-        {/* Refresh button */}
-        <button
-          onClick={onRefresh}
-          disabled={loading}
-          className="flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium transition-all"
-          style={{
-            background: '#111111',
-            color: '#FFFFFF',
-            boxShadow: '0 2px 8px -2px rgba(17,17,17,0.25)',
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.background = '#374151'
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.background = '#111111'
-          }}
-        >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} strokeWidth={2} />
-          Actualiser
-        </button>
-      </div>
-    </div>
-  )
-}
-
-/* ─── Right Info Panel ──────────────────────────────────────── */
-
 /* ─── Live Activity Feed ──────────────────────────────────────── */
 
 function LiveActivityFeed({ mesures, max = 6 }: { mesures: Mesure[]; max?: number }) {
@@ -320,11 +247,31 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-5 p-4 md:space-y-5 md:px-6">
       {/* Welcome Header */}
-      <DashHeader
-        loading={loading}
-        onRefresh={load}
-        onlineSalles={onlineSalles}
-        registeredSalles={registeredSalles}
+      <PageHeader
+        category="Bienvenue"
+        title="Tableau de bord"
+        subtitle={`Surveillance en temps réel · ${new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`}
+        liveCount={
+          registeredSalles > 0
+            ? {
+                value: `${onlineSalles}/${registeredSalles}`,
+                label: 'en ligne',
+                tone: onlineSalles > 0 ? 'good' : 'warning',
+              }
+            : undefined
+        }
+        actions={
+          <button
+            onClick={load}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition-all hover:-translate-y-px hover:bg-[#FAFAFA] active:scale-[0.97] disabled:opacity-60"
+            style={{ borderColor: '#ECECEC', background: '#FFFFFF', color: '#374151' }}
+            aria-label="Actualiser"
+          >
+            <RefreshCw size={12} strokeWidth={2.4} className={loading ? 'animate-spin' : ''} />
+            Actualiser
+          </button>
+        }
       />
 
       {error && (
