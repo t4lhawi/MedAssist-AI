@@ -7,7 +7,7 @@ import {
   MessageCircle,
   Power,
   Settings2,
-  HelpCircle,
+  UserCircle,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
@@ -96,16 +96,38 @@ export default function Sidebar({ alertCount = 0 }: Props) {
         ))}
       </nav>
 
-      {/* Bottom: Help, Settings, Logout */}
+      {/* Bottom: Profile, Logout */}
       <div className="border-t p-3" style={{ borderColor: '#F5F5F7' }}>
         <NavLink
-          to="/assistant"
-          className="mb-2 flex items-center gap-3 rounded-2xl px-4 py-2.5 text-[13px] font-medium text-[#6B7280] transition-colors hover:bg-[#F5F5F7] hover:text-[#111111]"
+          to="/profile"
+          className={({ isActive }) =>
+            `group relative mb-2 flex items-center gap-3 rounded-2xl px-4 py-2.5 text-[13px] font-medium transition-all duration-200 ${
+              isActive
+                ? 'text-[#111111]'
+                : 'text-[#6B7280] hover:text-[#111111] hover:bg-[#F5F5F7]'
+            }`
+          }
         >
-          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#F5F5F7]">
-            <HelpCircle size={15} strokeWidth={2} />
-          </span>
-          Aide & Support
+          {({ isActive }) => (
+            <>
+              {isActive && (
+                <span
+                  className="absolute inset-0 rounded-2xl"
+                  style={{
+                    background: '#FFFFFF',
+                    boxShadow: '0 1px 2px rgba(17,17,17,0.06), 0 1px 8px -2px rgba(17,17,17,0.08)',
+                  }}
+                />
+              )}
+              <span
+                className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl"
+                style={isActive ? { color: '#3B82F6' } : { background: '#F5F5F7', color: '#6B7280' }}
+              >
+                <UserCircle size={15} strokeWidth={2} />
+              </span>
+              <span className="relative z-10">Mon profil</span>
+            </>
+          )}
         </NavLink>
 
         <button
