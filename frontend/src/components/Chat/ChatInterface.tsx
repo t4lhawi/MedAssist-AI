@@ -996,7 +996,30 @@ type ChatInterfaceProps = {
 }
 
 const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(function ChatInterface({ onHistoryCountChange }, ref) {
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  // ── sessionStorage persistence ──────────────────────────────────────
+  // The chat state (messages, feedback, disclaimer) is kept across
+  // navigations and accidental refreshes by mirroring it to
+  // sessionStorage. sessionStorage is scoped to the tab, so closing the
+  // tab naturally starts a fresh conversation — which is the behavior
+  // we want for an "ephemeral" chat session.
+  const STORAGE_KEY = 'medassist:chat:v1'
+
+  const loadPersisted = <T,>(key: string, fallback: T): T => {
+    if (typeof window === 'undefined') return fallback
+    try {
+      const raw = window.sessionStorage.getItem(STORAGE_KEY)
+      if (!raw) return fallback
+      const parsed = JSON.parse(raw) as Record<string, unknown>
+      const value = parsed[key]
+      return value === undefined ? fallback : (value as T)
+    } catch {
+      // Corrupted entry — drop it so we don't keep failing on every read.
+      try { window.sessionStorage.removeItem(STORAGE_KEY) } catch {}
+      return fallback
+    }
+  }
+
+  const [messages, setMessages] = useState<ChatMessage[]>(() => loadPersisted<ChatMessage[]>('messages', []))
   const [history, setHistory] = useState<ConversationHistoryItem[]>([])
   const [historyLoading, setHistoryLoading] = useState(false)
   const [historyError, setHistoryError] = useState('')
@@ -1004,13 +1027,33 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(functi
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
-  const [feedback, setFeedback] = useState<Record<number, 'up' | 'down' | undefined>>({})
+  const [feedback, setFeedback] = useState<Record<number, 'up' | 'down' | undefined>>(() =>
+    loadPersisted<Record<number, 'up' | 'down' | undefined>>('feedback', {}),
+  )
   const [pendingDelete, setPendingDelete] = useState<{ item: ConversationHistoryItem; index: number } | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [disclaimerDismissed, setDisclaimerDismissed] = useState(false)
+  const [disclaimerDismissed, setDisclaimerDismissed] = useState<boolean>(() =>
+    loadPersisted<boolean>('disclaimerDismissed', false),
+  )
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const interruptedRef = useRef(false)
+
+  // Mirror the persisted fields back to sessionStorage on every change.
+  // We persist messages, feedback, and disclaimerDismissed only — input
+  // and transient UI state stay in memory.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      window.sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ messages, feedback, disclaimerDismissed }),
+      )
+    } catch {
+      // Quota exceeded or storage disabled — degrade gracefully, the
+      // in-memory state still works for the current session.
+    }
+  }, [messages, feedback, disclaimerDismissed])
 
   const loadHistory = async () => {
     setHistoryLoading(true)
@@ -1136,6 +1179,9 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(functi
     setInput('')
     setFeedback({})
     setHistoryOpen(false)
+    // Clear persisted chat so the next mount doesn't resurrect the
+    // conversation we just intentionally abandoned.
+    try { window.sessionStorage.removeItem(STORAGE_KEY) } catch {}
     inputRef.current?.focus()
   }
 

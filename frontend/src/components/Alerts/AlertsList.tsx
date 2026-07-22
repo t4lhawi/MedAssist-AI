@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { Alerte } from '../../types'
-import { traiterAlerte } from '../../services/api'
+import { deleteAlerte, deleteAlertesBulk, traiterAlerte } from '../../services/api'
 import {
   Activity,
   AlertOctagon,
@@ -29,6 +28,7 @@ import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { getMonitoringType } from '../../monitoring'
 import Markdown from '../ui/Markdown'
+import Modal, { ModalBody, ModalButton, ModalFooter, ModalHeader } from '../ui/Modal'
 import PageHeader from '../ui/PageHeader'
 
 /* ─── Public component contract (UNCHANGED) ─────────────────────
@@ -42,6 +42,12 @@ interface Props {
   onRefresh: () => void
   variant?: 'active' | 'all' | 'processed'
   compact?: boolean
+  // Optional: invoked when the user clicks a status pill in the toolbar
+  // (Toutes / Actives / Traitées). The parent can use this to refetch the
+  // right ``traitee`` slice from the backend instead of relying solely on
+  // the local filter, which is what makes the "Traitées" tab actually
+  // show treated alerts instead of an empty filtered-down active list.
+  onStatusChange?: (status: 'all' | 'active' | 'processed') => void
 }
 
 /* ─── Severity tokens ─────────────────────────────────────────── */
@@ -357,10 +363,14 @@ interface AlertToolbarProps {
   refreshing: boolean
   allFilteredIds: number[]
   onBulkAction: () => void
+  // Forwarded up to the page so the status pill triggers a refetch with
+  // the right `traitee` slice. Without this the local status filter
+  // applies on stale data and the "Traitées" view comes back empty.
+  onStatusChange?: (status: StatusFilter) => void
 }
 
 function AlertToolbar({
-  state, setState, rooms, onRefresh, refreshing, allFilteredIds, onBulkAction,
+  state, setState, rooms, onRefresh, refreshing, allFilteredIds, onBulkAction, onStatusChange,
 }: AlertToolbarProps) {
   const selectedCount = state.selected.size
   const allSelected = allFilteredIds.length > 0 && allFilteredIds.every(id => state.selected.has(id))
@@ -425,23 +435,17 @@ function AlertToolbar({
           {state.sort === 'newest' ? 'Plus récent' : 'Plus ancien'}
         </button>
 
-        {/* Room filter */}
+        {/* Room filter — custom popover so the options menu can match
+            the alerts UI. The native <select> menu is rendered by the
+            OS and can't be themed; the trigger pill above is kept as
+            the only visual piece (Filter icon + chip) so the rest of
+            the toolbar stays intact. */}
         {rooms.length > 0 && (
-          <div
-            className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[12px] font-medium"
-            style={{ background: '#F5F5F7', color: '#374151' }}
-          >
-            <Filter size={12} strokeWidth={2.2} />
-            <select
-              value={state.room}
-              onChange={e => setState(s => ({ ...s, room: e.target.value }))}
-              className="bg-transparent text-[12px] font-medium outline-none"
-              aria-label="Filtrer par salle"
-            >
-              <option value="">Toutes les salles</option>
-              {rooms.map(r => <option key={r} value={r}>{r}</option>)}
-            </select>
-          </div>
+          <RoomFilter
+            rooms={rooms}
+            value={state.room}
+            onChange={(v) => setState(s => ({ ...s, room: v }))}
+          />
         )}
 
         {/* Refresh */}
@@ -526,7 +530,15 @@ function AlertToolbar({
                 <button
                   key={p.key}
                   type="button"
-                  onClick={() => setState(s => ({ ...s, status: p.key }))}
+                  onClick={() => {
+                    setState(s => ({ ...s, status: p.key }))
+                    // Propagate up so the page-level filter re-fetches the
+                    // right slice (otherwise the local status filter is
+                    // applied on top of stale data — the classic
+                    // "Traitées empty when alertes was last fetched as
+                    // actives" bug).
+                    onStatusChange?.(p.key)
+                  }}
                   className="rounded-lg px-2.5 py-1 text-[11.5px] font-medium transition-all"
                   style={active ? { background: '#FFFFFF', color: '#111111', boxShadow: '0 1px 3px -1px rgba(17,17,17,0.1)' } : { color: '#6B7280' }}
                 >
@@ -541,6 +553,122 @@ function AlertToolbar({
   )
 }
 
+/* ─── Room filter popover ────────────────────────────────────── */
+
+/* Custom popover so the dropdown menu can match the alerts UI. The
+   trigger pill reuses the exact same visual treatment as the other
+   toolbar chips (gray pill, Filter icon, plain label) — only the
+   popped-over list is restyled. */
+
+function RoomFilter({ rooms, value, onChange }: {
+  rooms: string[]
+  value: string
+  onChange: (v: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  // Close on outside click / Escape
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  const items: Array<{ value: string; label: string }> = [
+    { value: '', label: 'Toutes les salles' },
+    ...rooms.map(r => ({ value: r, label: r })),
+  ]
+  const current = items.find(i => i.value === value) ?? items[0]
+
+  return (
+    <div className="relative" ref={rootRef}>
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[12px] font-medium transition-colors"
+        style={{ background: '#F5F5F7', color: '#374151' }}
+        aria-label="Filtrer par salle"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <Filter size={12} strokeWidth={2.2} />
+        <span className="max-w-[160px] truncate">{current.label}</span>
+        <ChevronDown
+          size={12}
+          strokeWidth={2.2}
+          className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {open && (
+        <div
+          className="absolute right-0 top-[calc(100%+6px)] z-30 w-56 origin-top overflow-hidden rounded-2xl border bg-white shadow-[0_12px_36px_-12px_rgba(15,23,42,0.18)]"
+          style={{
+            borderColor: '#ECECEC',
+            animation: 'alertsRoomMenuIn 140ms cubic-bezier(0.25, 0.1, 0.25, 1) both',
+          }}
+          role="listbox"
+        >
+          <div className="px-3 py-2 text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
+            Salle
+          </div>
+          <div className="max-h-64 overflow-y-auto pb-1.5">
+            {items.map((it) => {
+              const isSelected = it.value === value
+              return (
+                <button
+                  key={it.value || '__all__'}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => {
+                    onChange(it.value)
+                    setOpen(false)
+                  }}
+                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[12.5px] font-medium transition-colors"
+                  style={{
+                    color: isSelected ? '#111111' : '#374151',
+                    background: isSelected ? '#F5F5F7' : 'transparent',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) (e.currentTarget as HTMLElement).style.background = '#FAFAFA'
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent'
+                  }}
+                >
+                  <span className="truncate">{it.label}</span>
+                  {isSelected && <Check size={12} strokeWidth={2.6} style={{ color: '#111111' }} />}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes alertsRoomMenuIn {
+          from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+          to   { opacity: 1; transform: translateY(0)    scale(1); }
+        }
+      `}</style>
+    </div>
+  )
+}
+
 /* ─── Incident card ──────────────────────────────────────────── */
 
 interface AlertIncidentCardProps {
@@ -549,11 +677,12 @@ interface AlertIncidentCardProps {
   onToggleSelect: (id: number) => void
   onOpen: (a: Alerte) => void
   onTreat: (id: number) => void
+  onDelete: (id: number) => void
   processing: boolean
 }
 
 function AlertIncidentCard({
-  alerte: a, selected, onToggleSelect, onOpen, onTreat, processing,
+  alerte: a, selected, onToggleSelect, onOpen, onTreat, onDelete, processing,
 }: AlertIncidentCardProps) {
   const sev = SEVERITY[a.niveau] || FALLBACK_SEVERITY
   const SevIcon = SEVERITY_ICONS[a.niveau] || Info
@@ -581,11 +710,20 @@ function AlertIncidentCard({
 
       <div className="px-4 py-4 sm:px-5 sm:py-4">
         <div className="flex items-start gap-3">
-          {/* Checkbox */}
+          {/* Checkbox — must sit ABOVE the absolute overlay button
+              (defined later in the DOM at the end of the card). Without
+              `position: relative; z-index: 2`, the overlay sits on top
+              of the checkbox because it appears later in the DOM and
+              the checkbox has no stacking context. ``stopPropagation``
+              alone is not enough: the overlay is a *sibling*, not a
+              parent, so the click never even reaches this button. */}
           <button
             type="button"
-            onClick={() => onToggleSelect(a.id)}
-            className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md transition-colors"
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggleSelect(a.id)
+            }}
+            className="relative z-20 mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md transition-colors"
             style={{
               background: selected ? '#111111' : '#FFFFFF',
               border: `1.5px solid ${selected ? '#111111' : '#E4E4E7'}`,
@@ -651,17 +789,20 @@ function AlertIncidentCard({
             </p>
 
             {/* AI Analysis */}
-            <div className="mt-3">
+            <div className="relative z-10 mt-3" onClick={(e) => e.stopPropagation()}>
               <AIAnalysisCard explication={a.explication} />
             </div>
 
             {/* Footer actions */}
-            <div className="mt-3 flex items-center justify-end gap-2">
+            <div className="relative z-10 mt-3 flex items-center justify-end gap-2">
               {!a.traitee ? (
                 <>
                   <button
                     type="button"
-                    onClick={() => onOpen(a)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onOpen(a)
+                    }}
                     className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11.5px] font-semibold transition-colors"
                     style={{ color: '#374151', background: '#F5F5F7' }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#ECECEC' }}
@@ -671,7 +812,10 @@ function AlertIncidentCard({
                   </button>
                   <button
                     type="button"
-                    onClick={() => onTreat(a.id)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onTreat(a.id)
+                    }}
                     disabled={processing}
                     className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11.5px] font-semibold text-white transition-all active:scale-95 disabled:opacity-60"
                     style={{ background: '#111111' }}
@@ -683,12 +827,30 @@ function AlertIncidentCard({
                   </button>
                 </>
               ) : (
-                <span
-                  className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-100"
-                >
-                  <Check size={11} strokeWidth={2.6} />
-                  Traitée
-                </span>
+                <>
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-100"
+                  >
+                    <Check size={11} strokeWidth={2.6} />
+                    Traitée
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDelete(a.id)
+                    }}
+                    disabled={processing}
+                    className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11.5px] font-semibold transition-colors disabled:opacity-60"
+                    style={{ color: '#B91C1C', background: '#FEF2F2' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FEE2E2' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FEF2F2' }}
+                    aria-label="Supprimer l'alerte"
+                  >
+                    <Trash2 size={11} strokeWidth={2.4} />
+                    Supprimer
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -804,46 +966,20 @@ function AlertNoResults({ onReset }: { onReset: () => void }) {
   )
 }
 
-/* ─── Details drawer ─────────────────────────────────────────── */
+/* ─── Details modal (centered, like the ESP32 form) ──────────── */
 
-interface AlertDrawerProps {
+interface AlertDetailsModalProps {
   alerte: Alerte | null
   onClose: () => void
   onTreat: (id: number) => void
   processing: boolean
 }
 
-function AlertDetailsDrawer({ alerte, onClose, onTreat, processing }: AlertDrawerProps) {
-  const panelRef = useRef<HTMLDivElement>(null)
-  const previousFocusRef = useRef<HTMLElement | null>(null)
-
-  // Body scroll lock
-  useEffect(() => {
-    if (!alerte) return
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = prev }
-  }, [alerte])
-
-  // ESC + focus restore
-  useEffect(() => {
-    if (!alerte) return
-    previousFocusRef.current = (document.activeElement as HTMLElement) ?? null
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation()
-        onClose()
-      }
-    }
-    document.addEventListener('keydown', onKey)
-    const t = setTimeout(() => { panelRef.current?.focus() }, 60)
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      clearTimeout(t)
-      const prev = previousFocusRef.current
-      if (prev && typeof prev.focus === 'function') prev.focus()
-    }
-  }, [alerte, onClose])
+function AlertDetailsModal({ alerte, onClose, onTreat, processing }: AlertDetailsModalProps) {
+  const close = () => {
+    if (processing) return
+    onClose()
+  }
 
   if (!alerte) return null
 
@@ -853,89 +989,66 @@ function AlertDetailsDrawer({ alerte, onClose, onTreat, processing }: AlertDrawe
   const SensorIcon = sensor.icon
   const date = new Date(alerte.cree_le)
 
-  return createPortal(
-    <div aria-hidden={false} className="fixed inset-0 z-[180]">
-      {/* Backdrop */}
-      <div
-        aria-hidden="true"
-        onClick={onClose}
-        className="absolute inset-0 bg-[#0B0B0F]/40 backdrop-blur-md"
-        style={{ animation: 'alertsBackdropIn 200ms cubic-bezier(0.25, 0.1, 0.25, 1) both' }}
-      />
+  // Pick the header icon tone to match the severity
+  const headerIconTone: 'red' | 'amber' | 'blue' =
+    alerte.niveau === 'critique' ? 'red' :
+    alerte.niveau === 'attention' ? 'amber' :
+    'blue'
 
-      {/* Panel — desktop 480px, tablet 80vw, mobile 100vw */}
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Détails de l'alerte"
-        tabIndex={-1}
-        className="absolute inset-y-0 right-0 flex w-full flex-col overflow-hidden bg-white outline-none sm:w-[80vw] md:w-[480px] history-panel-edge"
-        style={{ animation: 'historyPanelIn 220ms cubic-bezier(0.25, 0.1, 0.25, 1) both' }}
-      >
-        {/* Header */}
-        <header
-          className="flex items-start justify-between gap-3 border-b px-6 py-5"
-          style={{ borderColor: '#F0F0F0' }}
-        >
-          <div className="flex min-w-0 items-start gap-3">
-            <span
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${sev.iconBg}`}
-              style={{ color: sev.iconColor }}
-            >
-              <SevIcon size={17} strokeWidth={2.2} />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
+  return (
+    <Modal
+      open={!!alerte}
+      onClose={close}
+      size="lg"
+      dismissDisabled={processing}
+      ariaLabel={`Détails de l'alerte ${alerte.id}`}
+    >
+      <div className="flex max-h-[85vh] flex-col">
+        <ModalHeader
+          icon={<SevIcon size={18} strokeWidth={2.2} />}
+          iconTone={headerIconTone}
+          title={alerte.message}
+          subtitle={
+            <span className="inline-flex flex-wrap items-center gap-1.5">
+              <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
                 Incident · #{alerte.id}
-              </p>
-              <h2 className="mt-0.5 text-[16px] font-semibold tracking-tight" style={{ color: '#111111' }}>
-                {alerte.message}
-              </h2>
-              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${sev.badge}`}>
-                  {sev.label}
+              </span>
+              <span className="text-[#D4D4D8]">·</span>
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${sev.badge}`}>
+                {sev.label}
+              </span>
+              {alerte.salle && (
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10.5px] font-semibold text-slate-700">
+                  {alerte.salle}
                 </span>
-                {alerte.salle && (
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10.5px] font-semibold text-slate-700">
-                    {alerte.salle}
-                  </span>
-                )}
-                <span
-                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
-                  style={{ background: 'rgba(59,130,246,0.08)', color: '#1D4ED8' }}
-                >
-                  <SensorIcon size={10} strokeWidth={2.4} />
-                  {sensor.title}
-                </span>
-              </div>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Fermer"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#6B7280] transition-all duration-200 hover:bg-[#F5F5F7] hover:text-[#111111] active:scale-90"
-          >
-            <X size={15} strokeWidth={2.2} />
-          </button>
-        </header>
+              )}
+              <span
+                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
+                style={{ background: 'rgba(59,130,246,0.08)', color: '#1D4ED8' }}
+              >
+                <SensorIcon size={10} strokeWidth={2.4} />
+                {sensor.title}
+              </span>
+            </span>
+          }
+          onClose={close}
+          closeDisabled={processing}
+        />
 
-        {/* Body */}
-        <div className="history-scroll flex-1 overflow-y-auto px-6 py-5">
+        <ModalBody className="overflow-y-auto">
           {/* Message */}
           <section>
-            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
+            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
               Message
             </h3>
-            <p className="mt-2 text-[15px] leading-7" style={{ color: '#111111' }}>
+            <p className="mt-2 text-[15px] leading-7 text-[#111111]">
               {alerte.message}
             </p>
           </section>
 
           {/* AI Analysis */}
           <section className="mt-6">
-            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
+            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
               Analyse IA
             </h3>
             <div className="mt-2">
@@ -945,24 +1058,25 @@ function AlertDetailsDrawer({ alerte, onClose, onTreat, processing }: AlertDrawe
 
           {/* Context */}
           <section className="mt-6">
-            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
+            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
               Contexte
             </h3>
-            <div
-              className="mt-2 grid grid-cols-2 gap-3 rounded-2xl border p-4"
-              style={{ borderColor: '#ECECEC', background: '#FAFAFA' }}
-            >
+            <div className="mt-2 grid grid-cols-2 gap-3 rounded-2xl border border-[#ECECEC] bg-[#FAFAFA] p-4">
               <Field label="Salle" value={alerte.salle ?? '—'} />
               <Field label="ESP32" value={alerte.esp32_id != null ? `#${alerte.esp32_id}` : '—'} />
               <Field label="Capteur" value={sensor.title} />
               <Field label="Créée le" value={fullDate(date)} />
-              <Field label="Statut" value={alerte.traitee ? 'Traitée' : 'Active'} valueClass={alerte.traitee ? 'text-emerald-600' : sev.text} />
+              <Field
+                label="Statut"
+                value={alerte.traitee ? 'Traitée' : 'Active'}
+                valueClass={alerte.traitee ? 'text-emerald-600' : sev.text}
+              />
             </div>
           </section>
 
           {/* Timeline */}
           <section className="mt-6">
-            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
+            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
               Chronologie
             </h3>
             <ol className="mt-2 space-y-3 pl-1">
@@ -997,50 +1111,34 @@ function AlertDetailsDrawer({ alerte, onClose, onTreat, processing }: AlertDrawe
             >
               <Sparkles size={15} strokeWidth={2.2} style={{ color: '#6B7280' }} />
               <div>
-                <p className="text-[12.5px] font-semibold" style={{ color: '#374151' }}>
+                <p className="text-[12.5px] font-semibold text-[#374151]">
                   Plus d'actions à venir
                 </p>
-                <p className="mt-0.5 text-[11.5px]" style={{ color: '#9CA3AF' }}>
+                <p className="mt-0.5 text-[11.5px] text-[#9CA3AF]">
                   Assigner des responsables, escalader vers une salle et lancer des réponses automatisées depuis cet écran.
                 </p>
               </div>
             </div>
           </section>
-        </div>
+        </ModalBody>
 
-        {/* Sticky footer */}
-        <footer
-          className="flex items-center justify-end gap-2 border-t px-6 py-4"
-          style={{ borderColor: '#F0F0F0', background: 'rgba(250,250,250,0.6)' }}
-        >
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex items-center justify-center rounded-full border px-4 py-2 text-[12.5px] font-medium transition-colors"
-            style={{ background: 'white', color: '#374151', borderColor: '#ECECEC' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F5F5F7' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'white' }}
-          >
+        <ModalFooter>
+          <ModalButton variant="secondary" onClick={close} disabled={processing}>
             Fermer
-          </button>
+          </ModalButton>
           {!alerte.traitee && (
-            <button
-              type="button"
+            <ModalButton
+              variant="primary"
               onClick={() => onTreat(alerte.id)}
-              disabled={processing}
-              className="inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[12.5px] font-semibold text-white transition-all active:scale-95 disabled:opacity-60"
-              style={{ background: '#111111', boxShadow: '0 2px 8px -2px rgba(17,17,17,0.35)' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#1F1F23' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#111111' }}
+              loading={processing}
+              leadingIcon={<Check size={12} strokeWidth={2.6} />}
             >
-              {processing ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} strokeWidth={2.6} />}
               Marquer comme traitée
-            </button>
+            </ModalButton>
           )}
-        </footer>
+        </ModalFooter>
       </div>
-    </div>,
-    document.body,
+    </Modal>
   )
 }
 
@@ -1079,6 +1177,7 @@ function AlertGroupSection({ title, items, ...rest }: {
   onToggleSelect: (id: number) => void
   onOpen: (a: Alerte) => void
   onTreat: (id: number) => void
+  onDelete: (id: number) => void
   processingId: number | null
 }) {
   return (
@@ -1113,6 +1212,7 @@ function AlertGroupSection({ title, items, ...rest }: {
               onToggleSelect={rest.onToggleSelect}
               onOpen={rest.onOpen}
               onTreat={rest.onTreat}
+              onDelete={rest.onDelete}
               processing={rest.processingId === a.id}
             />
           </div>
@@ -1129,10 +1229,21 @@ export default function AlertsList({
   onRefresh,
   variant = 'all',
   compact: _compact = false,
+  onStatusChange,
 }: Props) {
   const [processing, setProcessing] = useState<number | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [drawer, setDrawer] = useState<Alerte | null>(null)
+  // Confirmation dialog state. Two flavors: single-id delete and bulk
+  // delete. Using a state-driven in-app modal instead of window.confirm
+  // — the native dialog breaks the design, freezes the tab, and looks
+  // out of place next to the rest of the UI.
+  const [confirmDelete, setConfirmDelete] = useState<
+    { kind: 'single'; id: number } | { kind: 'bulk'; ids: number[] } | null
+  >(null)
+  // In-app toast for success / error feedback. Same reason: native
+  // window.alert looks bad and blocks the UI thread.
+  const [toast, setToast] = useState<{ tone: 'success' | 'error'; text: string } | null>(null)
   const [now, setNow] = useState(Date.now())
   const [lastUpdated, setLastUpdated] = useState<number | null>(null)
 
@@ -1147,6 +1258,60 @@ export default function AlertsList({
       setProcessing(null)
     }
   }, [onRefresh])
+
+  // Toast helper — auto-dismiss after 3.5s. Used in place of window.alert
+  // so the UI never freezes and the design stays consistent.
+  const showToast = useCallback((tone: 'success' | 'error', text: string) => {
+    setToast({ tone, text })
+    window.setTimeout(() => setToast(t => (t && t.text === text ? null : t)), 3500)
+  }, [])
+
+  // Click on the per-card "Supprimer" button — just opens the
+  // confirmation modal. The actual API call lives in
+  // ``performDelete`` below and runs when the user confirms.
+  const askDeleteOne = useCallback((id: number) => {
+    setConfirmDelete({ kind: 'single', id })
+  }, [])
+
+  // Suppression effective (single ou bulk). Appelée depuis le modal de
+  // confirmation. Gère aussi la fermeture du drawer et la désélection.
+  const performDelete = useCallback(async () => {
+    if (!confirmDelete) return
+    if (confirmDelete.kind === 'single') {
+      const id = confirmDelete.id
+      setProcessing(id)
+      try {
+        await deleteAlerte(id)
+        setDrawer(prev => (prev && prev.id === id ? null : prev))
+        setState(s => {
+          if (!s.selected.has(id)) return s
+          const next = new Set(s.selected)
+          next.delete(id)
+          return { ...s, selected: next }
+        })
+        showToast('success', 'Alerte supprimée.')
+        onRefresh()
+      } catch (err) {
+        showToast('error', 'Échec de la suppression : ' + (err as Error).message)
+      } finally {
+        setProcessing(null)
+        setConfirmDelete(null)
+      }
+    } else {
+      const ids = confirmDelete.ids
+      try {
+        const r = await deleteAlertesBulk(ids)
+        // Vider la sélection
+        setState(s => ({ ...s, selected: new Set() }))
+        showToast('success', `${r.data.deleted} alerte(s) supprimée(s).`)
+        onRefresh()
+      } catch (err) {
+        showToast('error', 'Échec de la suppression : ' + (err as Error).message)
+      } finally {
+        setConfirmDelete(null)
+      }
+    }
+  }, [confirmDelete, onRefresh, showToast])
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
@@ -1257,11 +1422,10 @@ export default function AlertsList({
   }
 
   const onBulkAction = () => {
-    // No backend endpoint yet — show a soft no-op confirmation.
-    // We could open a Modal here, but keep it inline for the v1.
     if (state.selected.size === 0) return
-    // eslint-disable-next-line no-alert
-    alert('Les actions en masse seront bientôt disponibles. Sélection : ' + state.selected.size + ' alerte(s).')
+    // Ouvre la modale de confirmation. La suppression effective est
+    // lancée par ``performDelete`` quand l'utilisateur confirme.
+    setConfirmDelete({ kind: 'bulk', ids: Array.from(state.selected) })
   }
 
   const resetFilters = () => setState(s => ({
@@ -1344,6 +1508,7 @@ export default function AlertsList({
         refreshing={refreshing}
         allFilteredIds={allFilteredIds}
         onBulkAction={onBulkAction}
+        onStatusChange={onStatusChange}
       />
 
       {/* Selection strip */}
@@ -1389,19 +1554,98 @@ export default function AlertsList({
               onToggleSelect={onToggleSelect}
               onOpen={setDrawer}
               onTreat={traiter}
+              onDelete={askDeleteOne}
               processingId={processing}
             />
           ))
         )}
       </div>
 
-      {/* Drawer */}
-      <AlertDetailsDrawer
+      {/* Details modal */}
+      <AlertDetailsModal
         alerte={drawer}
         onClose={() => setDrawer(null)}
         onTreat={traiter}
         processing={processing !== null}
       />
+
+      {/* Confirmation modal — remplace window.confirm pour la suppression.
+          Une seule forme qui s'adapte au nombre d'alertes sélectionnées :
+          titre et libellé du bouton se mettent au singulier/pluriel
+          automatiquement. Couvre à la fois le bouton 'Supprimer' d'une
+          carte et l'action de masse du toolbar. */}
+      <Modal
+        open={confirmDelete !== null}
+        onClose={() => setConfirmDelete(null)}
+        size="sm"
+        ariaLabel="Confirmer la suppression"
+      >
+        {confirmDelete ? (
+          (() => {
+            const count =
+              confirmDelete.kind === 'single' ? 1 : confirmDelete.ids.length
+            return (
+              <>
+                <ModalHeader
+                  icon={<Trash2 size={18} strokeWidth={2.2} />}
+                  iconTone="red"
+                  title={
+                    count === 1
+                      ? 'Supprimer cette alerte ?'
+                      : `Supprimer ${count} alertes ?`
+                  }
+                  subtitle="Cette action est irréversible. Les alertes seront définitivement retirées de l'historique."
+                  onClose={() => setConfirmDelete(null)}
+                />
+                <ModalFooter noBorder>
+                  <ModalButton
+                    variant="secondary"
+                    onClick={() => setConfirmDelete(null)}
+                  >
+                    Annuler
+                  </ModalButton>
+                  <ModalButton
+                    variant="danger"
+                    onClick={performDelete}
+                    loading={processing !== null && confirmDelete.kind === 'single'}
+                  >
+                    {count === 1 ? 'Supprimer' : 'Tout supprimer'}
+                  </ModalButton>
+                </ModalFooter>
+              </>
+            )
+          })()
+        ) : null}
+      </Modal>
+
+      {/* In-app toast — remplace window.alert. Disparaît tout seul
+          après 3.5s, ne bloque pas l'UI, et reste dans le design. */}
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none fixed bottom-6 right-6 z-[300] flex items-center gap-2.5 rounded-2xl border bg-white px-4 py-3 shadow-[0_12px_36px_-12px_rgba(15,23,42,0.25)]"
+          style={{
+            borderColor: toast.tone === 'error' ? '#FECACA' : '#A7F3D0',
+            animation: 'modalPanelIn 180ms cubic-bezier(0.25, 0.1, 0.25, 1) both',
+          }}
+        >
+          <span
+            className="flex h-7 w-7 items-center justify-center rounded-full"
+            style={{
+              background: toast.tone === 'error' ? '#FEE2E2' : '#D1FAE5',
+              color: toast.tone === 'error' ? '#B91C1C' : '#047857',
+            }}
+          >
+            {toast.tone === 'error'
+              ? <X size={14} strokeWidth={2.6} />
+              : <Check size={14} strokeWidth={2.6} />}
+          </span>
+          <span className="text-[13px] font-medium" style={{ color: '#111111' }}>
+            {toast.text}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

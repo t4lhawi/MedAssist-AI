@@ -9,6 +9,7 @@
 #  UI    : http://localhost:3000
 #  API   : http://localhost:8000/docs
 #  Broker: localhost:1883 (mosquitto)
+#  LLM   : Ollama local (gratuit, pas de clé API, pas de quota)
 # ════════════════════════════════════════════════════════════
 
 name: medassist
@@ -40,14 +41,11 @@ services:
     image: ollama/ollama:latest
     container_name: medassist_ollama
     restart: unless-stopped
-    # Le serveur tourne à l'intérieur du conteneur ; on évite de l'exposer
-    # en dehors de Docker pour limiter l'accès au LLM en local.
     volumes:
       - ollama_data:/root/.ollama
     ports:
       - "11434:11434"      # pratique pour `ollama list` depuis l'hôte
     healthcheck:
-      # /api/tags répond dès que le daemon est prêt (modèles listés vides au début).
       test: ["CMD-SHELL", "wget -qO- http://localhost:11434/api/tags >/dev/null || exit 1"]
       interval: 10s
       timeout: 5s

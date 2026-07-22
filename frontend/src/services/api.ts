@@ -69,6 +69,9 @@ export const getMesures = (params?: {
 export const getAlertes = (traitee?: boolean) =>
   api.get<Alerte[]>('/api/alertes/', { params: { traitee } })
 export const traiterAlerte = (id: number) => api.patch(`/api/alertes/${id}/traiter`)
+export const deleteAlerte = (id: number) => api.delete(`/api/alertes/${id}`)
+export const deleteAlertesBulk = (ids: number[]) =>
+  api.post<{ deleted: number }>('/api/alertes/bulk-delete', { ids })
 
 // ─── Documents ──────────────────────────────────────────────────
 export const getDocuments = () => api.get<Document[]>('/api/documents/')

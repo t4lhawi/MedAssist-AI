@@ -43,11 +43,16 @@ LIBELLES_TYPES: Dict[str, str] = {
 # get_salles_status(offline_threshold_seconds=...).
 OFFLINE_THRESHOLD_SECONDS: int = 60
 
-# Alertes older than this are filtered out of every read. The row stays
-# in the DB (we don't physically delete it) — the API just never returns
-# it. Keeps the alertes list self-cleaning without a background sweeper,
-# and the dashboard's 5s polling picks up the change automatically.
+# Alertes older than this are filtered out of every read AND physically
+# purged from the database by a background sweeper (see ``purge_old_alertes``
+# in ``app.main``). The 24h window keeps the alertes list bounded while
+# still giving the dashboard enough history to be useful.
 ALERTE_RETENTION_HOURS: int = 24
+
+# AI explanations are cached per (sensor type, severity) for this long.
+# Any new alert of the same (type, niveau) within the window reuses the
+# last generated explanation instead of paying for another LLM call.
+EXPLICATION_CACHE_HOURS: int = 24
 
 
 # ─── Utilisateurs ────────────────────────────────────────────────
@@ -347,8 +352,29 @@ def _schedule_explication(alerte_id: int) -> None:
 
 
 def _run_explication(alerte_id: int) -> None:
-    """Wrapper thread-safe : capture toute exception, ne propage jamais."""
+    """Wrapper thread-safe : capture toute exception, ne propage jamais.
+
+    Avant d'appeler le LLM, tente de réutiliser une explication récente
+    (≤ ``EXPLICATION_CACHE_HOURS``) pour une alerte de même
+    ``(type, niveau)``. Cela évite de refaire un appel LLM à chaque
+    seuil dépassé — la majorité des alertes d'un même capteur et d'un
+    même niveau partagent la même explication, le prompt RAG ne changeant
+    pas en pratique d'un incident à l'autre dans la fenêtre de cache.
+    """
     try:
+        # 1) Tentative de cache : on cherche la dernière explication encore
+        #    valide pour ce couple (type, niveau).
+        cached = _get_cached_explication(alerte_id)
+        if cached is not None:
+            texte, source_id = cached
+            _apply_cached_explication(alerte_id, texte, source_id)
+            logger.info(
+                "Explication IA réutilisée du cache pour alerte %d (source: alerte %d, %d caractères)",
+                alerte_id, source_id, len(texte),
+            )
+            return
+
+        # 2) Pas de cache exploitable : on appelle le LLM.
         from .rag.pipeline import expliquer_alerte
         explication = expliquer_alerte(alerte_id)
         if explication:
@@ -357,6 +383,86 @@ def _run_explication(alerte_id: int) -> None:
             logger.info("Explication IA vide pour alerte %d (LLM a renvoyé un texte vide)", alerte_id)
     except Exception as exc:
         logger.warning("Échec génération explication IA pour alerte %d : %s: %s", alerte_id, type(exc).__name__, exc)
+
+
+def _get_cached_explication(alerte_id: int) -> Optional[Tuple[str, int]]:
+    """Cherche une explication récente (< ``EXPLICATION_CACHE_HOURS``) pour
+    une alerte de même ``(type, niveau)``.
+
+    Retourne ``(texte, alerte_source_id)`` ou ``None`` si rien d'exploitable
+    n'est trouvé. La recherche est volontairement large sur le type (toutes
+    salles confondues) : le contenu d'une explication "température critique
+    35°C" ne dépend pas de la salle, juste du type de capteur et du niveau
+    d'alerte.
+    """
+    from .database import SessionLocal
+    db = SessionLocal()
+    try:
+        cible = db.query(models.Alerte).get(alerte_id)
+        if cible is None or not cible.type or not cible.niveau:
+            return None
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=EXPLICATION_CACHE_HOURS)
+        row = (
+            db.query(models.Alerte)
+            .filter(
+                models.Alerte.id != alerte_id,
+                models.Alerte.type == cible.type,
+                models.Alerte.niveau == cible.niveau,
+                models.Alerte.explication.isnot(None),
+                models.Alerte.explication != "",
+                models.Alerte.explication_cree_le.isnot(None),
+                models.Alerte.explication_cree_le >= cutoff,
+            )
+            .order_by(desc(models.Alerte.explication_cree_le))
+            .first()
+        )
+        if row is None or not row.explication:
+            return None
+        return (row.explication, row.id)
+    finally:
+        db.close()
+
+
+def _apply_cached_explication(alerte_id: int, texte: str, source_id: int) -> None:
+    """Copie ``texte`` sur l'alerte cible et stamp le timestamp. On utilise
+    le timestamp courant (pas celui de la source) pour que la prochaine
+    fenêtre de cache reparte de l'utilisation la plus récente."""
+    from .database import SessionLocal
+    db = SessionLocal()
+    try:
+        cible = db.query(models.Alerte).get(alerte_id)
+        if cible is None:
+            return
+        cible.explication = texte
+        cible.explication_cree_le = datetime.now(timezone.utc)
+        db.commit()
+    finally:
+        db.close()
+
+
+def purge_old_alertes(db: Session) -> int:
+    """Supprime physiquement les alertes actives (non traitées) plus
+    vieilles que ``ALERTE_RETENTION_HOURS``. Renvoie le nombre de lignes
+    effacées.
+
+    Les alertes déjà traitées (``traitee=True``) sont conservées : ce
+    sont des actions historiques, on ne les efface pas. La lecture
+    (``get_alertes``) applique la même règle — seules les alertes encore
+    actives expirent au bout de 24h.
+
+    Appelé périodiquement par le sweeper de ``app.main``.
+    """
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=ALERTE_RETENTION_HOURS)
+    deleted = (
+        db.query(models.Alerte)
+        .filter(
+            models.Alerte.cree_le < cutoff,
+            models.Alerte.traitee.is_(False),
+        )
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+    return int(deleted or 0)
 
 
 # ─── Salles (aggregated view) ───────────────────────────────────
@@ -524,12 +630,18 @@ def get_alertes(
         joinedload(models.Alerte.esp32),
         joinedload(models.Alerte.mesure).joinedload(models.Mesure.esp32),
     )
-    # Self-cleaning filter: alertes older than ALERTE_RETENTION_HOURS are
-    # never returned. Applied unconditionally so both active and history
-    # views stay bounded. ``cree_le`` is timezone-aware; compare with a
-    # tz-aware now() (matches the pattern in get_salles_status).
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=ALERTE_RETENTION_HOURS)
-    q = q.filter(models.Alerte.cree_le >= cutoff)
+    # Self-cleaning filter: *active* alertes (traitee=False) older than
+    # ALERTE_RETENTION_HOURS are never returned — the list stays bounded
+    # without a background sweeper, and the dashboard's safety poll picks
+    # up the change automatically.
+    #
+    # Treated alertes (traitee=True) bypass the 24h cap: once a soignant
+    # has acknowledged the alert, it's a historical record of the action
+    # taken and should remain visible in the "traitées" view indefinitely.
+    # The sweeper in app.main also skips treated rows for the same reason.
+    if traitee is not True:
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=ALERTE_RETENTION_HOURS)
+        q = q.filter(models.Alerte.cree_le >= cutoff)
     if traitee is not None:
         q = q.filter(models.Alerte.traitee == traitee)
     if esp32_id is not None:
@@ -543,6 +655,43 @@ def traiter_alerte(db: Session, alerte_id: int):
         a.traitee = True
         db.commit()
     return a
+
+
+def delete_alerte(db: Session, alerte_id: int) -> bool:
+    """Supprime une alerte par id. Renvoie True si une ligne a été effacée.
+
+    Utilisé par l'écran 'Traitées' pour purger manuellement des alertes
+    que l'utilisateur ne veut plus voir dans son historique — le
+    sweeper automatique n'efface que les alertes encore actives (non
+    traitées) après 24h, donc les alertes traitées restent visibles
+    indéfiniment tant qu'on ne les supprime pas explicitement.
+    """
+    deleted = (
+        db.query(models.Alerte)
+        .filter(models.Alerte.id == alerte_id)
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+    return bool(deleted)
+
+
+def delete_alertes(db: Session, alerte_ids: List[int]) -> int:
+    """Supprime plusieurs alertes en une seule transaction. Renvoie le
+    nombre de lignes effacées (peut être inférieur à ``len(alerte_ids)``
+    si certains ids n'existent pas).
+
+    Utilisé par l'action en masse de l'écran 'Traitées' : le frontend
+    envoie la liste des ids sélectionnés et on purge tout d'un coup.
+    """
+    if not alerte_ids:
+        return 0
+    deleted = (
+        db.query(models.Alerte)
+        .filter(models.Alerte.id.in_(alerte_ids))
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+    return int(deleted or 0)
 
 
 # ─── Documents ───────────────────────────────────────────────────

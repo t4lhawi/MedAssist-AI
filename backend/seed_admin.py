@@ -12,7 +12,7 @@ if db.query(models.Utilisateur).filter_by(email=admin_email).first():
     print(f"[INFO] Admin already exists ({admin_email})")
 else:
     admin = models.Utilisateur(
-        nom="Administrateur",
+        nom="Mohamed Talhaoui",
         email=admin_email,
         mdp_hash=hacher_mdp("Admin@2026!"),
         role="admin"

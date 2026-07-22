@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     # Provider IA — par défaut Ollama (gratuit, local)
     LLM_PROVIDER: Literal["openrouter"] = "openrouter"
-    LLM_MODEL: str = "llama3.2"
+    LLM_MODEL: str = "meta-llama/llama-3.3-70b-instruct:free"
     LLM_MAX_TOKENS: int = 256
     LLM_TIMEOUT_SECONDS: int = 60
     OLLAMA_BASE_URL: str = "http://ollama:11434"
@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
     GROQ_API_KEY: str = ""
-    OPENROUTER_API_KEY: str = "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"
+    OPENROUTER_API_KEY: str = ""
     EMBEDDING_MODEL: str = "nvidia/nemotron-3-embed-1b:free"    # vide = défaut par provider
 
     CHROMA_PATH: str = "./chroma_db"

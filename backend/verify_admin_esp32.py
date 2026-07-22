@@ -27,8 +27,9 @@ _tmp = tempfile.NamedTemporaryFile(prefix="medassist_verify_", suffix=".db", del
 _tmp.close()
 os.environ["DATABASE_URL"] = f"sqlite:///{_tmp.name}"
 os.environ.setdefault("SECRET_KEY", "verify-secret-key")
-os.environ.setdefault("LLM_PROVIDER", "ollama")
 os.environ.setdefault("LLM_MODEL", "llama3.2")
+os.environ.setdefault("EMBEDDING_MODEL", "nomic-embed-text")
+os.environ.setdefault("OLLAMA_BASE_URL", "http://localhost:11434")
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { Bell, LogOut, User, ChevronDown, UserCircle, Clock } from 'lucide-react'
 
+const LOGO = '../assets/favicon.ico';
+
 interface Props {
   alertCount: number
 }
+
 
 export default function Navbar({ alertCount }: Props) {
   const { user, logout } = useAuth()
@@ -46,10 +49,13 @@ export default function Navbar({ alertCount }: Props) {
       <div className="flex h-full items-center justify-between px-5">
         {/* Left: Logo + Brand */}
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl" style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 21c-4.5-3-8-6.5-8-10.5A5.5 5.5 0 0 1 9.5 5c1 0 2 .3 2.5 1 .5-.7 1.5-1 2.5-1A5.5 5.5 0 0 1 20 10.5c0 4-3.5 7.5-8 10.5Z" />
-            </svg>
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl">
+            <img 
+              src={LOGO} 
+              alt="Logo" 
+              width={65} 
+              height={65} 
+            />
           </div>
           <div>
             <h1 className="text-[14px] font-semibold tracking-tight" style={{ color: '#111111' }}>

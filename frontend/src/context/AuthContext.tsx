@@ -36,6 +36,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem('token')
+    // Drop any persisted chat from the previous session so the next
+    // user who opens this tab starts with an empty conversation.
+    try { sessionStorage.removeItem('medassist:chat:v1') } catch {}
     setToken(null)
     setUser(null)
   }

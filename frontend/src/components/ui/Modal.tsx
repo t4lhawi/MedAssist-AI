@@ -256,12 +256,15 @@ interface ModalFooterProps {
   children: React.ReactNode
   /** Stays at the bottom of the panel even when content is short */
   sticky?: boolean
+  /** Drop the top divider — useful for compact dialogs (confirmations) where
+   *  the footer sits directly under the header with no body in between. */
+  noBorder?: boolean
 }
 
-export function ModalFooter({ children, sticky = true }: ModalFooterProps) {
+export function ModalFooter({ children, sticky = true, noBorder = false }: ModalFooterProps) {
   return (
     <footer
-      className={`flex items-center justify-end gap-2 border-t border-[#F0F0F0] bg-[#FAFAFA]/60 px-7 py-4 ${sticky ? '' : ''}`}
+      className={`flex items-center justify-end gap-2 ${noBorder ? '' : 'border-t border-[#F0F0F0]'} bg-[#FAFAFA]/60 px-7 py-4 ${sticky ? '' : ''}`}
     >
       {children}
     </footer>

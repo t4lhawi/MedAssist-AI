@@ -15,7 +15,7 @@ an Ollama-based local LLM service by default, and a Vite React frontend.
 - Real-time dashboard with charts and alerts.
 - Document upload and indexing for RAG-powered Q&A.
 - Role-based authentication with JWTs.
-- Configurable LLM provider: Ollama (local), Groq, or Google Gemini.
+- Local LLM via Ollama (embeddings + chat).
 
 ## Architecture Overview
 
@@ -100,24 +100,20 @@ npm install
 npm run dev
 ```
 
-## Configuring LLM Providers
+## Configuring the LLM (Ollama)
 
-The default configuration uses Ollama locally. Alternatives include Groq and
-Google Gemini. Configure the provider and credentials in the `.env` file:
-
-Examples
+The LLM runs locally via Ollama. Adjust the model in `.env` if needed:
 
 ```env
-LLM_PROVIDER=ollama
 LLM_MODEL=llama3.2
+EMBEDDING_MODEL=nomic-embed-text
+```
 
-# or for Groq
-LLM_PROVIDER=groq
-GROQ_API_KEY=your_groq_key
+To pull the models into the Ollama container:
 
-# or for Google Gemini
-LLM_PROVIDER=gemini
-GEMINI_API_KEY=your_gemini_key
+```bash
+docker exec medassist_ollama ollama pull llama3.2
+docker exec medassist_ollama ollama pull nomic-embed-text
 ```
 
 After changing `.env`, restart the backend:

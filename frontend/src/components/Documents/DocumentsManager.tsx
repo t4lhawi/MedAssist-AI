@@ -824,7 +824,7 @@ function DocumentsList({
   onDelete: (d: Document) => void
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#ECECEC] bg-white shadow-[0_1px_2px_rgba(17,17,17,0.04),0_4px_14px_-8px_rgba(17,17,17,0.06)]">
+    <div className="rounded-2xl border border-[#ECECEC] bg-white shadow-[0_1px_2px_rgba(17,17,17,0.04),0_4px_14px_-8px_rgba(17,17,17,0.06)]">
       <ul className="divide-y divide-slate-100">
         {docs.map(d => (
           <DocumentListRow key={d.id} doc={d} onDelete={onDelete} />
@@ -843,7 +843,7 @@ function DocumentListRow({
 }) {
   const meta = statusMeta(doc.indexe)
   return (
-    <li className="group flex items-center gap-3 px-4 py-3 transition-colors duration-150 hover:bg-slate-50/70">
+    <li className="group relative flex items-center gap-3 px-4 py-3 transition-colors duration-150 hover:bg-slate-50/70">
       {/* File icon */}
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-b from-slate-50 to-slate-100 text-slate-500 ring-1 ring-slate-200/70">
         <FileText size={18} strokeWidth={2} />
@@ -873,7 +873,7 @@ function DocumentListRow({
       </span>
 
       {/* Actions */}
-      <div className="flex shrink-0 items-center gap-1 opacity-100 transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100">
+      <div className="flex shrink-0 items-center gap-1">
         <DocumentActionsMenu doc={doc} onDelete={onDelete} />
         <ActionIconButton
           title="Supprimer"
@@ -946,7 +946,7 @@ function DocumentCard({
 }) {
   const meta = statusMeta(doc.indexe)
   return (
-    <article className="group card-lift relative overflow-hidden rounded-2xl border border-[#ECECEC] bg-white p-4">
+    <article className="group card-lift relative rounded-2xl border border-[#ECECEC] bg-white p-4">
       <div className="flex items-start gap-3">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-b from-slate-50 to-slate-100 text-slate-500 ring-1 ring-slate-200/70">
           <FileText size={22} strokeWidth={1.9} />
@@ -975,7 +975,7 @@ function DocumentCard({
         </span>
       </div>
 
-      <div className="mt-3 flex items-center justify-end gap-1 border-t border-slate-100 pt-3 opacity-100 transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100">
+      <div className="mt-3 flex items-center justify-end gap-1 border-t border-slate-100 pt-3">
         <DocumentActionsMenu doc={doc} onDelete={onDelete} />
         <ActionIconButton
           title="Supprimer"
@@ -1025,13 +1025,31 @@ function DocumentActionsMenu({
   const apiBase = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'
   const fileUrl = `${apiBase}/api/documents/${doc.id}/file`
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     setOpen(false)
-    // The backend serves the file with `Content-Disposition: attachment;
-    // filename=<nom>` so navigating to this URL is enough to trigger a
-    // save dialog with the original filename — no <a download> hack or
-    // popup tricks needed.
-    window.location.href = fileUrl
+    // The endpoint is auth-protected, so we can't just navigate to it
+    // (`window.location.href` would send no Authorization header and
+    // the backend would 401). Fetch the file with axios (which adds
+    // the Bearer token), then hand the Blob to a hidden <a download>
+    // so the browser saves it with the original filename.
+    try {
+      const api = (await import('../../services/api')).default
+      const res = await api.get(`/api/documents/${doc.id}/file`, {
+        responseType: 'blob',
+      })
+      const blobUrl = window.URL.createObjectURL(res.data)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = doc.nom
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      // Revoke after the click is processed so the browser still has
+      // the URL when the save dialog opens.
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 0)
+    } catch (err) {
+      console.error('Download failed', err)
+    }
   }
 
   const handleCopyName = async () => {

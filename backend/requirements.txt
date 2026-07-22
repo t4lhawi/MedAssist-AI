@@ -19,12 +19,15 @@ bcrypt==5.0.0
 # ── IA / RAG ───────────────────────────────────────────
 langchain==0.2.1
 langchain-community==0.2.1
+langchain-ollama==0.1.3        # ChatOllama + OllamaEmbeddings
 chromadb==0.4.24             # version stable avec wheels précompilés
 posthog<3
 pypdf==4.2.0
 
-# ── LLM providers gratuits ────────────────────────────
-langchain-groq==0.1.5
+# ── LLM providers (optionnels) ────────────────────────
+langchain-openai
+langchain-google-genai
+openai
 
 # ── Utilitaires ────────────────────────────────────────
 python-dotenv==1.0.1
@@ -32,8 +35,3 @@ httpx==0.27.0
 
 # ── MQTT (ingestion capteurs IoT) ────────────────────────
 paho-mqtt==2.1.0
-
-# Optional LLM provider integrations
-langchain-openai
-langchain-google-genai
-openai
