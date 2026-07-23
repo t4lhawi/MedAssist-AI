@@ -259,16 +259,18 @@ def interpreter_mesure(type_capteur: str, valeur: float, unite: str, emplacement
         context = ""
 
     from langchain_core.messages import HumanMessage
-    prompt = f"""Tu es un assistant hospitalier expert.
-{f'Protocole de référence : {context}' if context else ''}
+    prompt = f"""
+            Tu es un assistant hospitalier expert.
+            {f'Protocole de référence : {context}' if context else ''}
 
-Mesure relevée :
-- Type de mesure : {type_capteur}
-- Valeur : {valeur} {unite}
-- Emplacement : {emplacement or 'Non spécifié'}
+            Mesure relevée :
+            - Type de mesure : {type_capteur}
+            - Valeur : {valeur} {unite}
+            - Emplacement : {emplacement or 'Non spécifié'}
 
-En 2 à 3 phrases, indique si cette valeur est dans les normes, et si une action est nécessaire.
-Réponds en français, de manière claire et directe."""
+            En 2 à 3 phrases, indique si cette valeur est dans les normes, et si une action est nécessaire.
+            Réponds en français, de manière claire et directe.
+        """
 
     result = llm.invoke([HumanMessage(content=prompt)])
     return str(result.content)

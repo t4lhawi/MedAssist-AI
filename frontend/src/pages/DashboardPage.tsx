@@ -265,7 +265,9 @@ export default function DashboardPage() {
             onClick={load}
             disabled={loading}
             className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition-all hover:-translate-y-px hover:bg-[#FAFAFA] active:scale-[0.97] disabled:opacity-60"
-            style={{ borderColor: '#ECECEC', background: '#FFFFFF', color: '#374151' }}
+            style={{ background: 'white', color: '#374151', borderColor: '#ECECEC' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F5F5F7' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'white' }}
             aria-label="Actualiser"
           >
             <RefreshCw size={12} strokeWidth={2.4} className={loading ? 'animate-spin' : ''} />

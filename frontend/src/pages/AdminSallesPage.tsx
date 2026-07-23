@@ -199,11 +199,14 @@ export default function AdminSallesPage() {
             type="button"
             onClick={load}
             disabled={loading}
-            aria-label="Rafraîchir"
+            aria-label="Actualiser"
             className="inline-flex items-center gap-1.5 rounded-full border border-[#ECECEC] bg-white px-3.5 py-1.5 text-[12.5px] font-medium text-[#374151] shadow-[0_1px_2px_rgba(17,17,17,0.04)] transition-all duration-200 hover:-translate-y-px hover:bg-[#FAFAFA] active:scale-[0.97] disabled:opacity-60"
+            style={{ background: 'white', color: '#374151', borderColor: '#ECECEC' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F5F5F7' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'white' }}
           >
             <RefreshCw size={12} strokeWidth={2.4} className={loading ? 'animate-spin' : ''} />
-            Rafraîchir
+            Actualiser
           </button>
         }
       />

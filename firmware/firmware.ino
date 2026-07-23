@@ -1,6 +1,8 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
+
 #include <ArduinoJson.h>
+
 #include "DHTesp.h"
 
 // ===============================
@@ -10,7 +12,7 @@ const char* WIFI_SSID     = "M-LINK";
 const char* WIFI_PASSWORD = "22092005";
 
 // Adresse IP du PC qui fait tourner Mosquitto (sur le même Wi-Fi que l'ESP32)
-const char* MQTT_BROKER     = "192.168.1.102";
+const char* MQTT_BROKER     = "192.168.1.100";
 const int   MQTT_PORT       = 1883;
 const char* MQTT_CLIENT_ID  = "esp32-sensor-1";
 
