@@ -92,7 +92,7 @@ export default function Navbar({ alertCount }: Props) {
             {alertCount > 0 && (
               <span
                 className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white"
-                style={{ background: '#EF4444' }}
+                style={{ background: '#3B82F6' }}
               >
                 {alertCount > 9 ? '9+' : alertCount}
               </span>

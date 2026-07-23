@@ -8,16 +8,8 @@ from ..database import get_db
 
 router = APIRouter(prefix="/api/mesures", tags=["Mesures"])
 
-
 @router.post("/", response_model=schemas.MesureOut)
 def creer(data: schemas.MesureCreate, db: Session = Depends(get_db)):
-    """Legacy endpoint kept for manual testing and the existing README
-    smoke test. ESP32 devices in production publish via MQTT to
-    ``medassist/mesures/<topic>`` (see ``backend/app/mqtt_client.py``).
-
-    The new ``type`` and ``source_ip`` fields on the payload are now
-    **required** for inserts. The legacy ``capteur_id`` field is silently
-    ignored (deprecated)."""
     return crud.create_mesure(db, data)
 
 

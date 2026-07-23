@@ -44,9 +44,6 @@ async def upload(
             print(f"[index] {nom}: {n} chunks indexés")
         except Exception as e:
             print(f"[index] ERREUR {nom}: {type(e).__name__}: {e}")
-            # Make sure indexe stays False and we record why in a transient
-            # attribute the UI can read on next poll. We don't add a column
-            # to the schema to avoid a migration — we just print.
         finally:
             db_index.close()
 

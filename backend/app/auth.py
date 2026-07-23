@@ -12,7 +12,6 @@ from . import models
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
-
 def _normaliser_mdp(mdp: str) -> bytes:
     return hashlib.sha256(mdp.encode("utf-8")).digest()
 
@@ -32,7 +31,6 @@ def verifier_mdp(mdp_brut: str, mdp_hash: str) -> bool:
     except (ValueError, TypeError):
         return False
 
-
 # ─── JWT ─────────────────────────────────────────────────────────
 def creer_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
@@ -45,7 +43,6 @@ def decoder_token(token: str) -> dict:
         return jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token invalide")
-
 
 # ─── Dépendances FastAPI ─────────────────────────────────────────
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):

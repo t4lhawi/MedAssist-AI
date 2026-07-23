@@ -24,7 +24,6 @@ def chat(
     crud.save_conversation(db, user.id, data.question, reponse, sources)
     return ChatResponse(reponse=reponse, sources=sources)
 
-
 @router.get("/historique")
 def historique(db: Session = Depends(get_db), user=Depends(get_current_user)):
     convs = crud.get_conversations(db, user.id)
@@ -39,7 +38,6 @@ def historique(db: Session = Depends(get_db), user=Depends(get_current_user)):
         for c in convs
     ]
 
-
 @router.delete("/historique/{conversation_id}")
 def supprimer_conversation(
     conversation_id: int,
@@ -51,12 +49,10 @@ def supprimer_conversation(
         raise HTTPException(404, "Conversation introuvable.")
     return {"deleted": True}
 
-
 @router.delete("/historique")
 def supprimer_historique(db: Session = Depends(get_db), user=Depends(get_current_user)):
     deleted = crud.delete_conversations(db, user.id)
     return {"deleted": deleted}
-
 
 @router.post("/interpreter")
 def interpreter(

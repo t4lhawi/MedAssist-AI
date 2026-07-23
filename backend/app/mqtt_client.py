@@ -1,61 +1,20 @@
-"""MQTT subscriber for sensor measurements.
-
-ESP32 devices publish JSON payloads to ``<MQTT_TOPIC_PREFIX>/<salle>/<type>``
-(see ``backend/app/config.py``). The default prefix is ``medassist/salle``,
-so the topic shape is::
-
-    medassist/salle/<salle>/<type>
-
-This client subscribes with a two-level wildcard (``+/+``) and parses the
-salle + type out of the topic — the topic is the source of truth for the
-salle. The IP in the JSON payload is used as a sanity check against the
-salle's registered devices.
-
-The matching is done against the ``esp32_devices`` table by salle. If the
-salle is registered and one of its devices has a matching IP, the mesure
-is linked to the device and a threshold check runs (see
-``crud._verifier_seuil``). If the salle is unknown or no device in the
-salle matches the IP, the mesure is still stored with ``esp32_id=NULL``
-and ``source_ip=<ip>`` (plus the topic salle in ``mesures.topic_salle``)
-so the admin can see and claim it from the dashboard.
-
-The paho network loop runs on its own background thread. We deliberately
-do **not** use the FastAPI request-scoped ``get_db`` generator here — every
-message opens a fresh ``SessionLocal()`` and closes it in ``finally``.
-"""
-
 from __future__ import annotations
-
 import json
 import logging
 import time
 from typing import Dict, List, Optional
-
 import paho.mqtt.client as mqtt
-
 from . import crud, models, schemas
 from .config import settings
 from .database import SessionLocal
 
 logger = logging.getLogger(__name__)
 
-
 # Rate-limit the "unknown source IP" log: at most 1 warning per IP per minute.
 _WARN_COOLDOWN_SECONDS = 60
 _last_unreg_warn_at: Dict[str, float] = {}
 
-
 class MqttIngestClient:
-    """Thin wrapper around :class:`paho.mqtt.client.Client`.
-
-    Lifecycle::
-
-        client = MqttIngestClient()
-        client.start()        # non-blocking; loop runs on a background thread
-        ...
-        client.stop()         # called from FastAPI lifespan shutdown
-    """
-
     def __init__(self) -> None:
         # paho-mqtt 1.x: pas de paramètre callback_api_version (API v1 par défaut)
         # paho-mqtt 2.x: il faut explicitement passer CallbackAPIVersion.VERSION2
@@ -247,11 +206,6 @@ class MqttIngestClient:
         source_ip: str,
         topic: str,
     ) -> Optional[object]:
-        """Find the Esp32Device for this (salle, ip) tuple, logging
-        non-fatal mismatches so the admin can spot misconfigured devices.
-
-        Returns the matching device, or ``None`` if the mesure should
-        fall into the unregistered bucket."""
         devices: List[object] = crud.get_esp32_by_salle(db, topic_salle)
         if not devices:
             self._warn_unknown_source(source_ip, topic_salle, topic)
@@ -261,8 +215,6 @@ class MqttIngestClient:
         if match is not None:
             return match
 
-        # Salle known, but the IP isn't part of it — log so the admin
-        # can decide whether to add a new device or update the topic.
         known_ips = [d.ip for d in devices]
         logger.warning(
             "MQTT salle/ip non concordant: salle=%s ip=%s (IPs enregistrées: %s) — "

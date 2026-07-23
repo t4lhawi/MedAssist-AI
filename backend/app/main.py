@@ -100,7 +100,7 @@ app.include_router(realtime.router)        # WebSocket live stream
 
 @app.get("/")
 def root():
-    return {"message": "MedAssist AI est opérationnel 🏥", "docs": "/docs"}
+    return {"message": "MedAssist AI est opérationnel", "docs": "/docs"}
 
 @app.get("/health")
 def health():

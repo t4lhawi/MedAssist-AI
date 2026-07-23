@@ -10,16 +10,13 @@ from ..config import settings
 
 logger = logging.getLogger(__name__)
 
-
-# OpenRouter expose une API compatible OpenAI (chat + embeddings).
-# On la réutilise via langchain-openai en surchargeant la base_url.
+# OpenRouter (Embeddings)
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-
+# Groq (LLM)
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 
 # ─── Embeddings OpenRouter (client custom, plus simple que langchain) ─
 class OpenRouterEmbeddings(Embeddings):
-    """Embeddings compatible LangChain via l'API OpenRouter."""
-
     def __init__(self, api_key: str, model: str):
         self.api_key = api_key
         self.model = model
@@ -47,43 +44,35 @@ class OpenRouterEmbeddings(Embeddings):
     def embed_query(self, text: str) -> list[float]:
         return self._call([text])[0]
 
-
 # ─── Embeddings (vecteurs de texte) ──────────────────────────────
 @lru_cache(maxsize=1)
 def _get_embeddings():
-    # OpenRouter uniquement : embeddings via l'API OpenRouter.
+    # Embeddings via l'API OpenRouter.
     if not settings.OPENROUTER_API_KEY:
         raise RuntimeError(
             "OPENROUTER_API_KEY manquant : configure-le dans .env pour utiliser les embeddings."
         )
     return OpenRouterEmbeddings(
         api_key=settings.OPENROUTER_API_KEY,
-        model=settings.EMBEDDING_MODEL or "nvidia/nemotron-3-embed-1b:free",
+        model=settings.EMBEDDING_MODEL,
     )
 
-
-# ─── LLM ─────────────────────────────────────────────────────────
+# ─── LLM (Chat) ─────────────────────────────────────────────────────────
 @lru_cache(maxsize=1)
 def _get_llm():
-    # OpenRouter uniquement : API compatible OpenAI.
-    if not settings.OPENROUTER_API_KEY:
+    # Groq : API compatible OpenAI, utilisée uniquement pour le chat.
+    if not settings.GROQ_API_KEY:
         raise RuntimeError(
-            "OPENROUTER_API_KEY manquant : configure-le dans .env pour utiliser le LLM."
+            "GROQ_API_KEY manquant : configure-le dans .env pour utiliser le LLM."
         )
     from langchain_openai import ChatOpenAI
     return cast(Any, ChatOpenAI)(
-        model=settings.LLM_MODEL or "meta-llama/llama-3.3-70b-instruct:free",
-        api_key=settings.OPENROUTER_API_KEY,
-        base_url=OPENROUTER_BASE_URL,
+        model=settings.LLM_MODEL,
+        api_key=settings.GROQ_API_KEY,
+        base_url=GROQ_BASE_URL,
         temperature=0.1,
         max_tokens=settings.LLM_MAX_TOKENS,
-        default_headers={
-            # Recommandé par OpenRouter pour identifier ton app
-            "HTTP-Referer": "https://medassist.local",
-            "X-Title": "MedAssist",
-        },
     )
-
 
 # ─── Base vectorielle ────────────────────────────────────────────
 @lru_cache(maxsize=1)
@@ -95,29 +84,17 @@ def _get_vectorstore():
         client_settings=ChromaSettings(anonymized_telemetry=False, is_persistent=True),
     )
 
-
 def _persist_vectorstore(vectorstore: Chroma) -> None:
     persist = getattr(vectorstore, "persist", None)
     if callable(persist):
         persist()
 
-
 def supprimer_document_index(nom_document: str) -> None:
-    """Supprime les chunks Chroma associes a un document."""
     vectorstore = _get_vectorstore()
-    # Pylance: chromadb's stub omits `where=` on delete(), but it's
-    # supported at runtime in chromadb 0.5+.
     cast(Any, vectorstore._collection).delete(where={"source_document": nom_document})
     _persist_vectorstore(vectorstore)
 
-
 def _purge_null_chunks(vectorstore) -> int:
-    """Supprime les chunks Chroma dont le texte est vide/None.
-
-    Peut arriver après un upload interrompu ou un mismatch d'embedding
-    model. Tant qu'ils sont là, similarity_search_with_score plante en
-    pydantic.v1 ValidationError. On les retire une fois pour toutes.
-    """
     try:
         result = vectorstore._collection.get(include=["documents"])
     except Exception as exc:
@@ -137,17 +114,8 @@ def _purge_null_chunks(vectorstore) -> int:
     _persist_vectorstore(vectorstore)
     return len(bad)
 
-
 # ─── Indexation d'un PDF ─────────────────────────────────────────
 def indexer_pdf(chemin_pdf: str, nom_document: str) -> int:
-    """Charge un PDF, le découpe en chunks et l'indexe dans ChromaDB.
-
-    Raises ``ValueError`` when the PDF has no extractable text (e.g. a
-    scanned image saved as PDF) so the caller can surface a real error
-    instead of silently marking the document as indexed with 0 chunks
-    in the vector store — that would make the chat return "Aucun
-    document" forever for questions the user expects to be answered.
-    """
     import os
     if not os.path.exists(chemin_pdf):
         raise ValueError(f"Fichier introuvable sur disque : {chemin_pdf}")
@@ -176,15 +144,10 @@ def indexer_pdf(chemin_pdf: str, nom_document: str) -> int:
         chunk.metadata["source_document"] = nom_document
 
     vectorstore = _get_vectorstore()
-    # Pylance: chromadb's stub omits `where=` on delete(), but it's
-    # supported at runtime in chromadb 0.5+.
     cast(Any, vectorstore._collection).delete(where={"source_document": nom_document})
     vectorstore.add_documents(chunks)
     _persist_vectorstore(vectorstore)
 
-    # Sanity check: confirm chunks actually landed in Chroma before
-    # reporting success. If the embedding call failed silently, this
-    # would have raised — but defense in depth.
     actual = len(
         vectorstore._collection.get(
             where={"source_document": nom_document}, include=[]
@@ -196,7 +159,6 @@ def indexer_pdf(chemin_pdf: str, nom_document: str) -> int:
             "aucun chunk trouvé dans Chroma après insertion."
         )
     return actual
-
 
 # ─── Réponse RAG ─────────────────────────────────────────────────
 SYSTEM_PROMPT = """Tu es MedAssist AI, un assistant pour le personnel hospitalier du CHU Mohammed VI d'Oujda.
@@ -215,21 +177,11 @@ Documents disponibles :
 """
 
 def repondre(question: str, historique: Optional[List[dict]] = None) -> Tuple[str, List[dict]]:
-    """Génère une réponse RAG. Retourne (réponse, sources)."""
     vectorstore = _get_vectorstore()
     llm = _get_llm()
 
-    # Auto-heal : si Chroma contient des chunks au texte vide (upload
-    # interrompu, mismatch d'embedding…), similarity_search_with_score
-    # plante en pydantic.v1 ValidationError. On les purge une fois.
     _purge_null_chunks(vectorstore)
 
-    # Recherche des passages pertinents. langchain construit un Document
-    # pour chaque résultat Chroma et Pydantic refuse page_content=None —
-    # ça peut arriver si la base contient des chunks corrompus (par ex.
-    # upload interrompu, embedding model mismatch). On attrape et on
-    # retombe sur le message "aucun document" plutôt que de planter
-    # toute la requête chat en 500.
     try:
         resultats = vectorstore.similarity_search_with_score(
             question, k=settings.RAG_RETRIEVAL_K,
@@ -252,15 +204,9 @@ def repondre(question: str, historique: Optional[List[dict]] = None) -> Tuple[st
             []
         )
 
-    # Chroma retourne des distances dont l'echelle depend du modele d'embeddings.
-    # Avec Ollama/nomic-embed-text, les passages pertinents peuvent avoir des
-    # scores de plusieurs centaines. On garde donc les meilleurs resultats et on
-    # laisse le prompt interdire les reponses hors documents.
     context_parts: list[str] = []
     sources: list[dict[str, object]] = []
     for doc, score in resultats:
-        # Défense en profondeur: si un chunk Chroma n'a pas de
-        # page_content, on le saute plutôt que de planter sur .strip().
         content = getattr(doc, "page_content", None)
         if not content or not isinstance(content, str) or not content.strip():
             continue
@@ -299,13 +245,10 @@ def repondre(question: str, historique: Optional[List[dict]] = None) -> Tuple[st
     reponse = llm.invoke(messages)
     return (str(reponse.content), sources)
 
-
 # ─── Interprétation d'une mesure capteur ─────────────────────────
 def interpreter_mesure(type_capteur: str, valeur: float, unite: str, emplacement: str) -> str:
-    """Génère une explication IA pour une mesure de capteur."""
     llm = _get_llm()
 
-    # Chercher des protocoles liés dans les documents
     try:
         vectorstore = _get_vectorstore()
         docs = vectorstore.similarity_search(
@@ -330,20 +273,8 @@ Réponds en français, de manière claire et directe."""
     result = llm.invoke([HumanMessage(content=prompt)])
     return str(result.content)
 
-
 # ─── Explication IA d'une alerte (explainable alerts) ────────────
 def expliquer_alerte(alerte_id: int) -> str:
-    """Génère une explication IA pour une alerte, et la persiste en BD.
-
-    Récupère le contexte complet (alerte, mesure, device, salle) ainsi que
-    le seuil configuré, cherche des passages pertinents dans les documents
-    indexés (RAG) et demande au LLM une réponse structurée en 3 sections :
-    Pourquoi, Risques, Action recommandée.
-
-    Le résultat est sauvegardé dans ``alertes.explication``. Si l'appel LLM
-    échoue, l'exception remonte et l'appelant (``crud._explain_alerte_safely``)
-    la capture sans bloquer l'alerte.
-    """
     # Importer ici pour éviter une boucle d'imports (crud → rag → crud).
     from .. import crud
     from ..database import SessionLocal

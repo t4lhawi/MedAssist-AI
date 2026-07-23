@@ -1,16 +1,8 @@
-"""Admin endpoints for managing ESP32 device registrations.
-
-All routes here are gated by ``require_admin`` (see ``backend/app/auth.py``).
-Soignants and techniciens only see the read-only dashboard.
-"""
 from __future__ import annotations
-
 import logging
 from typing import List
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
 from .. import crud, schemas
 from ..auth import require_admin
 from ..database import get_db
@@ -23,12 +15,10 @@ router = APIRouter(
     dependencies=[Depends(require_admin)],
 )
 
-
 # ─── CRUD on devices ────────────────────────────────────────────
 @router.get("/", response_model=List[schemas.Esp32DeviceOut])
 def lister_esp32(db: Session = Depends(get_db)):
     return crud.list_esp32(db)
-
 
 @router.post("/", response_model=schemas.Esp32DeviceOut, status_code=201)
 def creer_esp32(
@@ -39,7 +29,6 @@ def creer_esp32(
         return crud.create_esp32(db, data)
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
-
 
 @router.patch("/{esp32_id}", response_model=schemas.Esp32DeviceOut)
 def mettre_a_jour_esp32(
@@ -52,7 +41,6 @@ def mettre_a_jour_esp32(
         raise HTTPException(status_code=404, detail="ESP32 introuvable")
     return d
 
-
 @router.delete("/{esp32_id}", status_code=204)
 def supprimer_esp32(esp32_id: int, db: Session = Depends(get_db)):
     ok = crud.delete_esp32(db, esp32_id)
@@ -60,25 +48,20 @@ def supprimer_esp32(esp32_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="ESP32 introuvable")
     return None
 
-
 # ─── Unregistered bucket (measurements from unknown IPs) ─────────
 @router.get("/unregistered", response_model=List[schemas.UnregisteredSource])
 def lister_sources_non_enregistrees(db: Session = Depends(get_db)):
     return crud.get_unregistered_sources(db)
-
 
 @router.post("/claim", response_model=schemas.Esp32DeviceOut, status_code=201)
 def reclamer_ip(
     data: schemas.Esp32ClaimRequest,
     db: Session = Depends(get_db),
 ):
-    """Promote an unregistered source IP to a fully-registered ESP32 and
-    backfill all matching mesures in one transaction."""
     try:
         return crud.claim_source_ip(db, data.ip, data.salle, data.note)
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
-
 
 # ─── Aggregated salle grid (consumed by the dashboard) ──────────
 @router.get("/salles-status", response_model=List[schemas.SalleStatus])

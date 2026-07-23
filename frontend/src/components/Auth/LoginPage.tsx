@@ -7,7 +7,7 @@ import { Loader2, Mail, Lock, ShieldCheck, ImagePlus, Eye, EyeOff, Check, AlertC
 import { useAuth } from '../../context/AuthContext'
 import { TextField } from '../ui/Field'
 
-const LOGO_SRC: string = '/img/favicon.ico'
+const LOGO_SRC: string = '/assets/favicon.ico'
 
 function LogoMark({ size = 40 }: { size?: number }) {
   const [failed, setFailed] = useState(false)

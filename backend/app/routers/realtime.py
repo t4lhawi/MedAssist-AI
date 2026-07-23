@@ -1,21 +1,8 @@
-"""WebSocket endpoint that streams live mesures + alertes to the SPA.
-
-Single endpoint: ``GET /api/realtime/ws?token=<jwt>``. Browsers cannot
-set Authorization headers on a WebSocket, so we re-use the same JWT
-the REST API accepts and pass it as a query string. Bad / missing
-token → close 1008.
-
-The endpoint is intentionally **not** admin-gated: soignants also
-need the live view. Per-salle ACLs can be added later if needed.
-"""
 from __future__ import annotations
-
 import logging
 from typing import Any, Dict
-
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 from jose import JWTError
-
 from .. import realtime
 from ..auth import decoder_token
 
@@ -23,12 +10,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/realtime", tags=["Realtime"])
 
-
 def _decode_ws_token(token: str) -> Dict[str, Any]:
-    """Wrap ``decoder_token`` so the WS layer doesn't need to know
-    about HTTPException. Returns the JWT payload or raises
-    ``WebSocketDisconnect(1008)`` on any auth failure.
-    """
     try:
         return decoder_token(token)
     except JWTError:
@@ -37,7 +19,6 @@ def _decode_ws_token(token: str) -> Dict[str, Any]:
         # decoder_token also raises HTTPException(401) for "Token invalide".
         # Treat any auth failure as policy violation on the WS.
         raise WebSocketDisconnect(code=status.WS_1008_POLICY_VIOLATION)
-
 
 @router.websocket("/ws")
 async def realtime_ws(websocket: WebSocket, token: str = ""):

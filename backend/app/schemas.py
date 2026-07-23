@@ -1,9 +1,7 @@
 import re
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional
-
 from pydantic import BaseModel, EmailStr, Field, field_validator
-
 
 # ─── Auth ────────────────────────────────────────────────────────
 class Token(BaseModel):
@@ -13,7 +11,6 @@ class Token(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
-
 
 # ─── Utilisateur ────────────────────────────────────────────────
 class UtilisateurCreate(BaseModel):
@@ -32,9 +29,7 @@ class UtilisateurOut(BaseModel):
     class Config:
         from_attributes = True
 
-
-# ─── Capteur (legacy — kept for the read-only CapteursPage
-#              during the migration window). New code uses Esp32Device.
+# ─── Capteur ─────────────────────────────────────────────────────
 class CapteurCreate(BaseModel):
     nom: str
     type: str
@@ -47,7 +42,6 @@ class CapteurOut(CapteurCreate):
     class Config:
         from_attributes = True
 
-
 # ─── ESP32 (source-of-truth device registry) ───────────────────
 SensorType = Literal["temperature", "humidite", "pression", "qualite_air"]
 SENSOR_TYPES: tuple[SensorType, ...] = (
@@ -58,7 +52,6 @@ SENSOR_TYPES: tuple[SensorType, ...] = (
 # obvious garbage from the admin form.
 _IPV4_RE = re.compile(r"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$")
 
-
 def _validate_ipv4(value: str) -> str:
     if not isinstance(value, str) or not _IPV4_RE.match(value):
         raise ValueError("Adresse IP invalide (format IPv4 attendu)")
@@ -66,7 +59,6 @@ def _validate_ipv4(value: str) -> str:
         if int(part) > 255:
             raise ValueError("Adresse IP invalide (octet > 255)")
     return value
-
 
 class Esp32DeviceBase(BaseModel):
     ip: str
@@ -79,10 +71,8 @@ class Esp32DeviceBase(BaseModel):
     def _ip_v4(cls, v: str) -> str:
         return _validate_ipv4(v)
 
-
 class Esp32DeviceCreate(Esp32DeviceBase):
     pass
-
 
 class Esp32DeviceUpdate(BaseModel):
     salle: Optional[str] = Field(default=None, min_length=1, max_length=100)
@@ -93,7 +83,6 @@ class Esp32DeviceUpdate(BaseModel):
     note: Optional[str] = Field(default=None, max_length=200)
     clear_note: Optional[bool] = None
     actif: Optional[bool] = None
-
 
 class Esp32DeviceOut(BaseModel):
     id: int
@@ -106,7 +95,6 @@ class Esp32DeviceOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 class Esp32ClaimRequest(BaseModel):
     """Body for POST /api/admin/esp32/claim — promote an unregistered IP
     to a fully-registered ESP32 in a single call."""
@@ -118,7 +106,6 @@ class Esp32ClaimRequest(BaseModel):
     @classmethod
     def _ip_v4(cls, v: str) -> str:
         return _validate_ipv4(v)
-
 
 # ─── Mesure ──────────────────────────────────────────────────────
 class MesureCreate(BaseModel):
@@ -143,7 +130,6 @@ class MesureCreate(BaseModel):
     def _source_ip_v4(cls, v: Optional[str]) -> Optional[str]:
         return _validate_ipv4(v) if v else v
 
-
 class MesureOut(BaseModel):
     id: int
     esp32_id: Optional[int] = None
@@ -157,7 +143,6 @@ class MesureOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 # ─── Document ────────────────────────────────────────────────────
 class DocumentOut(BaseModel):
     id: int
@@ -168,7 +153,6 @@ class DocumentOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 # ─── Conversation ────────────────────────────────────────────────
 class ChatRequest(BaseModel):
     question: str
@@ -178,7 +162,6 @@ class ChatResponse(BaseModel):
     reponse: str
     sources: List[Any] = []
     explication: str | None = None
-
 
 # ─── Alerte ──────────────────────────────────────────────────────
 class AlerteOut(BaseModel):
@@ -201,7 +184,6 @@ class AlerteOut(BaseModel):
     # if the LLM call failed.
     explication: Optional[str] = None
     explication_cree_le: Optional[datetime] = None
-
 
 def _alerte_to_out(a) -> AlerteOut:
     """Map an Alerte ORM row (with eagerly-loaded esp32 and mesure.esp32)
@@ -226,10 +208,8 @@ def _alerte_to_out(a) -> AlerteOut:
         explication_cree_le=getattr(a, "explication_cree_le", None),
     )
 
-
 # ─── Aggregated views for the salle-grouped dashboard ──────────
 SensorState = Literal["active", "offline", "not_installed"]
-
 
 class SensorStatus(BaseModel):
     type: SensorType
@@ -239,7 +219,6 @@ class SensorStatus(BaseModel):
     last_timestamp: Optional[datetime] = None
     # Convenient pre-formatted "il y a 12 min" string for the dashboard.
     last_seen_label: Optional[str] = None
-
 
 class SalleStatus(BaseModel):
     esp32_id: Optional[int] = None
@@ -254,7 +233,6 @@ class SalleStatus(BaseModel):
     # Free-form internal note attached to the device (étage, service…).
     note: Optional[str] = None
 
-
 class UnregisteredSource(BaseModel):
     ip: str
     last_seen: Optional[datetime] = None
@@ -264,4 +242,3 @@ class UnregisteredSource(BaseModel):
     last_type: Optional[SensorType] = None
     last_valeur: Optional[float] = None
     last_unite: Optional[str] = None
-
