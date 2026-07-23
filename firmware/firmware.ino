@@ -6,7 +6,6 @@
 // ===============================
 // Configuration
 // ===============================
-
 const char* WIFI_SSID     = "M-LINK";
 const char* WIFI_PASSWORD = "22092005";
 
@@ -16,11 +15,6 @@ const int   MQTT_PORT       = 1883;
 const char* MQTT_CLIENT_ID  = "esp32-sensor-1";
 
 // ── Salle identification ────────────────────────────────────────
-// IMPORTANT: this value MUST match the `salle` field registered for
-// this device on the dashboard. If you rename a salle in the admin UI,
-// re-flash the ESP32 with the new value — the topic prefix is baked
-// in at compile time and is the source of truth for salle matching
-// on the backend.
 #define SALLE "salle-1"
 
 // Topic shape (compiled):  medassist/salle/<SALLE>/<type>
