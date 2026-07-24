@@ -75,7 +75,7 @@ docker exec medassist_api python seed_admin.py
 
 Default admin credentials (for development)
 
-- Email: admin@medassist.ma
+- Email: admin@chuoujda.ma
 - Password: Admin@2026!
 
 Note: change these defaults in production.

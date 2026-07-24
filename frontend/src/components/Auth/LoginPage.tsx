@@ -36,7 +36,7 @@ function LogoMark({ size = 40 }: { size?: number }) {
 export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('admin@medassist.ma')
+  const [email, setEmail] = useState('admin@chuoujda.ma')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
