@@ -17,16 +17,8 @@ class UtilisateurCreate(BaseModel):
     nom: str
     email: str
     password: str
-    # The default role is the most restrictive one. Only an admin can
-    # promote a user to admin or hospital_staff through the user
-    # management endpoint.
     role: str = "visitor"
 
-# `UtilisateurUpdate` is intentionally permissive: every field is
-# optional so a PATCH-style update can change just one thing (name,
-# email, password, role, or active flag). The router is the single
-# source of truth that decides which fields are honoured and that
-# normalises the role before persisting it.
 class UtilisateurUpdate(BaseModel):
     nom: Optional[str] = None
     email: Optional[EmailStr] = None
@@ -91,10 +83,6 @@ class Esp32DeviceCreate(Esp32DeviceBase):
 
 class Esp32DeviceUpdate(BaseModel):
     salle: Optional[str] = Field(default=None, min_length=1, max_length=100)
-    # When set to a string, the note is replaced with that value (including
-    # the empty string ""). When ``clear_note`` is True the note is set to
-    # NULL regardless of ``note``. This disambiguates "leave untouched" from
-    # "wipe", which a single Optional[str] cannot express.
     note: Optional[str] = Field(default=None, max_length=200)
     clear_note: Optional[bool] = None
     actif: Optional[bool] = None
@@ -111,8 +99,6 @@ class Esp32DeviceOut(BaseModel):
         from_attributes = True
 
 class Esp32ClaimRequest(BaseModel):
-    """Body for POST /api/admin/esp32/claim — promote an unregistered IP
-    to a fully-registered ESP32 in a single call."""
     ip: str
     salle: str = Field(min_length=1, max_length=100)
     note: Optional[str] = Field(default=None, max_length=200)
@@ -124,16 +110,11 @@ class Esp32ClaimRequest(BaseModel):
 
 # ─── Mesure ──────────────────────────────────────────────────────
 class MesureCreate(BaseModel):
-    """Insertion DTO. Accepts both the new (esp32_id, type, source_ip) and
-    the legacy (capteur_id) shape — the legacy field is ignored on insert
-    with a deprecation log so old clients keep working during the migration
-    window."""
     # New (preferred)
     esp32_id: Optional[int] = None
     type: Optional[SensorType] = None
     source_ip: Optional[str] = None
     # Salle segment read from the MQTT topic (medassist/salle/<topic_salle>/<type>).
-    # Optional for callers that don't go through the MQTT path.
     topic_salle: Optional[str] = None
     # Legacy — ignored on insert
     capteur_id: Optional[int] = None
@@ -180,9 +161,6 @@ class ChatResponse(BaseModel):
 
 # ─── Alerte ──────────────────────────────────────────────────────
 class AlerteOut(BaseModel):
-    """esp32_id and salle are computed from the alerte → esp32 chain
-    (or from alerte → mesure → esp32 for pre-migration alertes).
-    Requires joinedload on both Alerte.esp32 and Alerte.mesure.esp32."""
     model_config = {"from_attributes": True}
 
     id: int
@@ -201,9 +179,6 @@ class AlerteOut(BaseModel):
     explication_cree_le: Optional[datetime] = None
 
 def _alerte_to_out(a) -> AlerteOut:
-    """Map an Alerte ORM row (with eagerly-loaded esp32 and mesure.esp32)
-    to AlerteOut. Prefers the direct Alerte.esp32 link, falls back to the
-    alerte → mesure → esp32 chain."""
     # Try direct link first (newer alertes), then go through mesure (legacy).
     direct_esp32 = getattr(a, "esp32", None)
     mesure = getattr(a, "mesure", None)

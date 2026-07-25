@@ -31,14 +31,14 @@ function StepDot({ filled, label }: { filled: boolean; label: string }) {
   return (
     <span
       className={`inline-flex items-center gap-1.5 text-[11.5px] font-medium ${
-        filled ? 'text-emerald-600' : 'text-[#6B7280]'
+        filled ? 'text-emerald-600' : 'text-[#6B7280] dark:text-text-secondary'
       }`}
     >
       <span
         className={`flex h-4 w-4 items-center justify-center rounded-full transition-all duration-300 ${
           filled
             ? 'bg-emerald-500 text-white shadow-[0_0_0_3px_rgba(16,185,129,0.15)]'
-            : 'bg-[#F5F5F7] text-[#9CA3AF]'
+            : 'bg-[#F5F5F7] text-[#9CA3AF] dark:text-text-muted'
         }`}
       >
         {filled ? <CheckCircle2 size={10} strokeWidth={2.8} /> : <CircleDot size={10} />}
@@ -174,8 +174,8 @@ export default function Esp32Form({ onCreated }: Props) {
             </div>
 
             {/* Validation steps */}
-            <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl border border-[#ECECEC] bg-[#FAFAFA] px-4 py-2.5">
-              <span className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#6B7280]">
+            <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl border border-[#ECECEC] bg-[#FAFAFA] dark:bg-hover px-4 py-2.5">
+              <span className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#6B7280] dark:text-text-secondary">
                 Validation
               </span>
               <span className="hidden h-3 w-px bg-[#ECECEC] sm:block" />

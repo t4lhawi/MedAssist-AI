@@ -44,23 +44,23 @@ function MiniStat({
   return (
     <div
       className="rounded-2xl p-3.5 transition-all duration-200 hover:scale-[1.02]"
-      style={{ background: '#F5F5F7' }}
+      style={{ background: 'var(--bg-hover)' }}
     >
       <div className="flex items-center gap-2">
         <span
           className="flex h-7 w-7 items-center justify-center rounded-xl"
-          style={{ background: '#FFFFFF' }}
+          style={{ background: 'var(--bg-card)' }}
         >
           <Icon size={13} strokeWidth={2.2} style={{ color: accent }} />
         </span>
-        <p className="text-[10.5px] font-medium uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
+        <p className="text-[10.5px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
           {label}
         </p>
       </div>
-      <p className="mt-2 text-[20px] font-semibold leading-none tracking-tight tabular-nums" style={{ color: '#111111' }}>
+      <p className="mt-2 text-[20px] font-semibold leading-none tracking-tight tabular-nums" style={{ color: 'var(--text-primary)' }}>
         {loading ? '—' : value}
         {total != null && !loading && (
-          <span className="ml-1 text-[12px] font-medium" style={{ color: '#9CA3AF' }}>/ {total}</span>
+          <span className="ml-1 text-[12px] font-medium" style={{ color: 'var(--text-muted)' }}>/ {total}</span>
         )}
       </p>
     </div>
@@ -85,27 +85,27 @@ function QuickAction({
   return (
     <Link
       to={to}
-      className="group flex items-center gap-3 rounded-2xl border p-3 transition-all duration-200 hover:border-[#D1D5DB] hover:shadow-sm"
-      style={{ background: '#FFFFFF', borderColor: '#ECECEC' }}
+      className="group flex items-center gap-3 rounded-2xl border p-3 transition-all duration-200 hover:border-border-strong hover:shadow-sm"
+      style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
     >
       <span
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110"
-        style={{ background: '#F5F5F7' }}
+        style={{ background: 'var(--bg-hover)' }}
       >
         <Icon size={16} strokeWidth={2.2} style={{ color: accent }} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-semibold" style={{ color: '#111111' }}>
+        <p className="truncate text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>
           {title}
         </p>
-        <p className="truncate text-[11.5px]" style={{ color: '#6B7280' }}>
+        <p className="truncate text-[11.5px]" style={{ color: 'var(--text-secondary)' }}>
           {description}
         </p>
       </div>
       <ExternalLink
         size={13}
         strokeWidth={2}
-        style={{ color: '#9CA3AF' }}
+        style={{ color: 'var(--text-muted)' }}
         className="shrink-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
       />
     </Link>
@@ -127,15 +127,15 @@ function InfoRow({
     <div className="flex items-center gap-3 py-2.5">
       <span
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
-        style={{ background: '#F5F5F7' }}
+        style={{ background: 'var(--bg-hover)' }}
       >
-        <Icon size={14} strokeWidth={2.2} style={{ color: '#6B7280' }} />
+        <Icon size={14} strokeWidth={2.2} style={{ color: 'var(--text-secondary)' }} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[10.5px] font-medium uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
+        <p className="text-[10.5px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
           {label}
         </p>
-        <p className="truncate text-[13px] font-medium" style={{ color: '#111111' }}>
+        <p className="truncate text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>
           {value}
         </p>
       </div>
@@ -148,8 +148,8 @@ function InfoRow({
 function Skeleton() {
   return (
     <div className="mx-auto max-w-3xl space-y-5 p-4 md:px-6">
-      <div className="h-10 w-1/3 animate-pulse rounded-xl" style={{ background: '#ECECEC' }} />
-      <div className="h-64 animate-pulse rounded-3xl" style={{ background: '#ECECEC' }} />
+      <div className="h-10 w-1/3 animate-pulse rounded-xl" style={{ background: 'var(--shimmer-bg)' }} />
+      <div className="h-64 animate-pulse rounded-3xl" style={{ background: 'var(--shimmer-bg)' }} />
     </div>
   )
 }
@@ -207,7 +207,7 @@ export default function ProfilePage() {
       {/* ── Hero card: cover + identity ─────────────────────────── */}
       <div
         className="card relative overflow-hidden rounded-3xl border"
-        style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
       >
         {/* Cover gradient */}
         <div
@@ -248,17 +248,17 @@ export default function ProfilePage() {
               <span style={{ fontSize: 24, fontWeight: 600 }}>{initial}</span>
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="truncate text-[18px] font-semibold tracking-tight" style={{ color: '#111111' }}>
+              <h3 className="truncate text-[18px] font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
                 {user.nom}
               </h3>
-              <p className="mt-0.5 flex items-center gap-1.5 truncate text-[12.5px]" style={{ color: '#6B7280' }}>
+              <p className="mt-0.5 flex items-center gap-1.5 truncate text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
                 <Mail size={12} strokeWidth={2} />
                 {user.email}
               </p>
               <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                 <span
                   className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
-                  style={{ background: '#EEF2FF', color: '#4F46E5' }}
+                  style={{ background: 'color-mix(in srgb, var(--color-primary) 12%, transparent)', color: 'var(--color-primary)' }}
                 >
                   <ShieldCheck size={11} strokeWidth={2.4} />
                   {roleLabel}
@@ -266,7 +266,7 @@ export default function ProfilePage() {
                 {memberShort && (
                   <span
                     className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-medium"
-                    style={{ background: '#F5F5F7', color: '#6B7280' }}
+                    style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
                   >
                     <CalendarClock size={11} strokeWidth={2.2} />
                     {memberShort}
@@ -274,7 +274,7 @@ export default function ProfilePage() {
                 )}
                 <span
                   className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-medium"
-                  style={{ background: '#F0FDF4', color: '#16A34A' }}
+                  style={{ background: 'color-mix(in srgb, var(--color-success) 14%, transparent)', color: 'var(--color-success)' }}
                 >
                   <Sparkles size={11} strokeWidth={2.2} />
                   ID #{user.id}
@@ -323,25 +323,25 @@ export default function ProfilePage() {
         {/* Account info */}
         <div
           className="rounded-3xl border p-5"
-          style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
         >
           <div className="mb-3 flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#3B82F6' }}>
+              <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-primary)' }}>
                 Informations
               </p>
-              <h4 className="mt-0.5 text-[15px] font-semibold tracking-tight" style={{ color: '#111111' }}>
+              <h4 className="mt-0.5 text-[15px] font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
                 Mon compte
               </h4>
             </div>
             <span
               className="flex h-8 w-8 items-center justify-center rounded-xl"
-              style={{ background: '#F5F5F7' }}
+              style={{ background: 'var(--bg-hover)' }}
             >
-              <KeyRound size={14} strokeWidth={2.2} style={{ color: '#6B7280' }} />
+              <KeyRound size={14} strokeWidth={2.2} style={{ color: 'var(--text-secondary)' }} />
             </span>
           </div>
-          <div className="divide-y" style={{ borderColor: '#F5F5F7' }}>
+          <div className="divide-y" style={{ borderColor: 'var(--bg-hover)' }}>
             <InfoRow icon={Mail} label="Adresse e-mail" value={user.email} />
             <InfoRow icon={ShieldCheck} label="Rôle" value={roleLabel} />
             <InfoRow icon={CalendarClock} label="Inscrit le" value={memberSince || '—'} />
@@ -352,38 +352,38 @@ export default function ProfilePage() {
         {/* Network status */}
         <div
           className="rounded-3xl border p-5"
-          style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
         >
           <div className="mb-3 flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#3B82F6' }}>
+              <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-primary)' }}>
                 Temps réel
               </p>
-              <h4 className="mt-0.5 text-[15px] font-semibold tracking-tight" style={{ color: '#111111' }}>
+              <h4 className="mt-0.5 text-[15px] font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
                 État du réseau
               </h4>
             </div>
             <span
               className="flex h-8 w-8 items-center justify-center rounded-xl"
-              style={{ background: '#F5F5F7' }}
+              style={{ background: 'var(--bg-hover)' }}
             >
-              <Wifi size={14} strokeWidth={2.2} style={{ color: networkHealth > 0 ? '#10B981' : '#9CA3AF' }} />
+              <Wifi size={14} strokeWidth={2.2} style={{ color: networkHealth > 0 ? 'var(--color-success)' : 'var(--text-muted)' }} />
             </span>
           </div>
 
           {/* Network health bar */}
           <div className="mb-4">
             <div className="mb-1.5 flex items-baseline justify-between">
-              <p className="text-[12px] font-medium" style={{ color: '#6B7280' }}>
+              <p className="text-[12px] font-medium" style={{ color: 'var(--text-secondary)' }}>
                 Salles connectées
               </p>
-              <p className="text-[13px] font-semibold tabular-nums" style={{ color: '#111111' }}>
+              <p className="text-[13px] font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>
                 {loading ? '—' : `${networkHealth}%`}
               </p>
             </div>
             <div
               className="h-2 w-full overflow-hidden rounded-full"
-              style={{ background: '#F5F5F7' }}
+              style={{ background: 'var(--bg-hover)' }}
             >
               <div
                 className="h-full rounded-full transition-all duration-500"
@@ -402,28 +402,28 @@ export default function ProfilePage() {
           <div className="grid grid-cols-2 gap-2.5">
             <div
               className="rounded-2xl p-3"
-              style={{ background: '#F5F5F7' }}
+              style={{ background: 'var(--bg-hover)' }}
             >
-              <p className="text-[10.5px] font-medium uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
+              <p className="text-[10.5px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
                 En ligne
               </p>
-              <p className="mt-1 flex items-baseline gap-1 text-[18px] font-semibold tabular-nums" style={{ color: '#10B981' }}>
+              <p className="mt-1 flex items-baseline gap-1 text-[18px] font-semibold tabular-nums" style={{ color: 'var(--color-success)' }}>
                 {loading ? '—' : onlineSalles}
-                <span className="text-[11px] font-medium" style={{ color: '#9CA3AF' }}>
+                <span className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>
                   / {registeredSalles || 0}
                 </span>
               </p>
             </div>
             <div
               className="rounded-2xl p-3"
-              style={{ background: '#F5F5F7' }}
+              style={{ background: 'var(--bg-hover)' }}
             >
-              <p className="text-[10.5px] font-medium uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
+              <p className="text-[10.5px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
                 Hors ligne
               </p>
-              <p className="mt-1 flex items-baseline gap-1 text-[18px] font-semibold tabular-nums" style={{ color: '#EF4444' }}>
+              <p className="mt-1 flex items-baseline gap-1 text-[18px] font-semibold tabular-nums" style={{ color: 'var(--color-danger)' }}>
                 {loading ? '—' : Math.max(registeredSalles - onlineSalles, 0)}
-                <span className="text-[11px] font-medium" style={{ color: '#9CA3AF' }}>
+                <span className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>
                   salles
                 </span>
               </p>
@@ -435,13 +435,13 @@ export default function ProfilePage() {
       {/* ── Quick actions ────────────────────────────────────────── */}
       <div
         className="rounded-3xl border p-5"
-        style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
       >
         <div className="mb-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#3B82F6' }}>
+          <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-primary)' }}>
             Raccourcis
           </p>
-          <h4 className="mt-0.5 text-[15px] font-semibold tracking-tight" style={{ color: '#111111' }}>
+          <h4 className="mt-0.5 text-[15px] font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
             Actions rapides
           </h4>
         </div>
@@ -488,29 +488,29 @@ export default function ProfilePage() {
       {/* ── Security + Logout ────────────────────────────────────── */}
       <div
         className="rounded-3xl border p-5"
-        style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
       >
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#3B82F6' }}>
+            <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-primary)' }}>
               Sécurité
             </p>
-            <h4 className="mt-0.5 text-[15px] font-semibold tracking-tight" style={{ color: '#111111' }}>
+            <h4 className="mt-0.5 text-[15px] font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
               Session & confidentialité
             </h4>
           </div>
           <span
             className="flex h-8 w-8 items-center justify-center rounded-xl"
-            style={{ background: '#F0FDF4' }}
+            style={{ background: 'color-mix(in srgb, var(--color-success) 14%, transparent)' }}
           >
-            <Lock size={14} strokeWidth={2.2} style={{ color: '#16A34A' }} />
+            <Lock size={14} strokeWidth={2.2} style={{ color: 'var(--color-success)' }} />
           </span>
         </div>
         <div
           className="mb-4 flex items-center gap-2 rounded-2xl px-3 py-2.5 text-[12.5px]"
-          style={{ background: '#F0FDF4', color: '#166534' }}
+          style={{ background: 'color-mix(in srgb, var(--color-success) 12%, transparent)', color: 'var(--color-success)' }}
         >
-          <CheckCircle2 size={14} strokeWidth={2.4} style={{ color: '#16A34A' }} />
+          <CheckCircle2 size={14} strokeWidth={2.4} style={{ color: 'var(--color-success)' }} />
           <span>
             Connexion sécurisée · Vos données sont chiffrées de bout en bout.
           </span>
@@ -520,7 +520,7 @@ export default function ProfilePage() {
           <Link
             to="/assistant"
             className="flex flex-1 items-center justify-center gap-2 rounded-2xl py-2.5 text-[13px] font-semibold transition-all hover:opacity-90 active:scale-[0.98]"
-            style={{ background: '#111111', color: '#FFFFFF' }}
+            style={{ background: 'var(--text-primary)', color: 'var(--bg-card)' }}
           >
             <MessageCircle size={14} strokeWidth={2} />
             Poser une question
@@ -528,9 +528,9 @@ export default function ProfilePage() {
           <button
             onClick={logout}
             className="flex items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-[13px] font-semibold transition-all active:scale-[0.98]"
-            style={{ borderColor: '#FECACA', color: '#DC2626', background: '#FFFFFF' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#FEF2F2' }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#FFFFFF' }}
+            style={{ borderColor: 'color-mix(in srgb, var(--color-danger) 30%, transparent)', color: 'var(--color-danger)', background: 'var(--bg-card)' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--color-danger) 10%, transparent)' }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-card)' }}
           >
             <LogOut size={14} strokeWidth={2.2} />
             Déconnexion

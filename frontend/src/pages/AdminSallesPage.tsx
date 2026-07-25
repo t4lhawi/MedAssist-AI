@@ -169,17 +169,17 @@ export default function AdminSallesPage() {
         title="Gestion des salles"
         subtitle={
           <span>
-            <span className="font-medium text-[#374151]">
+            <span className="font-medium text-[#374151] dark:text-text-secondary">
               {salles.length} salle{salles.length > 1 ? 's' : ''} enregistrée{salles.length > 1 ? 's' : ''}
             </span>
             <span className="mx-1.5 text-[#D1D5DB]">·</span>
-            <span className="font-medium text-[#374151]">
+            <span className="font-medium text-[#374151] dark:text-text-secondary">
               {counts.online} connectée{counts.online > 1 ? 's' : ''}
             </span>
             <span className="mx-1.5 text-[#D1D5DB]">·</span>
             <span
               className={`font-medium ${
-                unregistered.length > 0 ? 'text-amber-600' : 'text-[#374151]'
+                unregistered.length > 0 ? 'text-amber-600' : 'text-[#374151] dark:text-text-secondary'
               }`}
             >
               {unregistered.length} appareil{unregistered.length > 1 ? 's' : ''} inconnu
@@ -207,8 +207,8 @@ export default function AdminSallesPage() {
             onClick={load}
             disabled={loading}
             aria-label="Actualiser"
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#ECECEC] bg-white px-3.5 py-1.5 text-[12.5px] font-medium text-[#374151] shadow-[0_1px_2px_rgba(17,17,17,0.04)] transition-all duration-200 hover:-translate-y-px hover:bg-[#FAFAFA] active:scale-[0.97] disabled:opacity-60"
-            style={{ background: 'white', color: '#374151', borderColor: '#ECECEC' }}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#ECECEC] dark:border-border bg-white dark:bg-card px-3.5 py-1.5 text-[12.5px] font-medium text-[#374151] dark:text-text-secondary shadow-[0_1px_2px_rgba(17,17,17,0.04)] transition-all duration-200 hover:-translate-y-px hover:bg-[#FAFAFA] dark:bg-hover dark:hover:bg-hover active:scale-[0.97] disabled:opacity-60"
+            style={{ background: 'white', color: 'var(--text-secondary)', borderColor: 'var(--border-color)' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F5F5F7' }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'white' }}
           >
@@ -264,21 +264,21 @@ export default function AdminSallesPage() {
       {/* ── Filter toolbar ────────────────────────────────────── */}
       <section
         aria-label="Filtres"
-        className="flex flex-col gap-3 rounded-3xl border border-[#ECECEC] bg-white p-3 shadow-[0_1px_2px_rgba(17,17,17,0.04),0_8px_24px_-12px_rgba(17,17,17,0.08)] sm:flex-row sm:items-center sm:justify-between sm:p-4"
+        className="flex flex-col gap-3 rounded-3xl border border-[#ECECEC] dark:border-border bg-white dark:bg-card p-3 shadow-[0_1px_2px_rgba(17,17,17,0.04),0_8px_24px_-12px_rgba(17,17,17,0.08)] sm:flex-row sm:items-center sm:justify-between sm:p-4"
       >
         {/* Search — Spotlight style */}
         <div className="relative w-full sm:max-w-xs">
           <Search
             size={14}
             strokeWidth={2.2}
-            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]"
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] dark:text-text-muted"
           />
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Rechercher une salle ou une IP…"
             aria-label="Rechercher"
-            className="w-full rounded-full border border-transparent bg-[#F5F5F7] py-2 pl-9 pr-3 text-[13px] text-[#111111] outline-none placeholder:text-[#9CA3AF] transition-all duration-200 focus:bg-white focus:border-[#3B82F6]/40 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.10)]"
+            className="w-full rounded-full border border-transparent bg-[#F5F5F7] py-2 pl-9 pr-3 text-[13px] text-[#111111] dark:text-text-primary outline-none placeholder:text-[#9CA3AF] dark:text-text-muted transition-all duration-200 focus:bg-white dark:bg-card focus:border-[#3B82F6]/40 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.10)]"
           />
         </div>
 
@@ -300,8 +300,8 @@ export default function AdminSallesPage() {
                   onClick={() => setFilter(f)}
                   className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-medium transition-all duration-200 active:scale-[0.97] ${
                     active
-                      ? 'bg-white text-[#111111] shadow-[0_1px_2px_rgba(17,17,17,0.06)]'
-                      : 'text-[#6B7280] hover:text-[#111111]'
+                      ? 'bg-white dark:bg-card text-[#111111] dark:text-text-primary shadow-[0_1px_2px_rgba(17,17,17,0.06)]'
+                      : 'text-[#6B7280] dark:text-text-secondary hover:text-[#111111] dark:text-text-primary'
                   }`}
                 >
                   {f === 'online' && (
@@ -328,7 +328,7 @@ export default function AdminSallesPage() {
                   {FILTER_LABELS[f]}
                   <span
                     className={`tabular-nums text-[11px] ${
-                      active ? 'text-[#6B7280]' : 'text-[#9CA3AF]'
+                      active ? 'text-[#6B7280] dark:text-text-secondary' : 'text-[#9CA3AF] dark:text-text-muted'
                     }`}
                   >
                     {counts[f]}
@@ -363,23 +363,23 @@ export default function AdminSallesPage() {
       {/* ── Room grid ─────────────────────────────────────────── */}
       {loading && salles.length === 0 ? (
         <div
-          className="flex items-center justify-center gap-2 rounded-3xl border border-dashed border-[#ECECEC] bg-white py-16 text-[13px] text-[#6B7280]"
+          className="flex items-center justify-center gap-2 rounded-3xl border border-dashed border-[#ECECEC] dark:border-border bg-white dark:bg-card py-16 text-[13px] text-[#6B7280] dark:text-text-secondary"
         >
           <Loader2 size={14} className="animate-spin" />
           Chargement des salles…
         </div>
       ) : filteredSalles.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-[#ECECEC] bg-white py-16 text-center">
-          <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F5F5F7] text-[#6B7280]">
+        <div className="rounded-3xl border border-dashed border-[#ECECEC] dark:border-border bg-white dark:bg-card py-16 text-center">
+          <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F5F5F7] text-[#6B7280] dark:text-text-secondary">
             <Server size={20} strokeWidth={2} />
           </span>
-          <p className="text-[13.5px] font-medium text-[#374151]">
+          <p className="text-[13.5px] font-medium text-[#374151] dark:text-text-secondary">
             {salles.length === 0
               ? 'Aucune salle enregistrée pour le moment.'
               : 'Aucune salle ne correspond à votre filtre.'}
           </p>
           {salles.length === 0 && (
-            <p className="mt-1 text-[12.5px] text-[#6B7280]">
+            <p className="mt-1 text-[12.5px] text-[#6B7280] dark:text-text-secondary">
               Cliquez sur « Enregistrer un ESP32 » pour ajouter votre première salle.
             </p>
           )}

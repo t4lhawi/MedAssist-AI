@@ -19,13 +19,13 @@ interface Props {
 }
 
 const TONE_BG: Record<PageHeaderTone, string> = {
-  neutral: 'bg-[#F5F5F7] text-[#6B7280]',
-  good: 'bg-emerald-50 text-emerald-700',
-  warning: 'bg-amber-50 text-amber-700',
-  danger: 'bg-red-50 text-red-600',
+  neutral: 'bg-hover text-text-secondary',
+  good: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
+  warning: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
+  danger: 'bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-300',
 }
 const TONE_DOT: Record<PageHeaderTone, string> = {
-  neutral: 'bg-[#9CA3AF]',
+  neutral: 'bg-text-muted',
   good: 'bg-emerald-500',
   warning: 'bg-amber-500',
   danger: 'bg-red-500',
@@ -47,17 +47,17 @@ export default function PageHeader({
   return (
     <div className={`flex flex-col gap-3 md:flex-row md:items-start md:justify-between ${className}`}>
       <div className="min-w-0">
-        <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#3B82F6' }}>
+        <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-primary)' }}>
           {category}
         </p>
         <h2
           className="mt-0.5 text-[28px] font-semibold tracking-tight"
-          style={{ color: '#111111' }}
+          style={{ color: 'var(--text-primary)' }}
         >
           {title}
         </h2>
         {subtitle && (
-          <p className="mt-1 text-[13px]" style={{ color: '#6B7280' }}>{subtitle}</p>
+          <p className="mt-1 text-[13px]" style={{ color: 'var(--text-secondary)' }}>{subtitle}</p>
         )}
       </div>
 

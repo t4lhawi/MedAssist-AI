@@ -15,14 +15,14 @@ interface Props {
 }
 
 const TONE: Record<NonNullable<Props['tone']>, string> = {
-  neutral: 'bg-[#F5F5F7] text-[#6B7280]',
-  good: 'bg-emerald-50 text-emerald-700',
-  warning: 'bg-amber-50 text-amber-700',
-  danger: 'bg-red-50 text-red-600',
+  neutral: 'bg-hover text-text-secondary',
+  good: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+  warning: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+  danger: 'bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300',
 }
 
 const DOT: Record<NonNullable<Props['tone']>, string> = {
-  neutral: 'bg-[#9CA3AF]',
+  neutral: 'bg-text-muted',
   good: 'bg-emerald-500',
   warning: 'bg-amber-500',
   danger: 'bg-red-500',
@@ -128,16 +128,16 @@ export default function StatCard({
   const trendTone = !hasTrend
     ? ''
     : trend > 0.05
-    ? 'text-emerald-600'
+    ? 'text-emerald-600 dark:text-emerald-400'
     : trend < -0.05
-    ? 'text-red-500'
-    : 'text-[#9CA3AF]'
+    ? 'text-red-500 dark:text-red-400'
+    : 'text-text-muted'
   const hasSpark = !!sparkline && sparkline.length >= 2
 
   return (
     <div
       className="card-lift group relative flex flex-col overflow-hidden rounded-3xl border p-4 pl-4 pr-4"
-      style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
     >
       {/* Header: icon chip + title, trend on the right */}
       <div className="flex items-center justify-between gap-2">
@@ -148,7 +148,7 @@ export default function StatCard({
           >
             <Icon size={18} strokeWidth={2.2} style={{ color: accent }} />
           </div>
-          <p className="truncate text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>
+          <p className="truncate text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
             {title}
           </p>
         </div>
@@ -164,12 +164,12 @@ export default function StatCard({
       <div className="mt-3 flex items-end gap-1.5">
         <p
           className="text-[26px] font-semibold leading-none tracking-tight tabular-nums"
-          style={{ color: '#111111' }}
+          style={{ color: 'var(--text-primary)' }}
         >
           {animated}
         </p>
         {unit && (
-          <span className="mb-0.5 text-[12px] font-medium" style={{ color: '#9CA3AF' }}>
+          <span className="mb-0.5 text-[12px] font-medium" style={{ color: 'var(--text-muted)' }}>
             {unit}
           </span>
         )}

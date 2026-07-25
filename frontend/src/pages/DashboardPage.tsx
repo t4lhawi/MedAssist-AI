@@ -33,18 +33,18 @@ function LiveActivityFeed({ mesures, max = 6 }: { mesures: Mesure[]; max?: numbe
     return (
       <div
         className="card flex flex-col items-center justify-center rounded-3xl border p-8 text-center"
-        style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
       >
         <div
           className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl"
-          style={{ background: '#F5F5F7' }}
+          style={{ background: 'var(--bg-hover)' }}
         >
-          <Sparkles size={20} strokeWidth={1.6} style={{ color: '#D1D5DB' }} />
+          <Sparkles size={20} strokeWidth={1.6} style={{ color: 'var(--border-strong)' }} />
         </div>
-        <p className="text-[13.5px] font-semibold" style={{ color: '#6B7280' }}>
+        <p className="text-[13.5px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
           En attente de mesures
         </p>
-        <p className="mt-1 text-[12px]" style={{ color: '#9CA3AF' }}>
+        <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
           Les mesures MQTT apparaîtront ici.
         </p>
       </div>
@@ -54,24 +54,24 @@ function LiveActivityFeed({ mesures, max = 6 }: { mesures: Mesure[]; max?: numbe
   return (
     <div
       className="card overflow-hidden rounded-3xl border"
-      style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
     >
-      <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: '#F5F5F7' }}>
+      <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: 'var(--bg-hover)' }}>
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" style={{ animationDuration: '2s' }} />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
           </span>
-          <h3 className="text-[13.5px] font-semibold tracking-tight" style={{ color: '#111111' }}>
+          <h3 className="text-[13.5px] font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
             Activité en direct
           </h3>
         </div>
-        <p className="text-[11px]" style={{ color: '#9CA3AF' }}>
+        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
           {items.length} dernière{items.length > 1 ? 's' : ''} mesure{items.length > 1 ? 's' : ''}
         </p>
       </div>
 
-      <div className="divide-y" style={{ borderColor: '#F5F5F7' }}>
+      <div className="divide-y" style={{ borderColor: 'var(--bg-hover)' }}>
         {items.map((m, idx) => {
           const mt = (m.type && getMonitoringType(m.type)) || MONITORING_TYPES[0]
           const Icon = mt.icon
@@ -80,7 +80,7 @@ function LiveActivityFeed({ mesures, max = 6 }: { mesures: Mesure[]; max?: numbe
           return (
             <div
               key={m.id}
-              className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-[#FAFAFA]"
+              className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-hover"
               style={{
                 animation: 'slideUp 200ms ease-out both',
                 animationDelay: `${idx * 25}ms`,
@@ -93,19 +93,19 @@ function LiveActivityFeed({ mesures, max = 6 }: { mesures: Mesure[]; max?: numbe
                 <Icon size={13} strokeWidth={2.4} />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-medium" style={{ color: '#374151' }}>
-                  <span style={{ color: '#111111' }}>{mt.title}</span>
-                  <span className="mx-1.5" style={{ color: '#D1D5DB' }}>·</span>
-                  <span style={{ color: '#6B7280' }}>{salle}</span>
+                <p className="truncate text-[13px] font-medium" style={{ color: 'var(--text-secondary)' }}>
+                  <span style={{ color: 'var(--text-primary)' }}>{mt.title}</span>
+                  <span className="mx-1.5" style={{ color: 'var(--border-strong)' }}>·</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{salle}</span>
                 </p>
-                <p className="text-[10.5px]" style={{ color: '#9CA3AF' }}>
+                <p className="text-[10.5px]" style={{ color: 'var(--text-muted)' }}>
                   {new Date(m.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-[15px] font-semibold leading-none tracking-tight tabular-nums" style={{ color: '#111111' }}>
+                <p className="text-[15px] font-semibold leading-none tracking-tight tabular-nums" style={{ color: 'var(--text-primary)' }}>
                   {Number(m.valeur).toFixed(m.type === 'pression' ? 0 : 1)}
-                  <span className="ml-0.5 text-[10.5px] font-medium" style={{ color: '#9CA3AF' }}>
+                  <span className="ml-0.5 text-[10.5px] font-medium" style={{ color: 'var(--text-muted)' }}>
                     {m.unite || mt.unit}
                   </span>
                 </p>
@@ -231,22 +231,22 @@ function VisitorWelcome({ nom }: { nom: string }) {
           the right column of the hero is hidden. */}
       <div
         className="rounded-3xl border p-5 lg:hidden"
-        style={{ background: '#F5F5F7', border: '1px solid #ECECEC' }}
+        style={{ background: 'var(--bg-hover)', border: '1px solid var(--border-color)' }}
       >
-        <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#3B82F6' }}>
+        <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-primary)' }}>
           Ce que vous pouvez faire
         </p>
-        <ul className="mt-3 space-y-2 text-[13px]" style={{ color: '#374151' }}>
+        <ul className="mt-3 space-y-2 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
           <li className="flex items-start gap-2">
-            <CheckCircle2 size={14} strokeWidth={2.4} style={{ color: '#10B981' }} className="mt-0.5 shrink-0" />
+            <CheckCircle2 size={14} strokeWidth={2.4} style={{ color: 'var(--color-success)' }} className="mt-0.5 shrink-0" />
             Poser des questions en langage naturel à l'assistant IA.
           </li>
           <li className="flex items-start gap-2">
-            <CheckCircle2 size={14} strokeWidth={2.4} style={{ color: '#10B981' }} className="mt-0.5 shrink-0" />
+            <CheckCircle2 size={14} strokeWidth={2.4} style={{ color: 'var(--color-success)' }} className="mt-0.5 shrink-0" />
             Consulter vos informations de profil.
           </li>
         </ul>
-        <p className="mt-4 text-[12px]" style={{ color: '#6B7280' }}>
+        <p className="mt-4 text-[12px]" style={{ color: 'var(--text-secondary)' }}>
           La supervision en temps réel des salles, des capteurs et des alertes
           est réservée au personnel hospitalier et aux administrateurs.
         </p>
@@ -258,7 +258,7 @@ function VisitorWelcome({ nom }: { nom: string }) {
         <Link
           to="/assistant"
           className="group flex items-center gap-3 rounded-2xl border p-4 transition-all duration-200 hover:-translate-y-px hover:shadow-sm"
-          style={{ background: '#FFFFFF', borderColor: '#ECECEC' }}
+          style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
         >
           <span
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white"
@@ -267,53 +267,53 @@ function VisitorWelcome({ nom }: { nom: string }) {
             <MessageCircle size={16} strokeWidth={2.2} />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[13.5px] font-semibold" style={{ color: '#111111' }}>
+            <p className="truncate text-[13.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
               Assistant IA
             </p>
-            <p className="truncate text-[12px]" style={{ color: '#6B7280' }}>
+            <p className="truncate text-[12px]" style={{ color: 'var(--text-secondary)' }}>
               Interroger la base documentaire
             </p>
           </div>
-          <Sparkles size={14} strokeWidth={2} style={{ color: '#9CA3AF' }} className="shrink-0 transition-transform group-hover:scale-110" />
+          <Sparkles size={14} strokeWidth={2} style={{ color: 'var(--text-muted)' }} className="shrink-0 transition-transform group-hover:scale-110" />
         </Link>
 
         <Link
           to="/profile"
           className="group flex items-center gap-3 rounded-2xl border p-4 transition-all duration-200 hover:-translate-y-px hover:shadow-sm"
-          style={{ background: '#FFFFFF', borderColor: '#ECECEC' }}
+          style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
         >
           <span
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-            style={{ background: '#F5F5F7' }}
+            style={{ background: 'var(--bg-hover)' }}
           >
-            <UserCircle size={16} strokeWidth={2.2} style={{ color: '#374151' }} />
+            <UserCircle size={16} strokeWidth={2.2} style={{ color: 'var(--text-secondary)' }} />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[13.5px] font-semibold" style={{ color: '#111111' }}>
+            <p className="truncate text-[13.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
               Mon profil
             </p>
-            <p className="truncate text-[12px]" style={{ color: '#6B7280' }}>
+            <p className="truncate text-[12px]" style={{ color: 'var(--text-secondary)' }}>
               Vos informations de compte
             </p>
           </div>
-          <Sparkles size={14} strokeWidth={2} style={{ color: '#9CA3AF' }} className="shrink-0 transition-transform group-hover:scale-110" />
+          <Sparkles size={14} strokeWidth={2} style={{ color: 'var(--text-muted)' }} className="shrink-0 transition-transform group-hover:scale-110" />
         </Link>
 
         <div
           className="flex items-center gap-3 rounded-2xl border p-4"
-          style={{ background: '#F5F5F7', borderColor: '#ECECEC' }}
+          style={{ background: 'var(--bg-hover)', borderColor: 'var(--border-color)' }}
         >
           <span
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-            style={{ background: '#FFFFFF' }}
+            style={{ background: 'var(--bg-card)' }}
           >
-            <ShieldCheck size={16} strokeWidth={2.2} style={{ color: '#10B981' }} />
+            <ShieldCheck size={16} strokeWidth={2.2} style={{ color: 'var(--color-success)' }} />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[13.5px] font-semibold" style={{ color: '#111111' }}>
+            <p className="truncate text-[13.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
               Session sécurisée
             </p>
-            <p className="truncate text-[12px]" style={{ color: '#6B7280' }}>
+            <p className="truncate text-[12px]" style={{ color: 'var(--text-secondary)' }}>
               Connexion chiffrée de bout en bout
             </p>
           </div>
@@ -487,10 +487,10 @@ export default function DashboardPage() {
           <button
             onClick={load}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition-all hover:-translate-y-px hover:bg-[#FAFAFA] active:scale-[0.97] disabled:opacity-60"
-            style={{ background: 'white', color: '#374151', borderColor: '#ECECEC' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F5F5F7' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'white' }}
+            className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition-all hover:-translate-y-px hover:bg-hover active:scale-[0.97] disabled:opacity-60"
+            style={{ background: 'var(--bg-card)', color: 'var(--text-secondary)', borderColor: 'var(--border-color)' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-card)' }}
             aria-label="Actualiser"
           >
             <RefreshCw size={12} strokeWidth={2.4} className={loading ? 'animate-spin' : ''} />
@@ -502,7 +502,7 @@ export default function DashboardPage() {
       {error && (
         <div
           className="flex items-center gap-2 rounded-2xl border px-4 py-3 text-[13px] font-medium"
-          style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626' }}
+          style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)', color: 'var(--color-danger)' }}
         >
           <AlertCircle size={15} />
           {error}
@@ -584,27 +584,27 @@ export default function DashboardPage() {
           {canViewSalles && (
             <div
               className="card rounded-3xl border p-5"
-              style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
             >
               <div className="flex items-center gap-2">
                 <span
                   className="flex h-7 w-7 items-center justify-center rounded-xl"
-                  style={{ background: '#EEF2FF' }}
+                  style={{ background: 'color-mix(in srgb, var(--color-primary) 12%, transparent)' }}
                 >
-                  <Settings2 size={14} strokeWidth={2.2} style={{ color: '#4F46E5' }} />
+                  <Settings2 size={14} strokeWidth={2.2} style={{ color: 'var(--color-primary)' }} />
                 </span>
-                <h3 className="text-[15px] font-semibold" style={{ color: '#111111' }}>
+                <h3 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>
                   Gestion des salles
                 </h3>
               </div>
-              <p className="mt-2 text-[13px]" style={{ color: '#6B7280' }}>
+              <p className="mt-2 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
                 {registeredSalles} salle(s) enregistrée(s), {onlineSalles} en ligne.
                 Gérez vos équipements et IP non reconnues.
               </p>
               <Link
                 to="/admin/salles"
                 className="mt-3 inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-[13px] font-semibold text-white transition-all hover:opacity-90"
-                style={{ background: '#111111' }}
+                style={{ background: 'var(--text-primary)', color: 'var(--bg-card)' }}
               >
                 Administration
                 <Sparkles size={13} strokeWidth={2} />
@@ -619,16 +619,16 @@ export default function DashboardPage() {
           {canViewAlertes && recentAlertes.length > 0 && (
             <div
               className="card rounded-3xl border p-4"
-              style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
             >
               <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-[13px] font-semibold" style={{ color: '#111111' }}>
+                <h3 className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>
                   Alertes récentes
                 </h3>
                 <Link
                   to="/alertes"
                   className="text-[11.5px] font-medium transition-colors hover:underline"
-                  style={{ color: '#3B82F6' }}
+                  style={{ color: 'var(--color-primary)' }}
                 >
                   Tout voir
                 </Link>
@@ -636,9 +636,9 @@ export default function DashboardPage() {
               <div className="flex flex-col gap-2">
                 {recentAlertes.map(a => {
                   const colors: Record<string, { bg: string; text: string }> = {
-                    critique: { bg: '#FEF2F2', text: '#DC2626' },
-                    attention: { bg: '#FFFBEB', text: '#D97706' },
-                    info: { bg: '#EFF6FF', text: '#2563EB' },
+                    critique: { bg: 'color-mix(in srgb, var(--color-danger) 12%, transparent)', text: 'var(--color-danger)' },
+                    attention: { bg: 'color-mix(in srgb, var(--color-warning) 14%, transparent)', text: 'var(--color-warning)' },
+                    info: { bg: 'color-mix(in srgb, var(--color-primary) 12%, transparent)', text: 'var(--color-primary)' },
                   }
                   const c = colors[a.niveau] || colors.info
                   return (

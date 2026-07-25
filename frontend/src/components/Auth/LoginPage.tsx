@@ -73,7 +73,7 @@ export default function LoginPage() {
 
   return (
     <div
-      className="relative min-h-screen overflow-hidden"
+      className="login-page relative min-h-screen overflow-hidden"
       style={{
         // Soft blue-tinted gradient so the colorful hospital logo reads clearly
         background:
@@ -107,7 +107,7 @@ export default function LoginPage() {
         />
         {/* Faint grid texture for a more designed, less-flat feel */}
         <div
-          className="absolute inset-0 opacity-[0.35]"
+          className="grid-texture absolute inset-0 opacity-[0.35]"
           style={{
             backgroundImage:
               'linear-gradient(rgba(15,23,42,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.045) 1px, transparent 1px)',
@@ -127,10 +127,10 @@ export default function LoginPage() {
           <div className="flex items-center gap-4">
             <LogoMark size={56} />
             <div className="flex flex-col leading-tight">
-              <span className="text-[16px] font-semibold tracking-tight" style={{ color: '#0F172A' }}>
+              <span className="text-[16px] font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
                 MedAssist AI
               </span>
-              <span className="text-[11.5px] font-medium" style={{ color: '#475569' }}>
+              <span className="text-[11.5px] font-medium" style={{ color: 'var(--text-secondary)' }}>
                 CHU Mohammed VI · Oujda
               </span>
             </div>
@@ -139,39 +139,39 @@ export default function LoginPage() {
           <div className="max-w-[520px]">
             <p
               className="text-[11px] font-semibold uppercase tracking-[0.16em]"
-              style={{ color: '#2563EB' }}
+              style={{ color: 'var(--color-primary)' }}
             >
               Plateforme de Suivi Clinique
             </p>
             <h1
               className="mt-3 text-[40px] font-semibold leading-[1.08] tracking-tight sm:text-[48px]"
-              style={{ color: '#0F172A' }}
+              style={{ color: 'var(--text-primary)' }}
             >
               Des soins, coordonnés en temps réel.
             </h1>
             <p
               className="mt-4 max-w-[440px] text-[14.5px] leading-relaxed"
-              style={{ color: '#475569' }}
+              style={{ color: 'var(--text-secondary)' }}
             >
               Un espace de travail unifié pour les équipes du CHU Mohammed VI d'Oujda —
               suivez les signaux des patients, coordonnez les gardes et agissez sur l'essentiel en premier.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-2 text-[12px]">
               <span
-                className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1.5 font-medium shadow-[0_1px_2px_rgba(15,23,42,0.04)] backdrop-blur"
-                style={{ color: '#1E3A8A' }}
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium shadow-[0_1px_2px_var(--shadow-1)] backdrop-blur"
+                style={{ color: 'var(--color-primary)', background: 'color-mix(in srgb, var(--bg-card) 70%, transparent)' }}
               >
                 <ShieldCheck size={12} strokeWidth={2.4} /> Conforme HDS
               </span>
               <span
-                className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1.5 font-medium shadow-[0_1px_2px_rgba(15,23,42,0.04)] backdrop-blur"
-                style={{ color: '#1E3A8A' }}
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium shadow-[0_1px_2px_var(--shadow-1)] backdrop-blur"
+                style={{ color: 'var(--color-primary)', background: 'color-mix(in srgb, var(--bg-card) 70%, transparent)' }}
               >
                 Chiffrement de bout en bout
               </span>
               <span
-                className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1.5 font-medium shadow-[0_1px_2px_rgba(15,23,42,0.04)] backdrop-blur"
-                style={{ color: '#1E3A8A' }}
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium shadow-[0_1px_2px_var(--shadow-1)] backdrop-blur"
+                style={{ color: 'var(--color-primary)', background: 'color-mix(in srgb, var(--bg-card) 70%, transparent)' }}
               >
                 Surveillance 24h/24
               </span>
@@ -179,7 +179,7 @@ export default function LoginPage() {
           </div>
 
           <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2 text-[11.5px]" style={{ color: '#64748B' }}>
+            <div className="flex items-center gap-2 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" style={{ animationDuration: '2.2s' }} />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
@@ -190,16 +190,16 @@ export default function LoginPage() {
             </div>
             <div
               className="h-px w-full"
-              style={{ background: 'linear-gradient(90deg, transparent, rgba(15,23,42,0.12), transparent)' }}
+              style={{ background: 'linear-gradient(90deg, transparent, color-mix(in srgb, var(--text-primary) 12%, transparent), transparent)' }}
             />
             <div
               className="login-reveal flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]"
-              style={{ animationDelay: '540ms', color: '#94A3B8' }}
+              style={{ animationDelay: '540ms', color: 'var(--text-muted)' }}
             >
               <span>© 2026 MedAssist</span>
               <span aria-hidden="true">·</span>
               <span>Créé par{' '}
-                <span className="font-semibold" style={{ color: '#475569' }}>
+                <span className="font-semibold" style={{ color: 'var(--text-secondary)' }}>
                   Mohamed Talhaoui
                 </span>
               </span>
@@ -213,17 +213,17 @@ export default function LoginPage() {
             <div className="flex items-center gap-3">
               <LogoMark size={36} />
               <div className="flex flex-col leading-tight">
-                <span className="text-[13.5px] font-semibold tracking-tight" style={{ color: '#0F172A' }}>
+                <span className="text-[13.5px] font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
                   MedAssist AI
                 </span>
-                <span className="text-[10.5px] font-medium" style={{ color: '#64748B' }}>
+                <span className="text-[10.5px] font-medium" style={{ color: 'var(--text-muted)' }}>
                   CHU Mohammed VI · Oujda
                 </span>
               </div>
             </div>
             <span
               className="text-[10.5px] font-medium uppercase tracking-[0.1em]"
-              style={{ color: '#94A3B8' }}
+              style={{ color: 'var(--text-muted)' }}
             >
               v1.0.0
             </span>
@@ -234,17 +234,17 @@ export default function LoginPage() {
           <div className="login-reveal mb-7" style={{ animationDelay: '120ms' }}>
             <p
               className="text-[11px] font-semibold uppercase tracking-[0.14em]"
-              style={{ color: '#3B82F6' }}
+              style={{ color: 'var(--color-primary)' }}
             >
               Accès Sécurisé
             </p>
             <h2
               className="mt-2 text-[28px] font-semibold leading-[1.15] tracking-tight sm:text-[30px]"
-              style={{ color: '#111111' }}
+              style={{ color: 'var(--text-primary)' }}
             >
               Bon retour parmi nous
             </h2>
-            <p className="mt-2 text-[13.5px] leading-relaxed" style={{ color: '#6B7280' }}>
+            <p className="mt-2 text-[13.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
               Connectez-vous pour accéder à la plateforme de suivi MedAssist.
             </p>
           </div>
@@ -254,10 +254,10 @@ export default function LoginPage() {
             className="login-reveal relative w-full rounded-[20px] p-6 sm:p-7"
             style={{
               animationDelay: '200ms',
-              background: 'rgba(255,255,255,0.78)',
-              border: '1px solid rgba(255,255,255,0.9)',
+              background: 'color-mix(in srgb, var(--bg-elevated) 78%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--bg-elevated) 90%, transparent)',
               boxShadow:
-                '0 1px 2px rgba(15,23,42,0.04), 0 24px 60px -32px rgba(15,23,42,0.22), 0 8px 20px -10px rgba(15,23,42,0.08)',
+                '0 1px 2px var(--shadow-1), 0 24px 60px -32px var(--shadow-3), 0 8px 20px -10px var(--shadow-2)',
               backdropFilter: 'blur(10px)',
               WebkitBackdropFilter: 'blur(10px)',
             }}
@@ -270,18 +270,18 @@ export default function LoginPage() {
             {/* Card product identity — small status row, like a real product */}
             <div
               className="mb-5 flex items-center justify-between border-b pb-4"
-              style={{ borderColor: '#F5F5F7' }}
+              style={{ borderColor: 'var(--border-color)' }}
             >
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" style={{ animationDuration: '2.2s' }} />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                 </span>
-                <span className="text-[11.5px] font-medium" style={{ color: '#6B7280' }}>
+                <span className="text-[11.5px] font-medium" style={{ color: 'var(--text-secondary)' }}>
                   Tous les systèmes opérationnels
                 </span>
               </div>
-              <span className="text-[10.5px] font-medium uppercase tracking-[0.1em]" style={{ color: '#9CA3AF' }}>
+              <span className="text-[10.5px] font-medium uppercase tracking-[0.1em]" style={{ color: 'var(--text-muted)' }}>
                 v1.0.0
               </span>
             </div>
@@ -316,30 +316,43 @@ export default function LoginPage() {
                     onKeyDown={handleCapsLock}
                     onKeyUp={handleCapsLock}
                     onBlur={() => setCapsLock(false)}
-                    className="peer w-full rounded-[14px] border-0 bg-slate-50 px-4 py-3.5 pl-11 pr-12 text-[14px] outline-none transition-all duration-200 ease-out focus:bg-white"
+                    className="peer w-full rounded-[14px] border-0 px-4 py-3.5 pl-11 pr-12 text-[14px] outline-none transition-all duration-200 ease-out"
                     style={{
-                      color: '#111111',
-                      boxShadow: 'inset 0 0 0 1px rgba(15,23,42,0.08)',
+                      color: 'var(--text-primary)',
+                      background: 'var(--bg-input)',
+                      boxShadow: 'inset 0 0 0 1px var(--border-color)',
                     }}
                     onFocus={e => {
+                      e.currentTarget.style.background = 'var(--bg-elevated)'
                       e.currentTarget.style.boxShadow =
-                        'inset 0 0 0 1.5px rgba(59,130,246,0.55), 0 0 0 4px rgba(59,130,246,0.08)'
+                        'inset 0 0 0 1.5px color-mix(in srgb, var(--color-primary) 55%, transparent), 0 0 0 4px color-mix(in srgb, var(--color-primary) 8%, transparent)'
                     }}
                     onBlurCapture={e => {
-                      e.currentTarget.style.boxShadow = 'inset 0 0 0 1px rgba(15,23,42,0.08)'
+                      e.currentTarget.style.background = 'var(--bg-input)'
+                      e.currentTarget.style.boxShadow = 'inset 0 0 0 1px var(--border-color)'
                     }}
                   />
                   <Lock
                     size={16}
                     strokeWidth={2.1}
-                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors duration-200 peer-focus:text-blue-500"
+                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-200"
+                    style={{ color: 'var(--text-muted)' }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(v => !v)}
                     aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                     tabIndex={-1}
-                    className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors duration-200 hover:bg-slate-100 hover:text-slate-600"
+                    className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full transition-colors duration-200"
+                    style={{ color: 'var(--text-muted)' }}
+                    onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
+                      e.currentTarget.style.background = 'var(--bg-hover)'
+                      e.currentTarget.style.color = 'var(--text-secondary)'
+                    }}
+                    onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
+                      e.currentTarget.style.background = 'transparent'
+                      e.currentTarget.style.color = 'var(--text-muted)'
+                    }}
                   >
                     {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
@@ -348,8 +361,9 @@ export default function LoginPage() {
                 <div className="mt-2 flex items-center justify-between text-[12px]">
                   <span
                     className={`inline-flex items-center gap-1.5 font-medium transition-opacity duration-200 ${
-                      capsLock ? 'opacity-100 text-amber-600' : 'opacity-0'
+                      capsLock ? 'opacity-100' : 'opacity-0'
                     }`}
+                    style={{ color: 'var(--color-warning)' }}
                     aria-live="polite"
                   >
                     <AlertCircle size={11} strokeWidth={2.4} />
@@ -359,7 +373,8 @@ export default function LoginPage() {
                     href="#"
                     aria-disabled="true"
                     onClick={e => e.preventDefault()}
-                    className="cursor-not-allowed text-[12px] font-medium text-slate-300 select-none"
+                    className="cursor-not-allowed text-[12px] font-medium select-none"
+                    style={{ color: 'var(--border-strong)' }}
                   >
                     Mot de passe oublié ?
                   </a>
@@ -371,9 +386,9 @@ export default function LoginPage() {
                   role="alert"
                   className="login-fade-in flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 text-[13px] font-medium"
                   style={{
-                    background: '#FEF2F2',
-                    borderColor: '#FECACA',
-                    color: '#DC2626',
+                    background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
+                    borderColor: 'color-mix(in srgb, var(--color-danger) 30%, transparent)',
+                    color: 'var(--color-danger)',
                   }}
                 >
                   <AlertCircle size={14} className="mt-0.5 shrink-0" strokeWidth={2.4} />
@@ -386,11 +401,36 @@ export default function LoginPage() {
                   type="submit"
                   disabled={loading || success}
                   aria-label={success ? 'Connecté' : 'Se connecter'}
-                  className={`relative inline-flex h-[50px] w-full items-center justify-center gap-2 overflow-hidden rounded-full text-[14px] font-semibold text-white transition-all duration-200 ease-out ${
-                    success
-                      ? 'bg-emerald-500 shadow-[0_8px_24px_-8px_rgba(16,185,129,0.55)]'
-                      : 'bg-[#111111] shadow-[0_4px_14px_-4px_rgba(17,17,17,0.45)] hover:-translate-y-[1px] hover:bg-[#1F2937] hover:shadow-[0_10px_24px_-6px_rgba(17,17,17,0.55)] active:translate-y-0 active:duration-100'
+                  className={`relative inline-flex h-[50px] w-full items-center justify-center gap-2 overflow-hidden rounded-full text-[14px] font-semibold transition-all duration-200 ease-out ${
+                    success ? '' : 'active:translate-y-0 active:duration-100'
                   } disabled:cursor-default`}
+                  style={
+                    success
+                      ? {
+                          background: 'var(--color-success)',
+                          color: '#FFFFFF',
+                          boxShadow: '0 8px 24px -8px color-mix(in srgb, var(--color-success) 55%, transparent)',
+                        }
+                      : {
+                          background: 'var(--text-primary)',
+                          color: 'var(--bg-card)',
+                          boxShadow: '0 4px 14px -4px var(--shadow-3)',
+                        }
+                  }
+                  onMouseEnter={(e) => {
+                    if (success || loading) return
+                    const el = e.currentTarget as HTMLElement
+                    el.style.background = 'color-mix(in srgb, var(--text-primary) 88%, transparent)'
+                    el.style.boxShadow = '0 10px 24px -6px var(--shadow-3)'
+                    el.style.transform = 'translateY(-1px)'
+                  }}
+                  onMouseLeave={(e) => {
+                    if (success || loading) return
+                    const el = e.currentTarget as HTMLElement
+                    el.style.background = 'var(--text-primary)'
+                    el.style.boxShadow = '0 4px 14px -4px var(--shadow-3)'
+                    el.style.transform = ''
+                  }}
                 >
                   {success ? (
                     <>
@@ -458,6 +498,32 @@ export default function LoginPage() {
           .login-reveal { opacity: 1; transform: none; animation: none; }
           .login-blob { animation: none; }
           .login-fade-in, .login-pop { animation: none; }
+        }
+
+        /* Dark mode overrides — bespoke because the page uses custom
+           gradients and radial blobs that don't read with the generic
+           token flips. We override the page background, the grid
+           texture, and bump the blob alpha so the colored wash still
+           shows on a near-black surface. */
+        .dark .login-page {
+          background: linear-gradient(135deg, #0B1220 0%, #0F172A 35%, #111827 65%, #0B1220 100%) !important;
+        }
+        .dark .login-blob-a {
+          background: radial-gradient(circle at center, rgba(96, 165, 250, 0.40), transparent 60%) !important;
+        }
+        .dark .login-blob-b {
+          background: radial-gradient(circle at center, rgba(99, 179, 237, 0.30), transparent 65%) !important;
+        }
+        .dark .login-blob-c {
+          background: radial-gradient(circle at center, rgba(147, 197, 253, 0.22), transparent 70%) !important;
+        }
+        .dark .login-page .grid-texture {
+          opacity: 0.6;
+        }
+        .dark .login-page .grid-texture > div {
+          background-image:
+            linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px) !important;
         }
       `}</style>
     </div>

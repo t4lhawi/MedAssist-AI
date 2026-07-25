@@ -17,26 +17,26 @@ export default function AccessDenied() {
          style={{ minHeight: 'calc(100vh - 14rem)' }}>
       <div
         className="flex h-16 w-16 items-center justify-center rounded-2xl"
-        style={{ background: '#FEF2F2' }}
+        style={{ background: 'color-mix(in srgb, var(--color-danger) 12%, transparent)' }}
       >
-        <ShieldAlert size={28} strokeWidth={2.2} style={{ color: '#DC2626' }} />
+        <ShieldAlert size={28} strokeWidth={2.2} style={{ color: 'var(--color-danger)' }} />
       </div>
 
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em]"
-           style={{ color: '#DC2626' }}>
+           style={{ color: 'var(--color-danger)' }}>
           Accès refusé
         </p>
         <h1 className="mt-2 text-[26px] font-semibold tracking-tight"
-            style={{ color: '#111111' }}>
+            style={{ color: 'var(--text-primary)' }}>
           Cette page n'est pas accessible avec votre rôle.
         </h1>
         <p className="mx-auto mt-3 max-w-[44ch] text-[14px] leading-relaxed"
-           style={{ color: '#6B7280' }}>
+           style={{ color: 'var(--text-secondary)' }}>
           {user ? (
             <>
               Vous êtes connecté en tant que{' '}
-              <strong className="font-semibold" style={{ color: '#111111' }}>
+              <strong className="font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {roleLabelFr(role)}
               </strong>
               . Si vous pensez qu'il s'agit d'une erreur, contactez un
@@ -54,7 +54,12 @@ export default function AccessDenied() {
         <button
           type="button"
           onClick={() => navigate('/')}
-          className="inline-flex items-center gap-1.5 rounded-full bg-[#111111] px-4 py-2 text-[13px] font-semibold text-white shadow-[0_2px_8px_-2px_rgba(17,17,17,0.35)] transition-all hover:-translate-y-0.5 hover:bg-[#1F1F23] active:scale-[0.97]"
+          className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold transition-all hover:-translate-y-0.5 active:scale-[0.97]"
+          style={{
+            background: 'var(--text-primary)',
+            color: 'var(--bg-card)',
+            boxShadow: '0 2px 8px -2px var(--shadow-2)',
+          }}
         >
           <ArrowLeft size={13} strokeWidth={2.4} />
           Retour au tableau de bord
@@ -63,7 +68,18 @@ export default function AccessDenied() {
           <button
             type="button"
             onClick={() => navigate('/login')}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#ECECEC] bg-white px-4 py-2 text-[13px] font-semibold transition-colors hover:bg-[#F5F5F7]"
+            className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors"
+            style={{
+              background: 'var(--bg-card)',
+              color: 'var(--text-primary)',
+              borderColor: 'var(--border-color)',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)'
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.background = 'var(--bg-card)'
+            }}
           >
             <LogIn size={13} strokeWidth={2.4} />
             Se connecter
@@ -73,7 +89,18 @@ export default function AccessDenied() {
           <button
             type="button"
             onClick={() => { logout(); navigate('/login') }}
-            className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-white px-4 py-2 text-[13px] font-semibold text-red-600 transition-colors hover:bg-red-50"
+            className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors"
+            style={{
+              background: 'var(--bg-card)',
+              color: 'var(--color-danger)',
+              borderColor: 'color-mix(in srgb, var(--color-danger) 30%, transparent)',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--color-danger) 10%, transparent)'
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.background = 'var(--bg-card)'
+            }}
           >
             <LogIn size={13} strokeWidth={2.4} />
             Se connecter avec un autre compte

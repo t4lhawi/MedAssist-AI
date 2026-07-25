@@ -9,7 +9,6 @@ from .. import crud
 router = APIRouter(prefix="/api/alertes", tags=["Alertes"])
 
 # Alerte visibility is shared between admin and hospital staff
-# (visitor does NOT see global alertes). Mutating actions are split:
 #   * "traiter"  → admin OR hospital staff
 #   * delete     → admin only
 @router.get("/", response_model=List[AlerteOut])

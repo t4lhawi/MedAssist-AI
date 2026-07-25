@@ -52,7 +52,7 @@ function SensorTile({ type, sensor, isExpanded, onToggle }: {
   return (
     <div
       className={`
-        group relative rounded-2xl border bg-white p-3 transition-all duration-200 ease-out
+        group relative rounded-2xl border bg-white dark:bg-card p-3 transition-all duration-200 ease-out
         ${borderClass} ${bgClass}
         hover:shadow-[0_4px_14px_-6px_rgba(17,17,17,0.14)]
         ${isExpanded ? 'grid grid-rows-[auto_auto_1fr]' : 'grid grid-rows-[auto_1fr]'}
@@ -65,8 +65,8 @@ function SensorTile({ type, sensor, isExpanded, onToggle }: {
         <span className={`flex h-6 w-6 items-center justify-center rounded-full ${tone.bg} ${tone.text}`}>
           <mt.icon size={12} strokeWidth={2.5} />
         </span>
-        <p className="truncate text-xs font-medium text-[#6B7280]">{mt.title}</p>
-        <span className="ml-auto flex items-center justify-center text-[#D1D5DB] transition-transform duration-150 group-hover:text-[#6B7280]">
+        <p className="truncate text-xs font-medium text-[#6B7280] dark:text-text-secondary">{mt.title}</p>
+        <span className="ml-auto flex items-center justify-center text-[#D1D5DB] transition-transform duration-150 group-hover:text-[#6B7280] dark:text-text-secondary">
           {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </span>
       </div>
@@ -74,13 +74,13 @@ function SensorTile({ type, sensor, isExpanded, onToggle }: {
       {/* Main value */}
       <div className="flex items-end gap-1.5 mb-2">
         {state === 'not_installed' ? (
-          <span className="text-sm font-medium text-[#9CA3AF]">Non installé</span>
+          <span className="text-sm font-medium text-[#9CA3AF] dark:text-text-muted">Non installé</span>
         ) : (
           <>
-            <span className="text-xl font-semibold text-[#111111] tabular-nums">
+            <span className="text-xl font-semibold text-[#111111] dark:text-text-primary tabular-nums">
               {formatValue(value, unit, type === 'pression' ? 0 : 1)}
             </span>
-            <span className="text-xs text-[#9CA3AF] self-end mb-0.5">{unit}</span>
+            <span className="text-xs text-[#9CA3AF] dark:text-text-muted self-end mb-0.5">{unit}</span>
           </>
         )}
       </div>
@@ -89,7 +89,7 @@ function SensorTile({ type, sensor, isExpanded, onToggle }: {
       {isExpanded && (
         <div className="space-y-2 pt-2 border-t border-[#ECECEC] animate-slide-down">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-[#6B7280]">Dernière mise à jour</span>
+            <span className="text-[#6B7280] dark:text-text-secondary">Dernière mise à jour</span>
             <span className={`font-medium ${tone.text}`}>{lastSeen}</span>
           </div>
           {state === 'error' && (
@@ -178,7 +178,7 @@ export default function SalleCard({ salle }: { salle: SalleStatus }) {
     : 'flex h-2.5 w-2.5'
 
   return (
-    <div className="group relative rounded-[24px] border border-[#ECECEC] bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-12px_rgba(17,17,17,0.16)] overflow-hidden">
+    <div className="group relative rounded-[24px] border border-[#ECECEC] dark:border-border bg-white dark:bg-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-12px_rgba(17,17,17,0.16)] overflow-hidden">
       {/* Top accent bar — color coded by room status */}
       <div
         className={`h-1 w-full transition-colors duration-200 ${
@@ -219,23 +219,23 @@ export default function SalleCard({ salle }: { salle: SalleStatus }) {
                   onKeyDown={e => e.key === 'Enter' && handleRename()}
                   onBlur={handleRename}
                   autoFocus
-                  className="w-full rounded-xl border border-[#ECECEC] bg-[#F5F5F7] px-2.5 py-1 text-sm font-semibold text-[#111111] outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/15"
+                  className="w-full rounded-xl border border-[#ECECEC] bg-[#F5F5F7] px-2.5 py-1 text-sm font-semibold text-[#111111] dark:text-text-primary outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/15"
                 />
               ) : (
-                <h3 className="truncate text-base font-semibold tracking-tight text-[#111111]">
+                <h3 className="truncate text-base font-semibold tracking-tight text-[#111111] dark:text-text-primary">
                   {salle.salle}
                 </h3>
               )}
 
               <div className="mt-1 flex items-center gap-2">
                 {salle.ip && (
-                  <span className="flex items-center gap-1 text-[11px] font-mono text-[#9CA3AF]">
+                  <span className="flex items-center gap-1 text-[11px] font-mono text-[#9CA3AF] dark:text-text-muted">
                     <Wifi className="h-3 w-3" />
                     {salle.ip}
                   </span>
                 )}
                 {!salle.actif && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#F5F5F7] px-2 py-0.5 text-[10px] font-medium text-[#6B7280]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#F5F5F7] px-2 py-0.5 text-[10px] font-medium text-[#6B7280] dark:text-text-secondary">
                     Désactivée
                   </span>
                 )}
@@ -256,7 +256,7 @@ export default function SalleCard({ salle }: { salle: SalleStatus }) {
                 onClick={() => { setNewName(salle.salle); setIsRenaming(true) }}
                 disabled={busy}
                 title="Renommer"
-                className="relative flex h-8 w-8 items-center justify-center rounded-full text-[#9CA3AF] transition-all duration-150 hover:bg-[#F5F5F7] hover:text-[#111111] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative flex h-8 w-8 items-center justify-center rounded-full text-[#9CA3AF] dark:text-text-muted transition-all duration-150 hover:bg-[#F5F5F7] hover:text-[#111111] dark:text-text-primary active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Pencil size={14} />
               </button>
@@ -264,7 +264,7 @@ export default function SalleCard({ salle }: { salle: SalleStatus }) {
                 onClick={handleToggleActif}
                 disabled={busy}
                 title={salle.actif ? 'Désactiver' : 'Activer'}
-                className="relative flex h-8 w-8 items-center justify-center rounded-full text-[#9CA3AF] transition-all duration-150 hover:bg-[#F5F5F7] hover:text-[#111111] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative flex h-8 w-8 items-center justify-center rounded-full text-[#9CA3AF] dark:text-text-muted transition-all duration-150 hover:bg-[#F5F5F7] hover:text-[#111111] dark:text-text-primary active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {salle.actif ? <PowerOff size={14} /> : <Power size={14} />}
               </button>
@@ -272,12 +272,12 @@ export default function SalleCard({ salle }: { salle: SalleStatus }) {
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={busy}
                 title="Supprimer"
-                className="relative flex h-8 w-8 items-center justify-center rounded-full text-[#9CA3AF] transition-all duration-150 hover:bg-red-50 hover:text-red-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative flex h-8 w-8 items-center justify-center rounded-full text-[#9CA3AF] dark:text-text-muted transition-all duration-150 hover:bg-red-50 hover:text-red-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Trash2 size={14} />
               </button>
               {busy && (
-                <Loader2 className="h-5 w-5 animate-spin text-[#9CA3AF]" />
+                <Loader2 className="h-5 w-5 animate-spin text-[#9CA3AF] dark:text-text-muted" />
               )}
             </div>
           )}
@@ -303,22 +303,22 @@ export default function SalleCard({ salle }: { salle: SalleStatus }) {
         {/* Delete confirmation modal */}
         {showDeleteConfirm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111111]/30 animate-fade-in">
-            <div className="w-full max-w-md rounded-[24px] bg-white p-6 shadow-[0_24px_60px_-16px_rgba(17,17,17,0.28)] animate-slide-up">
+            <div className="w-full max-w-md rounded-[24px] bg-white dark:bg-card p-6 shadow-[0_24px_60px_-16px_rgba(17,17,17,0.28)] animate-slide-up">
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-red-500">
                   <AlertTriangle size={20} />
                 </div>
-                <h3 className="text-lg font-semibold text-[#111111]">Supprimer la salle</h3>
+                <h3 className="text-lg font-semibold text-[#111111] dark:text-text-primary">Supprimer la salle</h3>
               </div>
-              <p className="mb-6 text-sm text-[#6B7280]">
-                Voulez-vous vraiment supprimer <strong className="text-[#111111]">{salle.salle}</strong> ?
+              <p className="mb-6 text-sm text-[#6B7280] dark:text-text-secondary">
+                Voulez-vous vraiment supprimer <strong className="text-[#111111] dark:text-text-primary">{salle.salle}</strong> ?
                 Cette action est irréversible et supprimera aussi l'ESP32 associé.
               </p>
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
                   disabled={busy}
-                  className="rounded-full border border-[#ECECEC] bg-white px-4 py-2 text-sm font-medium text-[#374151] transition-colors duration-150 hover:bg-[#F5F5F7] disabled:opacity-50"
+                  className="rounded-full border border-[#ECECEC] dark:border-border bg-white dark:bg-card px-4 py-2 text-sm font-medium text-[#374151] dark:text-text-secondary transition-colors duration-150 hover:bg-[#F5F5F7] disabled:opacity-50"
                 >
                   Annuler
                 </button>

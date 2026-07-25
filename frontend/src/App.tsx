@@ -119,13 +119,19 @@ function Layout() {
 
   if (loading) {
     return (
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden" style={{ background: '#ffffff' }}>
-        <div className="relative text-center" style={{ color: '#111111' }}>
+      <div
+        className="relative flex min-h-screen items-center justify-center overflow-hidden"
+        style={{ background: 'var(--bg-main)' }}
+      >
+        <div className="relative text-center" style={{ color: 'var(--text-primary)' }}>
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center">
             <Logo size={175} />
           </div>
           <p className="text-[15px] font-semibold tracking-[-0.01em]">MedAssist AI · CHU Mohammed VI Oujda</p>
-          <p className="mt-3 flex items-center justify-center gap-2 text-[13px]" style={{ color: 'rgba(17,17,17,0.4)' }}>
+          <p
+            className="mt-3 flex items-center justify-center gap-2 text-[13px]"
+            style={{ color: 'var(--text-muted)' }}
+          >
             <Loader2 size={14} className="animate-spin" />
             Chargement…
           </p>
@@ -146,7 +152,7 @@ function Layout() {
       {/* ── 3-column layout: nav top + [sidebar | main | right panel] ── */}
       {/* h-screen + overflow-hidden on the outer column makes the inner
           <main> the only vertical scroller, so the navbar stays locked. */}
-      <div className="flex h-screen flex-col overflow-hidden" style={{ background: '#F5F5F7' }}>
+      <div className="flex h-screen flex-col overflow-hidden bg-bg">
         <Navbar alertCount={alertCount} />
         <div className="flex flex-1 overflow-hidden">
           {/* Left: fixed navigation sidebar — hidden for visitors since

@@ -146,8 +146,9 @@ export default function Modal({
       <div
         aria-hidden="true"
         onClick={tryClose}
-        className="absolute inset-0 bg-[#0B0B0F]/45 backdrop-blur-md"
+        className="absolute inset-0 backdrop-blur-md"
         style={{
+          background: 'var(--backdrop)',
           animation: 'modalBackdropIn 200ms cubic-bezier(0.25, 0.1, 0.25, 1) both',
         }}
       />
@@ -159,8 +160,11 @@ export default function Modal({
         aria-modal="true"
         aria-label={ariaLabel}
         tabIndex={-1}
-        className={`relative z-10 w-full overflow-hidden rounded-3xl bg-white shadow-[0_24px_64px_-20px_rgba(15,23,42,0.35),0_8px_24px_-8px_rgba(15,23,42,0.18)] outline-none ${SIZE_CLASS[size]}`}
+        className={`relative z-10 w-full overflow-hidden rounded-3xl outline-none ${SIZE_CLASS[size]}`}
         style={{
+          background: 'var(--bg-elevated)',
+          color: 'var(--text-primary)',
+          boxShadow: '0 24px 64px -20px var(--shadow-3), 0 8px 24px -8px var(--shadow-2)',
           animation: 'modalPanelIn 200ms cubic-bezier(0.25, 0.1, 0.25, 1) both',
         }}
       >
@@ -199,11 +203,11 @@ interface ModalHeaderProps {
 }
 
 const ICON_TONE: Record<NonNullable<ModalHeaderProps['iconTone']>, string> = {
-  blue: 'bg-[#EFF4FF] text-[#3B82F6]',
-  amber: 'bg-amber-50 text-amber-600',
-  red: 'bg-red-50 text-red-600',
-  emerald: 'bg-emerald-50 text-emerald-600',
-  slate: 'bg-slate-100 text-slate-600',
+  blue: 'bg-[#EFF4FF] text-[#3B82F6] dark:bg-blue-500/15 dark:text-blue-300',
+  amber: 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300',
+  red: 'bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-300',
+  emerald: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300',
+  slate: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-200',
 }
 
 export function ModalHeader({
@@ -225,11 +229,11 @@ export function ModalHeader({
           </span>
         )}
         <div className="min-w-0 pt-0.5">
-          <h2 className="text-[18px] font-semibold tracking-[-0.01em] text-[#111111]">
+          <h2 className="text-[18px] font-semibold tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>
             {title}
           </h2>
           {subtitle && (
-            <p className="mt-1 text-[13px] leading-relaxed text-[#6B7280]">{subtitle}</p>
+            <p className="mt-1 text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{subtitle}</p>
           )}
         </div>
       </div>
@@ -239,7 +243,18 @@ export function ModalHeader({
           onClick={onClose}
           disabled={closeDisabled}
           aria-label="Fermer"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#6B7280] transition-all duration-200 hover:bg-[#F5F5F7] hover:text-[#111111] active:scale-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200 active:scale-90 disabled:cursor-not-allowed disabled:opacity-50"
+          style={{ color: 'var(--text-secondary)' }}
+          onMouseEnter={(e) => {
+            const el = e.currentTarget as HTMLElement
+            el.style.background = 'var(--bg-hover)'
+            el.style.color = 'var(--text-primary)'
+          }}
+          onMouseLeave={(e) => {
+            const el = e.currentTarget as HTMLElement
+            el.style.background = 'transparent'
+            el.style.color = 'var(--text-secondary)'
+          }}
         >
           <X size={15} strokeWidth={2.2} />
         </button>
@@ -264,7 +279,11 @@ interface ModalFooterProps {
 export function ModalFooter({ children, sticky = true, noBorder = false }: ModalFooterProps) {
   return (
     <footer
-      className={`flex items-center justify-end gap-2 ${noBorder ? '' : 'border-t border-[#F0F0F0]'} bg-[#FAFAFA]/60 px-7 py-4 ${sticky ? '' : ''}`}
+      className={`flex items-center justify-end gap-2 px-7 py-4 ${sticky ? '' : ''}`}
+      style={{
+        borderTop: noBorder ? 'none' : '1px solid var(--border-color)',
+        background: 'color-mix(in srgb, var(--bg-hover) 50%, transparent)',
+      }}
     >
       {children}
     </footer>
@@ -277,16 +296,6 @@ export function ModalFooter({ children, sticky = true, noBorder = false }: Modal
  * ───────────────────────────────────────────────────────────── */
 
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost'
-
-const VARIANT_CLASS: Record<Variant, string> = {
-  primary:
-    'bg-[#111111] text-white shadow-[0_2px_8px_-2px_rgba(17,17,17,0.35)] hover:bg-[#1F1F23] hover:shadow-[0_6px_18px_-4px_rgba(17,17,17,0.4)]',
-  secondary:
-    'bg-white text-[#374151] border border-[#ECECEC] hover:bg-[#F5F5F7] hover:border-[#DCDCDC]',
-  danger:
-    'bg-red-600 text-white shadow-[0_2px_8px_-2px_rgba(220,38,38,0.4)] hover:bg-red-700 hover:shadow-[0_6px_18px_-4px_rgba(220,38,38,0.45)]',
-  ghost: 'bg-transparent text-[#6B7280] hover:bg-[#F5F5F7] hover:text-[#111111]',
-}
 
 interface ModalButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant
@@ -304,12 +313,66 @@ export function ModalButton({
   ...rest
 }: ModalButtonProps) {
   const isDisabled = disabled || loading
+
+  // Variant styling is theme-aware. The primary button inverts (black in
+  // light, near-white in dark); secondary uses a card surface with a
+  // border; danger uses the danger token.
+  const style: React.CSSProperties = (() => {
+    switch (variant) {
+      case 'primary':
+        return {
+          background: 'var(--text-primary)',
+          color: 'var(--bg-card)',
+          boxShadow: '0 2px 8px -2px var(--shadow-2)',
+        }
+      case 'secondary':
+        return {
+          background: 'var(--bg-card)',
+          color: 'var(--text-primary)',
+          border: '1px solid var(--border-color)',
+        }
+      case 'danger':
+        return {
+          background: 'var(--color-danger)',
+          color: '#FFFFFF',
+          boxShadow: '0 2px 8px -2px color-mix(in srgb, var(--color-danger) 40%, transparent)',
+        }
+      case 'ghost':
+        return {
+          background: 'transparent',
+          color: 'var(--text-secondary)',
+        }
+    }
+  })()
+
   return (
     <button
       type="button"
       {...rest}
       disabled={isDisabled}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium transition-all duration-200 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 ${VARIANT_CLASS[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium transition-all duration-200 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+      style={style}
+      onMouseEnter={(e) => {
+        if (isDisabled) return
+        const el = e.currentTarget as HTMLElement
+        if (variant === 'primary') {
+          el.style.background = 'color-mix(in srgb, var(--text-primary) 88%, transparent)'
+        } else if (variant === 'secondary') {
+          el.style.background = 'var(--bg-hover)'
+          el.style.borderColor = 'var(--border-strong)'
+        } else if (variant === 'danger') {
+          el.style.background = 'color-mix(in srgb, var(--color-danger) 85%, transparent)'
+        } else if (variant === 'ghost') {
+          el.style.background = 'var(--bg-hover)'
+          el.style.color = 'var(--text-primary)'
+        }
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget as HTMLElement
+        el.style.background = style.background as string
+        el.style.color = style.color as string
+        if (variant === 'secondary') el.style.borderColor = 'var(--border-color)'
+      }}
     >
       {loading ? (
         <span

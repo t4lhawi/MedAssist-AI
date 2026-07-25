@@ -60,8 +60,8 @@ const CONNECTION_TONE: Record<
   inactive: {
     dot: 'bg-[#9CA3AF]',
     pulse: 'bg-[#9CA3AF]',
-    chip: 'bg-[#F5F5F7] text-[#6B7280]',
-    chipText: 'text-[#6B7280]',
+    chip: 'bg-[#F5F5F7] text-[#6B7280] dark:text-text-secondary',
+    chipText: 'text-[#6B7280] dark:text-text-secondary',
     label: 'Inactive',
   },
 }
@@ -102,10 +102,10 @@ function SensorTile({
       data-sensor={type}
       className={`group/sensor relative overflow-hidden rounded-xl border p-2.5 transition-all duration-200 ${
         isActive
-          ? 'border-[#ECECEC] bg-white hover:border-[#DCDCDC] hover:shadow-[0_4px_14px_-6px_rgba(15,23,42,0.08)]'
+          ? 'border-[#ECECEC] dark:border-border bg-white dark:bg-card hover:border-[#DCDCDC] hover:shadow-[0_4px_14px_-6px_rgba(15,23,42,0.08)]'
           : isOffline
           ? 'border-amber-200/70 bg-amber-50/30'
-          : 'border-dashed border-[#E5E5E5] bg-[#FAFAFA]'
+          : 'border-dashed border-[#E5E5E5] bg-[#FAFAFA] dark:bg-hover'
       }`}
     >
       <div className="mb-1.5 flex items-center justify-between gap-1.5">
@@ -116,12 +116,12 @@ function SensorTile({
                 ? 'bg-[#EFF4FF] text-[#3B82F6]'
                 : isOffline
                 ? 'bg-amber-100 text-amber-700'
-                : 'bg-[#F5F5F7] text-[#9CA3AF]'
+                : 'bg-[#F5F5F7] text-[#9CA3AF] dark:text-text-muted'
             }`}
           >
             <Icon size={11} strokeWidth={2.2} />
           </span>
-          <p className="truncate text-[10.5px] font-medium text-[#6B7280]">{title}</p>
+          <p className="truncate text-[10.5px] font-medium text-[#6B7280] dark:text-text-secondary">{title}</p>
         </div>
         {isActive && (
           <span className="relative flex h-1.5 w-1.5 shrink-0" aria-label="Capteur actif">
@@ -132,18 +132,18 @@ function SensorTile({
       </div>
 
       {state === 'not_installed' ? (
-        <p className="text-[12px] font-medium text-[#9CA3AF]">Non installé</p>
+        <p className="text-[12px] font-medium text-[#9CA3AF] dark:text-text-muted">Non installé</p>
       ) : (
         <>
           <p
             className={`text-[15px] font-semibold leading-none tracking-[-0.01em] ${
-              isActive ? 'text-[#111111]' : 'text-[#6B7280]'
+              isActive ? 'text-[#111111] dark:text-text-primary' : 'text-[#6B7280] dark:text-text-secondary'
             }`}
           >
             {last_value !== null && last_value !== undefined
               ? Number(last_value).toFixed(last_value % 1 === 0 ? 0 : 1)
               : '—'}
-            <span className="ml-1 text-[10px] font-medium text-[#9CA3AF]">
+            <span className="ml-1 text-[10px] font-medium text-[#9CA3AF] dark:text-text-muted">
               {last_unite || unit}
             </span>
           </p>
@@ -209,8 +209,8 @@ function ActionMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Actions"
-        className={`flex h-9 w-9 items-center justify-center rounded-xl text-[#6B7280] transition-all duration-200 hover:bg-[#F5F5F7] hover:text-[#111111] active:scale-95 ${
-          open ? 'bg-[#F5F5F7] text-[#111111]' : ''
+        className={`flex h-9 w-9 items-center justify-center rounded-xl text-[#6B7280] dark:text-text-secondary transition-all duration-200 hover:bg-[#F5F5F7] hover:text-[#111111] dark:text-text-primary active:scale-95 ${
+          open ? 'bg-[#F5F5F7] text-[#111111] dark:text-text-primary' : ''
         }`}
       >
         <MoreHorizontal size={16} strokeWidth={2.2} />
@@ -219,7 +219,7 @@ function ActionMenu({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-11 z-20 w-52 origin-top-right overflow-hidden rounded-2xl border border-[#ECECEC] bg-white/95 p-1.5 shadow-[0_18px_40px_-12px_rgba(15,23,42,0.18),0_4px_8px_-2px_rgba(15,23,42,0.04)] backdrop-blur-xl"
+          className="absolute right-0 top-11 z-20 w-52 origin-top-right overflow-hidden rounded-2xl border border-[#ECECEC] dark:border-border bg-white dark:bg-card p-1.5 shadow-[0_18px_40px_-12px_rgba(15,23,42,0.18),0_4px_8px_-2px_rgba(15,23,42,0.04)] backdrop-blur-xl"
           style={{ animation: 'menuIn 180ms cubic-bezier(0.25, 0.1, 0.25, 1) both' }}
         >
           <button
@@ -229,9 +229,9 @@ function ActionMenu({
               setOpen(false)
               onRename()
             }}
-            className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-[#111111] transition-colors duration-150 hover:bg-[#F5F5F7]"
+            className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-[#111111] dark:text-text-primary transition-colors duration-150 hover:bg-[#F5F5F7]"
           >
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#F5F5F7] text-[#6B7280]">
+            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#F5F5F7] text-[#6B7280] dark:text-text-secondary">
               <Pencil size={12} strokeWidth={2.2} />
             </span>
             Renommer
@@ -243,7 +243,7 @@ function ActionMenu({
               setOpen(false)
               onEditNote()
             }}
-            className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-[#111111] transition-colors duration-150 hover:bg-[#F5F5F7]"
+            className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-[#111111] dark:text-text-primary transition-colors duration-150 hover:bg-[#F5F5F7]"
           >
             <span className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-50 text-amber-600">
               <StickyNote size={12} strokeWidth={2.2} />
@@ -258,7 +258,7 @@ function ActionMenu({
               onToggleActif()
             }}
             disabled={busy}
-            className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-[#111111] transition-colors duration-150 hover:bg-[#F5F5F7] disabled:opacity-50"
+            className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-[#111111] dark:text-text-primary transition-colors duration-150 hover:bg-[#F5F5F7] disabled:opacity-50"
           >
             <span
               className={`flex h-6 w-6 items-center justify-center rounded-md ${
@@ -466,12 +466,12 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
       ? 'text-emerald-600'
       : quality === 'fair'
       ? 'text-amber-600'
-      : 'text-[#6B7280]'
+      : 'text-[#6B7280] dark:text-text-secondary'
 
   return (
     <>
       <article
-        className={`group/card relative flex flex-col overflow-hidden rounded-2xl border bg-white shadow-[0_1px_2px_rgba(17,17,17,0.04),0_8px_24px_-12px_rgba(17,17,17,0.10)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(17,17,17,0.04),0_18px_40px_-12px_rgba(17,17,17,0.18)] ${
+        className={`group/card relative flex flex-col overflow-hidden rounded-2xl border bg-white dark:bg-card shadow-[0_1px_2px_rgba(17,17,17,0.04),0_8px_24px_-12px_rgba(17,17,17,0.10)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(17,17,17,0.04),0_18px_40px_-12px_rgba(17,17,17,0.18)] ${
           state === 'inactive' ? 'border-[#E5E5E5] opacity-80' : 'border-[#ECECEC]'
         }`}
       >
@@ -486,7 +486,7 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
                     ? 'bg-emerald-50 text-emerald-600'
                     : state === 'offline'
                     ? 'bg-amber-50 text-amber-600'
-                    : 'bg-[#F5F5F7] text-[#6B7280]'
+                    : 'bg-[#F5F5F7] text-[#6B7280] dark:text-text-secondary'
                 }`}
               >
                 <StateIcon size={17} strokeWidth={2} />
@@ -512,14 +512,14 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
                   <span className="text-[10px] text-amber-600/80">— activité &gt; 5 min</span>
                 )}
                 {canEdit && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#F5F5F7] px-1.5 py-0.5 text-[9.5px] font-medium text-[#6B7280]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#F5F5F7] px-1.5 py-0.5 text-[9.5px] font-medium text-[#6B7280] dark:text-text-secondary">
                     <Cpu size={8} strokeWidth={2.4} />
                     ESP32
                   </span>
                 )}
               </div>
 
-              <h3 className="truncate text-[14.5px] font-semibold tracking-[-0.01em] text-[#111111]">
+              <h3 className="truncate text-[14.5px] font-semibold tracking-[-0.01em] text-[#111111] dark:text-text-primary">
                 {salle.salle}
               </h3>
 
@@ -528,13 +528,13 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
                   type="button"
                   onClick={copyIp}
                   title="Copier l'adresse IP"
-                  className="mt-0.5 group/ip inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 font-mono text-[10.5px] text-[#6B7280] transition-colors hover:bg-[#F5F5F7] hover:text-[#111111]"
+                  className="mt-0.5 group/ip inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 font-mono text-[10.5px] text-[#6B7280] dark:text-text-secondary transition-colors hover:bg-[#F5F5F7] hover:text-[#111111] dark:text-text-primary"
                 >
-                  <Wifi size={9} strokeWidth={2.6} className="text-[#9CA3AF] group-hover/ip:text-[#3B82F6]" />
+                  <Wifi size={9} strokeWidth={2.6} className="text-[#9CA3AF] dark:text-text-muted group-hover/ip:text-[#3B82F6]" />
                   {salle.ip}
                   <span
                     className={`transition-all duration-200 ${
-                      copied ? 'text-emerald-500' : 'text-[#9CA3AF] group-hover/ip:text-[#6B7280]'
+                      copied ? 'text-emerald-500' : 'text-[#9CA3AF] dark:text-text-muted group-hover/ip:text-[#6B7280] dark:text-text-secondary'
                     }`}
                   >
                     {copied ? <Check size={10} strokeWidth={2.6} /> : <Copy size={10} />}
@@ -544,10 +544,10 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
 
               {salle.note && (
                 <div
-                  className="mt-1 flex items-start gap-1.5 rounded-md bg-[#FAFAFA] px-1.5 py-1 text-[10.5px] leading-snug text-[#6B7280]"
+                  className="mt-1 flex items-start gap-1.5 rounded-md bg-[#FAFAFA] dark:bg-hover px-1.5 py-1 text-[10.5px] leading-snug text-[#6B7280] dark:text-text-secondary"
                   title={salle.note}
                 >
-                  <StickyNote size={10} strokeWidth={2.2} className="mt-0.5 shrink-0 text-[#9CA3AF]" />
+                  <StickyNote size={10} strokeWidth={2.2} className="mt-0.5 shrink-0 text-[#9CA3AF] dark:text-text-muted" />
                   <span className="line-clamp-2">{salle.note}</span>
                 </div>
               )}
@@ -570,7 +570,7 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
         {toastActif && (
           <div
             role="status"
-            className="mx-4 mt-2.5 flex items-center gap-2 rounded-xl border border-[#ECECEC] bg-[#FAFAFA] px-3 py-1.5 text-[11px] font-medium text-[#374151]"
+            className="mx-4 mt-2.5 flex items-center gap-2 rounded-xl border border-[#ECECEC] bg-[#FAFAFA] dark:bg-hover px-3 py-1.5 text-[11px] font-medium text-[#374151] dark:text-text-secondary"
             style={{ animation: 'fieldIn 200ms ease-out both' }}
           >
             {toastActif === 'on' ? (
@@ -608,22 +608,22 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
         </div>
 
         {/* ── Footer ────────────────────────────────────────── */}
-        <footer className="mt-auto flex items-center justify-between gap-2.5 border-t border-[#F0F0F0] bg-[#FAFAFA] px-4 py-2.5">
-          <div className="flex items-center gap-1.5 text-[10.5px] text-[#6B7280]">
+        <footer className="mt-auto flex items-center justify-between gap-2.5 border-t border-[#F0F0F0] bg-[#FAFAFA] dark:bg-hover px-4 py-2.5">
+          <div className="flex items-center gap-1.5 text-[10.5px] text-[#6B7280] dark:text-text-secondary">
             <span
               className={`flex h-4 w-4 items-center justify-center rounded-full ${
                 activeSensors === totalSensors && totalSensors > 0
                   ? 'bg-emerald-100 text-emerald-600'
                   : activeSensors > 0
                   ? 'bg-amber-100 text-amber-600'
-                  : 'bg-[#F5F5F7] text-[#9CA3AF]'
+                  : 'bg-[#F5F5F7] text-[#9CA3AF] dark:text-text-muted'
               }`}
             >
               <Activity size={9} strokeWidth={2.6} />
             </span>
-            <span className="font-medium tabular-nums text-[#374151]">
+            <span className="font-medium tabular-nums text-[#374151] dark:text-text-secondary">
               {activeSensors}
-              <span className="text-[#9CA3AF]">/{totalSensors}</span>
+              <span className="text-[#9CA3AF] dark:text-text-muted">/{totalSensors}</span>
             </span>
             <span>capteurs actifs</span>
           </div>
@@ -633,7 +633,7 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
               {quality === 'good' ? 'Excellente' : quality === 'fair' ? 'Moyenne' : 'Faible'}
             </span>
             <span className="text-[#D1D5DB]">·</span>
-            <span className="text-[#6B7280]">
+            <span className="text-[#6B7280] dark:text-text-secondary">
               {salle.derniere_mesure_le
                 ? `MAJ ${new Date(salle.derniere_mesure_le).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
                 : 'Aucune mesure'}
@@ -747,10 +747,10 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
             closeDisabled={deleteBusy}
           />
           <ModalBody>
-            <div className="rounded-2xl border border-[#ECECEC] bg-[#FAFAFA] p-4">
-              <p className="text-[13px] leading-relaxed text-[#374151]">
+            <div className="rounded-2xl border border-[#ECECEC] bg-[#FAFAFA] dark:bg-hover p-4">
+              <p className="text-[13px] leading-relaxed text-[#374151] dark:text-text-secondary">
                 Vous allez supprimer définitivement{' '}
-                <strong className="font-semibold text-[#111111]">« {salle.salle} »</strong>
+                <strong className="font-semibold text-[#111111] dark:text-text-primary">« {salle.salle} »</strong>
                 {salle.ip && (
                   <>
                     {' '}

@@ -20,19 +20,19 @@ export type FieldSize = 'sm' | 'md'
 
 const VARIANT_RING: Record<FieldVariant, { idle: string; focus: string; error: string }> = {
   default: {
-    idle: 'shadow-[inset_0_0_0_1px_rgba(15,23,42,0.08)]',
-    focus: 'shadow-[inset_0_0_0_1.5px_rgba(46,99,255,0.55),0_0_0_4px_rgba(46,99,255,0.08)]',
-    error: 'shadow-[inset_0_0_0_1.5px_rgba(220,38,38,0.6),0_0_0_4px_rgba(220,38,38,0.08)]',
+    idle: 'shadow-[inset_0_0_0_1px_var(--border-color)]',
+    focus: 'shadow-[inset_0_0_0_1.5px_color-mix(in_srgb,var(--color-primary)_55%,transparent),0_0_0_4px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]',
+    error: 'shadow-[inset_0_0_0_1.5px_color-mix(in_srgb,var(--color-danger)_65%,transparent),0_0_0_4px_color-mix(in_srgb,var(--color-danger)_10%,transparent)]',
   },
   ghost: {
-    idle: 'shadow-[inset_0_0_0_1px_rgba(15,23,42,0.06)]',
-    focus: 'shadow-[inset_0_0_0_1.5px_rgba(46,99,255,0.5),0_0_0_4px_rgba(46,99,255,0.06)]',
-    error: 'shadow-[inset_0_0_0_1.5px_rgba(220,38,38,0.6)]',
+    idle: 'shadow-[inset_0_0_0_1px_var(--border-color)]',
+    focus: 'shadow-[inset_0_0_0_1.5px_color-mix(in_srgb,var(--color-primary)_50%,transparent),0_0_0_4px_color-mix(in_srgb,var(--color-primary)_8%,transparent)]',
+    error: 'shadow-[inset_0_0_0_1.5px_color-mix(in_srgb,var(--color-danger)_60%,transparent)]',
   },
   amber: {
-    idle: 'shadow-[inset_0_0_0_1px_rgba(180,83,9,0.18)]',
-    focus: 'shadow-[inset_0_0_0_1.5px_rgba(217,119,6,0.55),0_0_0_4px_rgba(217,119,6,0.08)]',
-    error: 'shadow-[inset_0_0_0_1.5px_rgba(220,38,38,0.6)]',
+    idle: 'shadow-[inset_0_0_0_1px_color-mix(in_srgb,#B45309_22%,transparent)]',
+    focus: 'shadow-[inset_0_0_0_1.5px_color-mix(in_srgb,#D97706_55%,transparent),0_0_0_4px_color-mix(in_srgb,#D97706_10%,transparent)]',
+    error: 'shadow-[inset_0_0_0_1.5px_color-mix(in_srgb,var(--color-danger)_60%,transparent)]',
   },
 }
 
@@ -66,10 +66,13 @@ export const FieldShell = forwardRef<HTMLDivElement, FieldShellProps>(function F
       ref={ref}
       data-variant={variant}
       data-error={hasError ? 'true' : 'false'}
-      className={`group/field relative flex items-center gap-2 rounded-xl bg-white transition-all duration-200 ease-out ${SIZE_PADDING[size]} ${idleRing} ${disabled ? 'cursor-not-allowed opacity-60' : ''} ${className}`}
+      className={`group/field relative flex items-center gap-2 rounded-xl bg-input transition-all duration-200 ease-out ${SIZE_PADDING[size]} ${idleRing} ${disabled ? 'cursor-not-allowed opacity-60' : ''} ${className}`}
     >
       {leadingIcon && (
-        <span className="pointer-events-none flex shrink-0 text-slate-400 transition-colors duration-200 group-focus-within/field:text-blue-500">
+        <span
+          className="pointer-events-none flex shrink-0 text-text-muted transition-colors duration-200 group-focus-within/field:text-brand"
+          style={{ color: 'var(--text-muted)' }}
+        >
           {leadingIcon}
         </span>
       )}
@@ -78,7 +81,8 @@ export const FieldShell = forwardRef<HTMLDivElement, FieldShellProps>(function F
         <button
           type="button"
           onClick={onClear}
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-slate-300 transition-colors hover:bg-slate-100 hover:text-slate-600"
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-hover"
+          style={{ color: 'var(--text-muted)' }}
           title="Effacer"
           tabIndex={-1}
         >
@@ -86,7 +90,10 @@ export const FieldShell = forwardRef<HTMLDivElement, FieldShellProps>(function F
         </button>
       )}
       {trailingIcon && (
-        <span className="flex shrink-0 text-slate-400 transition-colors duration-200 group-focus-within/field:text-blue-500">
+        <span
+          className="flex shrink-0 text-text-muted transition-colors duration-200 group-focus-within/field:text-brand"
+          style={{ color: 'var(--text-muted)' }}
+        >
           {trailingIcon}
         </span>
       )}
@@ -130,7 +137,8 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps & React.Inp
       <button
         type="button"
         onClick={() => setShowPw(v => !v)}
-        className="flex h-6 w-6 items-center justify-center text-slate-400 transition-colors hover:text-slate-600"
+        className="flex h-6 w-6 items-center justify-center transition-colors"
+        style={{ color: 'var(--text-muted)' }}
         tabIndex={-1}
         title={showPw ? 'Masquer' : 'Afficher'}
       >
@@ -145,7 +153,10 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps & React.Inp
     return (
       <label htmlFor={id} className={`block ${containerClassName}`}>
         {label && (
-          <span className="mb-1.5 flex items-center justify-between text-[11.5px] font-medium uppercase tracking-wide text-slate-500">
+          <span
+            className="mb-1.5 flex items-center justify-between text-[11.5px] font-medium uppercase tracking-wide"
+            style={{ color: 'var(--text-secondary)' }}
+          >
             {label}
             {success && <Check size={12} className="text-emerald-500" strokeWidth={2.6} />}
           </span>
@@ -165,11 +176,15 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps & React.Inp
             id={id}
             {...inputProps}
             type={effectiveType}
-            className={`w-full border-0 bg-transparent p-0 text-slate-900 outline-none placeholder:text-slate-400 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 ${inputClassName}`}
+            className={`w-full border-0 bg-transparent p-0 outline-none placeholder:text-text-muted focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 ${inputClassName}`}
+            style={{ color: 'var(--text-primary)' }}
           />
         </FieldShell>
         {(error || hint) && (
-          <p className={`mt-1.5 flex items-start gap-1 text-[11.5px] ${error ? 'font-medium text-red-600' : 'text-slate-400'}`}>
+          <p
+            className={`mt-1.5 flex items-start gap-1 text-[11.5px] ${error ? 'font-medium text-red-600' : ''}`}
+            style={error ? undefined : { color: 'var(--text-muted)' }}
+          >
             {error ? (
               <>
                 <AlertCircle size={11} className="mt-0.5 shrink-0" />
@@ -219,7 +234,8 @@ export function SelectField({
       {label && (
         <label
           htmlFor={id}
-          className="mb-1.5 block text-[11.5px] font-medium uppercase tracking-wide text-slate-500"
+          className="mb-1.5 block text-[11.5px] font-medium uppercase tracking-wide"
+          style={{ color: 'var(--text-secondary)' }}
         >
           {label}
         </label>
@@ -229,7 +245,8 @@ export function SelectField({
           <select
             id={id}
             {...selectProps}
-            className="w-full appearance-none border-0 bg-transparent p-0 pr-7 text-slate-900 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="w-full appearance-none border-0 bg-transparent p-0 pr-7 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            style={{ color: 'var(--text-primary)' }}
           >
             {children}
           </select>
@@ -238,7 +255,8 @@ export function SelectField({
         <svg
           viewBox="0 0 20 20"
           aria-hidden="true"
-          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-transform duration-200 group-focus-within/field:rotate-180 group-focus-within/field:text-blue-500"
+          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted transition-transform duration-200 group-focus-within/field:rotate-180 group-focus-within/field:text-brand"
+          style={{ color: 'var(--text-muted)' }}
         >
           <path
             d="M5 7.5l5 5 5-5"
@@ -251,7 +269,10 @@ export function SelectField({
         </svg>
       </div>
       {(error || hint) && (
-        <p className={`mt-1.5 text-[11.5px] ${error ? 'font-medium text-red-600' : 'text-slate-400'}`}>
+        <p
+          className={`mt-1.5 text-[11.5px] ${error ? 'font-medium text-red-600' : ''}`}
+          style={error ? undefined : { color: 'var(--text-muted)' }}
+        >
           {error || hint}
         </p>
       )}
@@ -310,7 +331,8 @@ export function SearchField({
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         autoFocus={autoFocus}
-        className="w-full border-0 bg-transparent p-0 text-slate-900 outline-none placeholder:text-slate-400 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+        className="w-full border-0 bg-transparent p-0 outline-none placeholder:text-text-muted focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+        style={{ color: 'var(--text-primary)' }}
       />
     </FieldShell>
   )

@@ -35,22 +35,35 @@ export default function Select({ options, value, onChange, placeholder = 'Sélec
         type="button"
         onClick={() => setOpen(v => !v)}
         className={`flex w-full items-center justify-between gap-2 rounded-xl border px-3.5 py-2.5 text-left text-[13.5px] transition-colors ${
-          open ? 'border-blue-300 bg-white' : 'border-slate-200 bg-white hover:bg-slate-50'
+          open ? '' : 'hover:bg-hover'
         }`}
+        style={{
+          background: 'var(--bg-card)',
+          borderColor: open ? 'var(--color-primary)' : 'var(--border-color)',
+          color: selected ? 'var(--text-primary)' : 'var(--text-muted)',
+        }}
       >
-        <span className={selected ? 'truncate text-slate-800' : 'truncate text-slate-400'}>
-          {selected ? selected.label : placeholder}
-        </span>
+        <span className="truncate">{selected ? selected.label : placeholder}</span>
         <ChevronDown
           size={15}
-          className={`shrink-0 text-slate-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          className={`shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          style={{ color: 'var(--text-muted)' }}
         />
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-30 max-h-64 origin-top animate-[selectIn_0.12s_ease-out] overflow-auto rounded-xl border border-slate-200 bg-white/95 p-1.5 shadow-[0_10px_30px_-8px_rgba(0,0,0,0.18)] backdrop-blur-xl">
+        <div
+          className="absolute left-0 right-0 top-[calc(100%+6px)] z-30 max-h-64 origin-top animate-[selectIn_0.12s_ease-out] overflow-auto rounded-xl border p-1.5 backdrop-blur-xl"
+          style={{
+            background: 'color-mix(in srgb, var(--bg-elevated) 96%, transparent)',
+            borderColor: 'var(--border-color)',
+            boxShadow: '0 10px 30px -8px var(--shadow-3)',
+          }}
+        >
           {options.length === 0 && (
-            <p className="px-3 py-2.5 text-[13px] text-slate-400">Aucune option</p>
+            <p className="px-3 py-2.5 text-[13px]" style={{ color: 'var(--text-muted)' }}>
+              Aucune option
+            </p>
           )}
           {options.map(opt => {
             const isSelected = opt.value === value
@@ -62,12 +75,23 @@ export default function Select({ options, value, onChange, placeholder = 'Sélec
                   onChange(opt.value)
                   setOpen(false)
                 }}
-                className={`flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-[13.5px] transition-colors ${
-                  isSelected ? 'bg-blue-50 font-medium text-blue-600' : 'text-slate-700 hover:bg-slate-50'
-                }`}
+                className="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-[13.5px] transition-colors"
+                style={{
+                  background: isSelected
+                    ? 'color-mix(in srgb, var(--color-primary) 12%, transparent)'
+                    : 'transparent',
+                  color: isSelected ? 'var(--color-primary)' : 'var(--text-primary)',
+                  fontWeight: isSelected ? 500 : 400,
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)'
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent'
+                }}
               >
                 <span className="truncate">{opt.label}</span>
-                {isSelected && <Check size={15} strokeWidth={2.4} className="shrink-0 text-blue-600" />}
+                {isSelected && <Check size={15} strokeWidth={2.4} className="shrink-0" style={{ color: 'var(--color-primary)' }} />}
               </button>
             )
           })}

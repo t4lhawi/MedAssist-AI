@@ -55,8 +55,8 @@ export default function Sidebar({ alertCount = 0 }: Props) {
     <aside
       className="hidden w-60 shrink-0 flex-col md:flex"
       style={{
-        background: '#FFFFFF',
-        borderRight: '1px solid #ECECEC',
+        background: 'var(--bg-card)',
+        borderRight: '1px solid var(--border-color)',
       }}
     >
       <nav className="flex flex-1 flex-col gap-0.5 p-3 pt-4">
@@ -68,8 +68,8 @@ export default function Sidebar({ alertCount = 0 }: Props) {
             className={({ isActive }) =>
               `group relative flex items-center gap-3 rounded-2xl px-4 py-2.5 text-[13.5px] font-medium transition-all duration-200 ${
                 isActive
-                  ? 'text-[#111111]'
-                  : 'text-[#6B7280] hover:text-[#111111] hover:bg-[#F5F5F7]'
+                  ? 'text-text-primary'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-hover'
               }`
             }
           >
@@ -80,22 +80,23 @@ export default function Sidebar({ alertCount = 0 }: Props) {
                   <span
                     className="absolute inset-0 rounded-2xl"
                     style={{
-                      background: '#FFFFFF',
-                      boxShadow: '0 1px 2px rgba(17,17,17,0.06), 0 1px 8px -2px rgba(17,17,17,0.08)',
+                      background: 'var(--bg-card)',
+                      boxShadow: '0 1px 2px var(--shadow-1), 0 1px 8px -2px var(--shadow-2)',
+                      border: '1px solid var(--border-color)',
                     }}
                   />
                 )}
                 <span
                   className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl transition-colors duration-200 ${
-                    isActive ? '' : 'group-hover:bg-[#F5F5F7]'
+                    isActive ? '' : 'group-hover:bg-hover'
                   }`}
-                  style={isActive ? { color: '#3B82F6' } : { color: '#6B7280' }}
+                  style={isActive ? { color: 'var(--color-primary)' } : { color: 'var(--text-secondary)' }}
                 >
                   <Icon size={16} strokeWidth={2} />
                   {badge !== undefined && badge > 0 && (
                     <span
                       className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold text-white"
-                      style={{ background: '#3B82F6' }}
+                      style={{ background: 'var(--color-primary)' }}
                     >
                       {badge > 9 ? '9+' : badge}
                     </span>
@@ -109,14 +110,14 @@ export default function Sidebar({ alertCount = 0 }: Props) {
       </nav>
 
       {/* Bottom: Profile, Logout */}
-      <div className="border-t p-3" style={{ borderColor: '#F5F5F7' }}>
+      <div className="border-t p-3" style={{ borderColor: 'var(--border-color)' }}>
         <NavLink
           to="/profile"
           className={({ isActive }) =>
             `group relative mb-2 flex items-center gap-3 rounded-2xl px-4 py-2.5 text-[13px] font-medium transition-all duration-200 ${
               isActive
-                ? 'text-[#111111]'
-                : 'text-[#6B7280] hover:text-[#111111] hover:bg-[#F5F5F7]'
+                ? 'text-text-primary'
+                : 'text-text-secondary hover:text-text-primary hover:bg-hover'
             }`
           }
         >
@@ -126,14 +127,19 @@ export default function Sidebar({ alertCount = 0 }: Props) {
                 <span
                   className="absolute inset-0 rounded-2xl"
                   style={{
-                    background: '#FFFFFF',
-                    boxShadow: '0 1px 2px rgba(17,17,17,0.06), 0 1px 8px -2px rgba(17,17,17,0.08)',
+                    background: 'var(--bg-card)',
+                    boxShadow: '0 1px 2px var(--shadow-1), 0 1px 8px -2px var(--shadow-2)',
+                    border: '1px solid var(--border-color)',
                   }}
                 />
               )}
               <span
                 className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl"
-                style={isActive ? { color: '#3B82F6' } : { background: '#F5F5F7', color: '#6B7280' }}
+                style={
+                  isActive
+                    ? { color: 'var(--color-primary)' }
+                    : { background: 'var(--bg-hover)', color: 'var(--text-secondary)' }
+                }
               >
                 <UserCircle size={15} strokeWidth={2} />
               </span>
@@ -144,9 +150,20 @@ export default function Sidebar({ alertCount = 0 }: Props) {
 
         <button
           onClick={logout}
-          className="flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-[13px] font-medium text-[#EF4444] transition-colors hover:bg-red-50"
+          className="flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-[13px] font-medium transition-colors"
+          style={{ color: 'var(--color-danger)' }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.background =
+              'color-mix(in srgb, var(--color-danger) 12%, transparent)'
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.background = 'transparent'
+          }}
         >
-          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-red-50">
+          <span
+            className="flex h-7 w-7 items-center justify-center rounded-xl"
+            style={{ background: 'color-mix(in srgb, var(--color-danger) 14%, transparent)' }}
+          >
             <Power size={15} strokeWidth={2} />
           </span>
           Déconnexion
@@ -170,10 +187,10 @@ export function MobileNav({ alertCount = 0 }: Props) {
     <nav
       className="fixed inset-x-0 bottom-0 z-30 border-t md:hidden"
       style={{
-        background: 'rgba(255,255,255,0.86)',
+        background: 'color-mix(in srgb, var(--bg-elevated) 86%, transparent)',
         backdropFilter: 'blur(20px) saturate(180%)',
         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-        borderColor: '#ECECEC',
+        borderColor: 'var(--border-color)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
     >
@@ -185,18 +202,25 @@ export function MobileNav({ alertCount = 0 }: Props) {
             end={to === '/'}
             className={({ isActive }) =>
               `relative flex flex-1 flex-col items-center gap-0.5 rounded-2xl px-1 py-1.5 transition-colors duration-200 active:scale-95 ${
-                isActive ? 'text-[#111111]' : 'text-[#9CA3AF]'
+                isActive ? 'text-text-primary' : 'text-text-muted'
               }`
             }
           >
             {({ isActive }) => (
               <>
                 <span className="relative">
-                  <Icon size={20} strokeWidth={isActive ? 2.4 : 2} style={isActive ? { color: '#3B82F6' } : undefined} />
+                  <Icon
+                    size={20}
+                    strokeWidth={isActive ? 2.4 : 2}
+                    style={isActive ? { color: 'var(--color-primary)' } : undefined}
+                  />
                   {badge !== undefined && badge > 0 && (
                     <span
-                      className="absolute -right-2 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-0.5 text-[8px] font-bold text-white ring-2 ring-white"
-                      style={{ background: '#EF4444' }}
+                      className="absolute -right-2 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-0.5 text-[8px] font-bold text-white"
+                      style={{
+                        background: 'var(--color-danger)',
+                        boxShadow: '0 0 0 2px var(--bg-elevated)',
+                      }}
                     >
                       {badge > 9 ? '9+' : badge}
                     </span>
@@ -212,7 +236,10 @@ export function MobileNav({ alertCount = 0 }: Props) {
         <button
           onClick={logout}
           title="Déconnexion"
-          className="flex flex-1 flex-col items-center gap-0.5 rounded-2xl px-1 py-1.5 text-[#9CA3AF] transition-colors duration-200 active:scale-95 hover:text-[#EF4444]"
+          className="flex flex-1 flex-col items-center gap-0.5 rounded-2xl px-1 py-1.5 transition-colors duration-200 active:scale-95"
+          style={{ color: 'var(--text-muted)' }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--color-danger)' }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)' }}
         >
           <Power size={20} strokeWidth={2} />
           <span className="text-[9.5px] font-medium">Quitter</span>

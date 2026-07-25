@@ -8,14 +8,14 @@ html {
 }
 
 body {
-  @apply bg-[#F5F5F7] text-[#111111] font-sans antialiased;
+  @apply bg-bg text-text-primary font-sans antialiased;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 /* ─── Custom Selection & Focus ─────────────────────────────── */
 ::selection {
-  background-color: rgba(59, 130, 246, 0.15);
-  color: #111111;
+  background-color: rgba(59, 130, 246, 0.25);
+  color: inherit;
 }
 
 button,
@@ -57,17 +57,29 @@ textarea:focus-visible {
 
 
 :root {
-  /* ─── Design Tokens ─────────────────────────────────────── */
-  --color-primary: #3B82F6;
+  /* ─── Surface tokens (light) ───────────────────────────── */
   --bg-main: #F5F5F7;
   --bg-card: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+  --bg-hover: #F5F5F7;
+  --bg-input: #F5F5F7;
   --border-color: #ECECEC;
+  --border-strong: #D1D5DB;
   --text-primary: #111111;
   --text-secondary: #6B7280;
   --text-muted: #9CA3AF;
+  --color-primary: #3B82F6;
   --color-success: #10B981;
   --color-warning: #F59E0B;
   --color-danger: #EF4444;
+
+  /* Shadow / overlay tokens */
+  --shadow-1: rgba(17, 17, 17, 0.04);
+  --shadow-2: rgba(17, 17, 17, 0.10);
+  --shadow-3: rgba(17, 17, 17, 0.16);
+  --shimmer-bg: rgba(15, 23, 42, 0.06);
+  --shimmer-sweep: rgba(255, 255, 255, 0.85);
+  --backdrop: rgba(11, 11, 15, 0.45);
 
   /* Apple-style easing: quick to respond, gentle to settle */
   --ease-out: cubic-bezier(0.25, 0.1, 0.25, 1);
@@ -75,6 +87,31 @@ textarea:focus-visible {
   --dur-fast: 120ms;
   --dur-base: 200ms;
   --dur-slow: 300ms;
+}
+
+/* ─── Dark surface tokens ─────────────────────────────────── */
+.dark {
+  --bg-main: #0B1220;
+  --bg-card: #111827;
+  --bg-elevated: #1F2937;
+  --bg-hover: #1F2937;
+  --bg-input: #0F172A;
+  --border-color: #1F2937;
+  --border-strong: #374151;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --color-primary: #60A5FA;
+  --color-success: #34D399;
+  --color-warning: #FBBF24;
+  --color-danger: #F87171;
+
+  --shadow-1: rgba(0, 0, 0, 0.30);
+  --shadow-2: rgba(0, 0, 0, 0.45);
+  --shadow-3: rgba(0, 0, 0, 0.55);
+  --shimmer-bg: rgba(255, 255, 255, 0.06);
+  --shimmer-sweep: rgba(255, 255, 255, 0.10);
+  --backdrop: rgba(0, 0, 0, 0.65);
 }
 
 /* Respect users who've asked for less motion */
@@ -132,21 +169,22 @@ button:active:not(:disabled) {
 }
 
 /* ─── Card surfaces ─────────────────────────────────────────── */
-/* Resting depth so white cards lift off the #F5F5F7 page background
-   instead of reading as flat rectangles. */
+/* Resting depth so cards lift off the page background instead of
+   reading as flat rectangles. Shadow values come from tokens so dark
+   mode uses a deeper, inkier shadow. */
 .card {
-  box-shadow: 0 1px 2px rgba(17, 17, 17, 0.04), 0 6px 18px -10px rgba(17, 17, 17, 0.10);
+  box-shadow: 0 1px 2px var(--shadow-1), 0 6px 18px -10px var(--shadow-2);
 }
 
 /* Card hover lift effect (rests on the same shadow baseline as .card) */
 .card-lift {
-  box-shadow: 0 1px 2px rgba(17, 17, 17, 0.04), 0 6px 18px -10px rgba(17, 17, 17, 0.10);
+  box-shadow: 0 1px 2px var(--shadow-1), 0 6px 18px -10px var(--shadow-2);
   transition: transform 200ms cubic-bezier(0.25, 0.1, 0.25, 1),
               box-shadow 200ms cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 .card-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 32px -8px rgba(17, 17, 17, 0.16);
+  box-shadow: 0 12px 32px -8px var(--shadow-3);
 }
 
 /* Slide animations */
@@ -224,7 +262,7 @@ button:active:not(:disabled) {
 .shimmer-bar {
   position: relative;
   overflow: hidden;
-  background: rgba(15, 23, 42, 0.06);
+  background: var(--shimmer-bg);
 }
 .shimmer-bar::after {
   content: '';
@@ -233,7 +271,7 @@ button:active:not(:disabled) {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.85) 50%,
+    var(--shimmer-sweep) 50%,
     transparent 100%
   );
   animation: shimmer 1.4s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
@@ -311,7 +349,7 @@ button:active:not(:disabled) {
 .history-shimmer {
   position: relative;
   overflow: hidden;
-  background: rgba(15, 23, 42, 0.05);
+  background: var(--shimmer-bg);
 }
 .history-shimmer::after {
   content: '';
@@ -320,7 +358,7 @@ button:active:not(:disabled) {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.85) 50%,
+    var(--shimmer-sweep) 50%,
     transparent 100%
   );
   animation: historyShimmer 1.6s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
@@ -344,10 +382,10 @@ button:active:not(:disabled) {
    backgrounds. The ring is a single hairline at ~6% black. */
 .history-panel-edge {
   box-shadow:
-    inset 0 0 0 1px rgba(15, 23, 42, 0.05),
-    0 1px 2px rgba(15, 23, 42, 0.04),
-    0 30px 80px -24px rgba(15, 23, 42, 0.28),
-    0 12px 32px -12px rgba(15, 23, 42, 0.14);
+    inset 0 0 0 1px var(--border-color),
+    0 1px 2px var(--shadow-1),
+    0 30px 80px -24px var(--shadow-3),
+    0 12px 32px -12px var(--shadow-2);
 }
 
 /* Sticky subheader used by the search + filter bar so the
@@ -356,7 +394,7 @@ button:active:not(:disabled) {
   position: sticky;
   top: 0;
   z-index: 5;
-  background: rgba(245, 245, 247, 0.86);
+  background: color-mix(in srgb, var(--bg-main) 86%, transparent);
   backdrop-filter: saturate(180%) blur(10px);
   -webkit-backdrop-filter: saturate(180%) blur(10px);
 }
@@ -403,7 +441,7 @@ button:active:not(:disabled) {
 .alerts-skeleton {
   position: relative;
   overflow: hidden;
-  background: rgba(15, 23, 42, 0.05);
+  background: var(--shimmer-bg);
   border-radius: 8px;
 }
 .alerts-skeleton::after {
@@ -413,7 +451,7 @@ button:active:not(:disabled) {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.85) 50%,
+    var(--shimmer-sweep) 50%,
     transparent 100%
   );
   animation: historyShimmer 1.6s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
@@ -425,6 +463,6 @@ button:active:not(:disabled) {
   width: 3px;
   height: 3px;
   border-radius: 9999px;
-  background: #D4D4D8;
+  background: var(--border-strong);
   display: inline-block;
 }

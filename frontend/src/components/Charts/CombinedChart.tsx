@@ -14,6 +14,7 @@ import { fr } from 'date-fns/locale'
 import { Activity } from 'lucide-react'
 import { Mesure } from '../../types'
 import { MONITORING_TYPES } from '../../monitoring'
+import { useChartTheme } from './useChartTheme'
 
 interface Props {
   mesures: Mesure[]
@@ -36,6 +37,7 @@ const KNOWN_TYPES = new Set(MONITORING_TYPES.map(t => t.type))
 export default function CombinedChart({ mesures }: Props) {
   const [range, setRange] = useState<RangeKey>('all')
   const [hidden, setHidden] = useState<Record<string, boolean>>({})
+  const t = useChartTheme()
 
   const now = useMemo(
     () => Math.max(
@@ -89,15 +91,15 @@ export default function CombinedChart({ mesures }: Props) {
   return (
     <div
       className="card overflow-hidden rounded-3xl border"
-      style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
+      style={{ background: t.cardBg || 'var(--bg-card)', border: `1px solid ${t.cardBorder || 'var(--border-color)'}` }}
     >
       <div className="flex items-center justify-between gap-3 p-5 pb-0">
         <div className="min-w-0">
-          <h3 className="text-[14px] font-semibold tracking-tight" style={{ color: '#111111' }}>
+          <h3 className="text-[14px] font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
             Toutes les mesures
           </h3>
           {totalPoints > 0 && (
-            <p className="mt-0.5 text-[11px]" style={{ color: '#9CA3AF' }}>
+            <p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
               {totalPoints} mesure{totalPoints > 1 ? 's' : ''}
               {activeTypes.length > 0 && (
                 <>
@@ -110,7 +112,7 @@ export default function CombinedChart({ mesures }: Props) {
         </div>
 
         {/* Top-right time selector */}
-        <div className="inline-flex shrink-0 rounded-full p-0.5" style={{ background: '#F5F5F7' }}>
+        <div className="inline-flex shrink-0 rounded-full p-0.5" style={{ background: t.pillTrack || 'var(--bg-hover)' }}>
           {RANGES.map(r => (
             <button
               key={r.key}
@@ -118,14 +120,18 @@ export default function CombinedChart({ mesures }: Props) {
               className="rounded-full px-2.5 py-1 text-[11px] font-medium transition-all duration-200 active:scale-95"
               style={
                 range === r.key
-                  ? { background: '#FFFFFF', color: '#111111', boxShadow: '0 1px 2px rgba(17,17,17,0.08)' }
-                  : { background: 'transparent', color: '#9CA3AF' }
+                  ? {
+                      background: t.pillActiveBg || 'var(--bg-card)',
+                      color: t.pillActiveFg || 'var(--text-primary)',
+                      boxShadow: '0 1px 2px var(--shadow-1)',
+                    }
+                  : { background: 'transparent', color: t.pillInactiveFg || 'var(--text-muted)' }
               }
               onMouseEnter={(e) => {
-                if (range !== r.key) (e.currentTarget as HTMLElement).style.color = '#6B7280'
+                if (range !== r.key) (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'
               }}
               onMouseLeave={(e) => {
-                if (range !== r.key) (e.currentTarget as HTMLElement).style.color = '#9CA3AF'
+                if (range !== r.key) (e.currentTarget as HTMLElement).style.color = t.pillInactiveFg || 'var(--text-muted)'
               }}
             >
               {r.label}
@@ -138,14 +144,14 @@ export default function CombinedChart({ mesures }: Props) {
         <div className="flex h-[260px] flex-col items-center justify-center px-5 text-center">
           <div
             className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl"
-            style={{ background: '#F5F5F7' }}
+            style={{ background: t.pillTrack || 'var(--bg-hover)' }}
           >
-            <Activity size={20} strokeWidth={1.6} style={{ color: '#D1D5DB' }} />
+            <Activity size={20} strokeWidth={1.6} style={{ color: t.emptyIcon || 'var(--border-strong)' }} />
           </div>
-          <p className="text-[13px] font-semibold" style={{ color: '#6B7280' }}>
+          <p className="text-[13px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
             En attente de mesures
           </p>
-          <p className="mt-1 text-[12px]" style={{ color: '#9CA3AF' }}>
+          <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
             {range === 'all' ? 'Aucune mesure disponible' : 'Aucune mesure sur cette période'}
           </p>
         </div>
@@ -153,32 +159,32 @@ export default function CombinedChart({ mesures }: Props) {
         <div className="p-5 pt-3">
           <ResponsiveContainer width="100%" height={280}>
             <LC data={data} margin={{ left: 2, right: 2, top: 8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="0" vertical={false} stroke="#F3F4F6" />
+              <CartesianGrid strokeDasharray="0" vertical={false} stroke={t.grid || 'var(--border-color)'} />
               <XAxis
                 dataKey="time"
-                tick={{ fontSize: 11, fill: '#9CA3AF', fontFamily: 'Inter, sans-serif' }}
+                tick={{ fontSize: 11, fill: t.tick || 'var(--text-muted)', fontFamily: 'Inter, sans-serif' }}
                 tickLine={false}
                 axisLine={false}
                 minTickGap={24}
               />
-              {activeTypes.map((t, i) => {
+              {activeTypes.map((tt, i) => {
                 const side = i % 2 === 0 ? 'left' : 'right'
-                const visibleSeries = !hidden[t.type]
+                const visibleSeries = !hidden[tt.type]
                 return (
                   <YAxis
-                    key={t.type}
-                    yAxisId={t.type}
+                    key={tt.type}
+                    yAxisId={tt.type}
                     orientation={side}
                     hide={!visibleSeries || allHidden}
-                    tick={{ fontSize: 10, fill: t.chart, fontFamily: 'Inter, sans-serif' }}
+                    tick={{ fontSize: 10, fill: tt.chart, fontFamily: 'Inter, sans-serif' }}
                     tickLine={false}
                     axisLine={false}
                     width={38}
                     label={{
-                      value: t.unit,
+                      value: tt.unit,
                       angle: side === 'left' ? -90 : 90,
                       position: side === 'left' ? 'insideLeft' : 'insideRight',
-                      style: { fill: t.chart, fontSize: 10, fontFamily: 'Inter, sans-serif' },
+                      style: { fill: tt.chart, fontSize: 10, fontFamily: 'Inter, sans-serif' },
                       offset: 6,
                     }}
                   />
@@ -190,15 +196,17 @@ export default function CombinedChart({ mesures }: Props) {
                   return [`${value}${unit ? ' ' + unit : ''}`, name]
                 }}
                 contentStyle={{
-                  border: 'none',
+                  border: `1px solid ${t.tooltipBorder || 'var(--border-color)'}`,
                   borderRadius: 14,
-                  boxShadow: '0 8px 24px -8px rgba(17, 17, 17, 0.15)',
+                  boxShadow: `0 8px 24px -8px ${t.tooltipShadow || 'var(--shadow-3)'}`,
                   fontSize: 12.5,
                   fontFamily: 'Inter, sans-serif',
                   padding: '8px 12px',
-                  background: '#FFFFFF',
+                  background: t.tooltipBg || 'var(--bg-elevated)',
+                  color: 'var(--text-primary)',
                 }}
-                labelStyle={{ color: '#6B7280', fontWeight: 500, marginBottom: 4 }}
+                labelStyle={{ color: 'var(--text-secondary)', fontWeight: 500, marginBottom: 4 }}
+                itemStyle={{ color: 'var(--text-primary)' }}
               />
               <Legend
                 iconType="circle"
@@ -206,27 +214,27 @@ export default function CombinedChart({ mesures }: Props) {
                 formatter={(value: string) => {
                   const unit = activeTypes.find(t => t.title === value)?.unit ?? ''
                   return (
-                    <span style={{ color: '#374151', cursor: 'pointer' }}>
+                    <span style={{ color: 'var(--text-primary)', cursor: 'pointer' }}>
                       {value}
-                      {unit ? <span style={{ color: '#9CA3AF' }}> ({unit})</span> : ''}
+                      {unit ? <span style={{ color: 'var(--text-muted)' }}> ({unit})</span> : ''}
                     </span>
                   )
                 }}
                 onClick={(entry: any) => toggleType(entry?.dataKey ?? entry?.value)}
               />
-              {activeTypes.map(t => (
+              {activeTypes.map(tt => (
                 <Line
-                  key={t.type}
-                  yAxisId={t.type}
+                  key={tt.type}
+                  yAxisId={tt.type}
                   type="monotone"
-                  dataKey={t.type}
-                  name={t.title}
-                  stroke={t.chart}
+                  dataKey={tt.type}
+                  name={tt.title}
+                  stroke={tt.chart}
                   strokeWidth={2.5}
                   dot={false}
-                  activeDot={{ r: 4, strokeWidth: 2, stroke: '#FFFFFF', fill: t.chart }}
+                  activeDot={{ r: 4, strokeWidth: 2, stroke: t.cardBg || 'var(--bg-card)', fill: tt.chart }}
                   connectNulls
-                  hide={hidden[t.type]}
+                  hide={hidden[tt.type]}
                   isAnimationActive={false}
                 />
               ))}

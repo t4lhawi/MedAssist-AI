@@ -65,9 +65,6 @@ def telecharger(
     db: Session = Depends(get_db),
     user=Depends(require_hospital_staff),
 ):
-    """Stream the original PDF for a document so the UI can offer a
-    download action. The file is served with the original filename via
-    Content-Disposition so the browser saves it as `<nom>.pdf`."""
     doc = crud.get_document(db, doc_id)
     if not doc:
         raise HTTPException(404, "Document introuvable")

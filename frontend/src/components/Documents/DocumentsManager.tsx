@@ -257,27 +257,27 @@ export default function DocumentsManager({ documents, onRefresh }: Props) {
       )}
 
       {/* ─── Toolbar ─────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[#ECECEC] bg-white p-2 shadow-[0_1px_2px_rgba(17,17,17,0.04),0_4px_14px_-8px_rgba(17,17,17,0.06)]">
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[#ECECEC] dark:border-border bg-white dark:bg-card p-2 shadow-[0_1px_2px_rgba(17,17,17,0.04),0_4px_14px_-8px_rgba(17,17,17,0.06)]">
         {/* Search */}
         <div className="relative min-w-0 flex-1">
           <Search
             size={14}
             strokeWidth={2.2}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-text-muted"
           />
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Rechercher par nom, statut ou date…"
             aria-label="Rechercher des documents"
-            className="w-full rounded-xl bg-slate-50 py-2 pl-9 pr-9 text-[13px] text-slate-900 placeholder:text-slate-400 outline-none transition-all duration-200 focus:bg-white focus:shadow-[inset_0_0_0_1.5px_rgba(46,99,255,0.55),0_0_0_4px_rgba(46,99,255,0.08)]"
+            className="w-full rounded-xl bg-slate-50 dark:bg-input py-2 pl-9 pr-9 text-[13px] text-slate-900 dark:text-text-primary placeholder:text-slate-400 dark:placeholder:dark:text-text-muted dark:text-text-muted outline-none transition-all duration-200 focus:bg-white dark:bg-card focus:shadow-[inset_0_0_0_1.5px_rgba(46,99,255,0.55),0_0_0_4px_rgba(46,99,255,0.08)]"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery('')}
               aria-label="Effacer la recherche"
-              className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-slate-300 transition-colors hover:bg-slate-100 hover:text-slate-600"
+              className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-slate-300 dark:text-text-muted transition-colors hover:bg-slate-100 dark:hover:dark:bg-elevated dark:bg-elevated hover:text-slate-600 dark:text-text-secondary"
             >
               <X size={12} strokeWidth={2.4} />
             </button>
@@ -288,7 +288,7 @@ export default function DocumentsManager({ documents, onRefresh }: Props) {
         <div
           role="tablist"
           aria-label="Filtrer par statut"
-          className="flex items-center gap-0.5 rounded-xl bg-slate-100 p-1"
+          className="flex items-center gap-0.5 rounded-xl bg-slate-100 dark:bg-elevated p-1"
         >
           <SegmentButton
             active={statusFilter === 'all'}
@@ -316,7 +316,7 @@ export default function DocumentsManager({ documents, onRefresh }: Props) {
         <SortMenu value={sortKey} onChange={setSortKey} />
 
         {/* View toggle */}
-        <div className="flex items-center gap-0.5 rounded-xl bg-slate-100 p-1" role="group" aria-label="Mode d'affichage">
+        <div className="flex items-center gap-0.5 rounded-xl bg-slate-100 dark:bg-elevated p-1" role="group" aria-label="Mode d'affichage">
           <ViewButton
             active={view === 'list'}
             onClick={() => setView('list')}
@@ -337,7 +337,7 @@ export default function DocumentsManager({ documents, onRefresh }: Props) {
           onClick={handleRefresh}
           disabled={refreshing}
           aria-label="Actualiser"
-          className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6B7280] transition-all duration-200 hover:bg-slate-100 hover:text-[#111111] active:scale-95 disabled:opacity-50"
+          className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6B7280] dark:text-text-secondary transition-all duration-200 hover:bg-slate-100 dark:hover:dark:bg-elevated dark:bg-elevated hover:text-[#111111] dark:text-text-primary active:scale-95 disabled:opacity-50"
         >
           <RefreshCw
             size={14}
@@ -400,15 +400,15 @@ export default function DocumentsManager({ documents, onRefresh }: Props) {
               closeDisabled={deleting}
             />
             <ModalBody>
-              <div className="flex items-center gap-3 rounded-2xl border border-[#ECECEC] bg-[#FAFAFA] p-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-500 shadow-sm">
+              <div className="flex items-center gap-3 rounded-2xl border border-[#ECECEC] bg-[#FAFAFA] dark:bg-hover p-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-card text-slate-500 dark:text-text-secondary shadow-sm">
                   <FileText size={18} strokeWidth={2} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13.5px] font-semibold text-[#111111]">
+                  <p className="truncate text-[13.5px] font-semibold text-[#111111] dark:text-text-primary">
                     {pendingDelete.nom}
                   </p>
-                  <p className="mt-0.5 text-[12px] text-[#6B7280]">
+                  <p className="mt-0.5 text-[12px] text-[#6B7280] dark:text-text-secondary">
                     {fmt(pendingDelete.taille)} ·{' '}
                     {format(new Date(pendingDelete.uploade_le), 'dd MMM yyyy', {
                       locale: fr,
@@ -424,7 +424,7 @@ export default function DocumentsManager({ documents, onRefresh }: Props) {
                 </span>
               </div>
 
-              <p className="mt-3 text-[12.5px] leading-relaxed text-[#6B7280]">
+              <p className="mt-3 text-[12.5px] leading-relaxed text-[#6B7280] dark:text-text-secondary">
                 Le document sera retiré de la base de connaissances et ne pourra plus
                 être cité par l'assistant IA.
               </p>
@@ -500,7 +500,7 @@ function UploadHero({
 
   return (
     <article
-      className={`relative overflow-hidden rounded-3xl border bg-white transition-all duration-200 ${
+      className={`relative overflow-hidden rounded-3xl border bg-white dark:bg-card transition-all duration-200 ${
         state === 'dragging'
           ? 'border-blue-400 shadow-[0_0_0_4px_rgba(59,130,246,0.10),0_12px_32px_-8px_rgba(59,130,246,0.18)]'
           : 'border-[#ECECEC] shadow-[0_1px_2px_rgba(17,17,17,0.04),0_8px_24px_-12px_rgba(17,17,17,0.10)]'
@@ -520,7 +520,7 @@ function UploadHero({
               ? 'bg-emerald-50/40'
               : state === 'error'
               ? 'bg-red-50/30'
-              : 'bg-white hover:bg-slate-50/40'
+              : 'bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-input'
           } ${uploading ? 'pointer-events-none' : ''}`}
         >
           {/* Illustration */}
@@ -549,7 +549,7 @@ function UploadHero({
           <div className="space-y-1">
             <p
               className={`text-[15px] font-semibold tracking-[-0.01em] ${
-                state === 'error' ? 'text-red-700' : 'text-[#111111]'
+                state === 'error' ? 'text-red-700' : 'text-[#111111] dark:text-text-primary'
               }`}
             >
               {state === 'uploading'
@@ -562,7 +562,7 @@ function UploadHero({
                 ? 'Relâchez pour téléverser'
                 : 'Déposez vos PDF ici'}
             </p>
-            <p className="text-[12.5px] text-[#6B7280]">
+            <p className="text-[12.5px] text-[#6B7280] dark:text-text-secondary">
               {state === 'uploading' && uploadName
                 ? uploadName
                 : state === 'success'
@@ -587,7 +587,7 @@ function UploadHero({
               <UploadCloud size={14} strokeWidth={2.2} />
               Choisir un PDF
             </button>
-            <span className="text-[11.5px] text-[#9CA3AF]">PDF uniquement</span>
+            <span className="text-[11.5px] text-[#9CA3AF] dark:text-text-muted">PDF uniquement</span>
           </div>
 
           <input
@@ -603,10 +603,10 @@ function UploadHero({
         </label>
 
         {/* ─── Right: progress + meta ──────────────────────── */}
-        <div className="flex flex-col gap-4 border-t border-[#F0F0F0] bg-[#FAFAFA]/60 p-5 lg:border-l lg:border-t-0">
+        <div className="flex flex-col gap-4 border-t border-[#F0F0F0] bg-[#FAFAFA] dark:bg-hover/60 p-5 lg:border-l lg:border-t-0">
           {/* Progress */}
           <div>
-            <div className="flex items-center justify-between text-[11.5px] font-medium text-[#6B7280]">
+            <div className="flex items-center justify-between text-[11.5px] font-medium text-[#6B7280] dark:text-text-secondary">
               <span className="uppercase tracking-wide">
                 {state === 'success' ? 'Complété' : 'Progression'}
               </span>
@@ -616,13 +616,13 @@ function UploadHero({
                     ? 'text-emerald-600'
                     : state === 'error'
                     ? 'text-red-600'
-                    : 'text-[#111111]'
+                    : 'text-[#111111] dark:text-text-primary'
                 }`}
               >
                 {state === 'success' ? '100%' : `${uploadProgress}%`}
               </span>
             </div>
-            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200/70">
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-elevated dark:bg-elevated">
               <div
                 className={`h-full rounded-full transition-all duration-200 ${
                   state === 'success'
@@ -637,8 +637,8 @@ function UploadHero({
               />
             </div>
             {state === 'uploading' && uploadName && (
-              <p className="mt-2 truncate text-[11.5px] text-[#6B7280]">
-                <span className="font-medium text-[#374151]">Envoi :</span> {uploadName}
+              <p className="mt-2 truncate text-[11.5px] text-[#6B7280] dark:text-text-secondary">
+                <span className="font-medium text-[#374151] dark:text-text-secondary">Envoi :</span> {uploadName}
               </p>
             )}
             {state === 'success' && uploadName && (
@@ -650,23 +650,23 @@ function UploadHero({
 
           {/* Specs */}
           <div className="grid grid-cols-2 gap-2 text-[11.5px]">
-            <div className="rounded-xl border border-[#ECECEC] bg-white px-3 py-2">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
+            <div className="rounded-xl border border-[#ECECEC] dark:border-border bg-white dark:bg-card px-3 py-2">
+              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9CA3AF] dark:text-text-muted">
                 Format
               </p>
-              <p className="mt-0.5 font-medium text-[#111111]">PDF</p>
+              <p className="mt-0.5 font-medium text-[#111111] dark:text-text-primary">PDF</p>
             </div>
-            <div className="rounded-xl border border-[#ECECEC] bg-white px-3 py-2">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
+            <div className="rounded-xl border border-[#ECECEC] dark:border-border bg-white dark:bg-card px-3 py-2">
+              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9CA3AF] dark:text-text-muted">
                 Taille max
               </p>
-              <p className="mt-0.5 font-medium text-[#111111]">20 Mo</p>
+              <p className="mt-0.5 font-medium text-[#111111] dark:text-text-primary">20 Mo</p>
             </div>
-            <div className="col-span-2 rounded-xl border border-[#ECECEC] bg-white px-3 py-2">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
+            <div className="col-span-2 rounded-xl border border-[#ECECEC] dark:border-border bg-white dark:bg-card px-3 py-2">
+              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9CA3AF] dark:text-text-muted">
                 Indexation
               </p>
-              <p className="mt-0.5 font-medium text-[#111111]">
+              <p className="mt-0.5 font-medium text-[#111111] dark:text-text-primary">
                 Automatique après téléversement
               </p>
             </div>
@@ -693,9 +693,9 @@ function SegmentButton({
   tone?: 'blue' | 'emerald' | 'amber'
 }) {
   const activeBg: Record<typeof tone, string> = {
-    blue: 'bg-white text-[#111111] shadow-sm',
-    emerald: 'bg-white text-emerald-700 shadow-sm',
-    amber: 'bg-white text-amber-700 shadow-sm',
+    blue: 'bg-white dark:bg-card text-[#111111] dark:text-text-primary shadow-sm',
+    emerald: 'bg-white dark:bg-card text-emerald-700 shadow-sm',
+    amber: 'bg-white dark:bg-card text-amber-700 shadow-sm',
   }
   return (
     <button
@@ -706,7 +706,7 @@ function SegmentButton({
       className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium transition-all duration-200 ${
         active
           ? activeBg[tone]
-          : 'text-[#6B7280] hover:text-[#111111]'
+          : 'text-[#6B7280] dark:text-text-secondary hover:text-[#111111] dark:text-text-primary'
       }`}
     >
       <span>{label}</span>
@@ -718,8 +718,8 @@ function SegmentButton({
                 ? 'bg-emerald-50 text-emerald-700'
                 : tone === 'amber'
                 ? 'bg-amber-50 text-amber-700'
-                : 'bg-slate-100 text-[#374151]'
-              : 'bg-slate-200/70 text-[#6B7280]'
+                : 'bg-slate-100 dark:bg-elevated text-[#374151] dark:text-text-secondary'
+              : 'bg-slate-200 dark:bg-elevated dark:bg-elevated text-[#6B7280] dark:text-text-secondary'
           }`}
         >
           {count}
@@ -748,8 +748,8 @@ function ViewButton({
       aria-pressed={active}
       className={`flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200 ${
         active
-          ? 'bg-white text-[#111111] shadow-sm'
-          : 'text-[#6B7280] hover:text-[#111111]'
+          ? 'bg-white dark:bg-card text-[#111111] dark:text-text-primary shadow-sm'
+          : 'text-[#6B7280] dark:text-text-secondary hover:text-[#111111] dark:text-text-primary'
       }`}
     >
       {icon}
@@ -788,7 +788,7 @@ function SortMenu({
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
-        className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-transparent bg-slate-100 px-3 text-[12.5px] font-medium text-[#374151] transition-all duration-200 hover:bg-slate-200/70 hover:text-[#111111]"
+        className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-transparent bg-slate-100 dark:bg-elevated px-3 text-[12.5px] font-medium text-[#374151] dark:text-text-secondary transition-all duration-200 hover:bg-slate-200 dark:bg-elevated hover:text-[#111111] dark:text-text-primary"
       >
         <ArrowUpDown size={13} strokeWidth={2.2} />
         <span className="hidden sm:inline">{labels[value]}</span>
@@ -797,7 +797,7 @@ function SortMenu({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-20 mt-1.5 w-44 origin-top-right overflow-hidden rounded-xl border border-[#ECECEC] bg-white p-1 shadow-[0_12px_32px_-8px_rgba(15,23,42,0.18)]"
+          className="absolute right-0 top-full z-20 mt-1.5 w-44 origin-top-right overflow-hidden rounded-xl border border-[#ECECEC] dark:border-border bg-white dark:bg-card p-1 shadow-[0_12px_32px_-8px_rgba(15,23,42,0.18)]"
           style={{ animation: 'dropIn 160ms var(--ease-out) both' }}
         >
           {(Object.keys(labels) as SortKey[]).map(k => (
@@ -811,7 +811,7 @@ function SortMenu({
               className={`flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] transition-colors duration-150 ${
                 value === k
                   ? 'bg-blue-50 text-blue-700 font-medium'
-                  : 'text-[#374151] hover:bg-slate-50'
+                  : 'text-[#374151] dark:text-text-secondary hover:bg-slate-50 dark:hover:dark:bg-input dark:bg-input'
               }`}
             >
               <span>{labels[k]}</span>
@@ -834,7 +834,7 @@ function DocumentsList({
   onDelete?: (d: Document) => void
 }) {
   return (
-    <div className="rounded-2xl border border-[#ECECEC] bg-white shadow-[0_1px_2px_rgba(17,17,17,0.04),0_4px_14px_-8px_rgba(17,17,17,0.06)]">
+    <div className="rounded-2xl border border-[#ECECEC] dark:border-border bg-white dark:bg-card shadow-[0_1px_2px_rgba(17,17,17,0.04),0_4px_14px_-8px_rgba(17,17,17,0.06)]">
       <ul className="divide-y divide-slate-100">
         {docs.map(d => (
           <DocumentListRow key={d.id} doc={d} onDelete={onDelete} />
@@ -853,16 +853,16 @@ function DocumentListRow({
 }) {
   const meta = statusMeta(doc.indexe)
   return (
-    <li className="group relative flex items-center gap-3 px-4 py-3 transition-colors duration-150 hover:bg-slate-50/70">
+    <li className="group relative flex items-center gap-3 px-4 py-3 transition-colors duration-150 hover:bg-slate-50 dark:hover:bg-input">
       {/* File icon */}
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-b from-slate-50 to-slate-100 text-slate-500 ring-1 ring-slate-200/70">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-b from-slate-50 to-slate-100 dark:from-elevated dark:to-input text-slate-500 dark:text-text-secondary ring-1 ring-slate-200/70 dark:ring-border">
         <FileText size={18} strokeWidth={2} />
       </div>
 
       {/* Name + meta */}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13.5px] font-semibold text-[#111111]">{doc.nom}</p>
-        <p className="mt-0.5 truncate text-[12px] text-[#6B7280]">
+        <p className="truncate text-[13.5px] font-semibold text-[#111111] dark:text-text-primary">{doc.nom}</p>
+        <p className="mt-0.5 truncate text-[12px] text-[#6B7280] dark:text-text-secondary">
           {fmt(doc.taille)} ·{' '}
           {format(new Date(doc.uploade_le), 'dd MMM yyyy', { locale: fr })}
         </p>
@@ -914,8 +914,8 @@ function ActionIconButton({
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const palette = {
     slate:
-      'text-[#6B7280] hover:bg-slate-100 hover:text-[#111111]',
-    red: 'text-[#6B7280] hover:bg-red-50 hover:text-red-600',
+      'text-[#6B7280] dark:text-text-secondary hover:bg-slate-100 dark:hover:dark:bg-elevated dark:bg-elevated hover:text-[#111111] dark:text-text-primary',
+    red: 'text-[#6B7280] dark:text-text-secondary hover:bg-red-50 hover:text-red-600',
   }[tone]
 
   return (
@@ -958,20 +958,20 @@ function DocumentCard({
 }) {
   const meta = statusMeta(doc.indexe)
   return (
-    <article className="group card-lift relative rounded-2xl border border-[#ECECEC] bg-white p-4">
+    <article className="group card-lift relative rounded-2xl border border-[#ECECEC] dark:border-border bg-white dark:bg-card p-4">
       <div className="flex items-start gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-b from-slate-50 to-slate-100 text-slate-500 ring-1 ring-slate-200/70">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-b from-slate-50 to-slate-100 dark:from-elevated dark:to-input text-slate-500 dark:text-text-secondary ring-1 ring-slate-200/70 dark:ring-border">
           <FileText size={22} strokeWidth={1.9} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="line-clamp-2 break-all text-[13.5px] font-semibold leading-snug text-[#111111]">
+          <p className="line-clamp-2 break-all text-[13.5px] font-semibold leading-snug text-[#111111] dark:text-text-primary">
             {doc.nom}
           </p>
-          <p className="mt-1 text-[12px] text-[#6B7280]">{fmt(doc.taille)}</p>
+          <p className="mt-1 text-[12px] text-[#6B7280] dark:text-text-secondary">{fmt(doc.taille)}</p>
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between text-[12px] text-[#6B7280]">
+      <div className="mt-3 flex items-center justify-between text-[12px] text-[#6B7280] dark:text-text-secondary">
         <span>{format(new Date(doc.uploade_le), 'dd MMM yyyy', { locale: fr })}</span>
         <span
           className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10.5px] font-semibold ${meta.className}`}
@@ -988,7 +988,7 @@ function DocumentCard({
       </div>
 
       {onDelete && (
-        <div className="mt-3 flex items-center justify-end gap-1 border-t border-slate-100 pt-3">
+        <div className="mt-3 flex items-center justify-end gap-1 border-t border-slate-100 dark:border-border pt-3">
           <DocumentActionsMenu doc={doc} onDelete={onDelete} />
           <ActionIconButton
             title="Supprimer"
@@ -1107,16 +1107,16 @@ function DocumentActionsMenu({
           role="menu"
           // The panel is right-aligned to the trigger so it doesn't
           // overflow the row on small screens.
-          className="absolute right-0 top-full z-30 mt-1.5 w-44 origin-top-right overflow-hidden rounded-xl border border-[#ECECEC] bg-white p-1 shadow-[0_12px_32px_-8px_rgba(15,23,42,0.18)]"
+          className="absolute right-0 top-full z-30 mt-1.5 w-44 origin-top-right overflow-hidden rounded-xl border border-[#ECECEC] dark:border-border bg-white dark:bg-card p-1 shadow-[0_12px_32px_-8px_rgba(15,23,42,0.18)]"
           style={{ animation: 'dropIn 160ms var(--ease-out) both' }}
         >
           <button
             type="button"
             role="menuitem"
             onClick={handleDownload}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#374151] transition-colors duration-150 hover:bg-slate-50"
+            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#374151] dark:text-text-secondary transition-colors duration-150 hover:bg-slate-50 dark:hover:dark:bg-input dark:bg-input"
           >
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 dark:bg-elevated text-slate-500 dark:text-text-secondary">
               <Download size={12} strokeWidth={2.2} />
             </span>
             <span>Télécharger</span>
@@ -1125,16 +1125,16 @@ function DocumentActionsMenu({
             type="button"
             role="menuitem"
             onClick={handleCopyName}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#374151] transition-colors duration-150 hover:bg-slate-50"
+            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#374151] dark:text-text-secondary transition-colors duration-150 hover:bg-slate-50 dark:hover:dark:bg-input dark:bg-input"
           >
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 dark:bg-elevated text-slate-500 dark:text-text-secondary">
               <Copy size={12} strokeWidth={2.2} />
             </span>
             <span>Copier le nom</span>
           </button>
           {onDelete && (
             <>
-              <div className="my-1 h-px bg-slate-100" />
+              <div className="my-1 h-px bg-slate-100 dark:bg-elevated" />
               <button
                 type="button"
                 role="menuitem"
@@ -1168,20 +1168,20 @@ function EmptyState({
 }) {
   if (hasQuery) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#ECECEC] bg-white px-4 py-14 text-center">
-        <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 text-slate-400 ring-1 ring-slate-200/70">
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#ECECEC] dark:border-border bg-white dark:bg-card px-4 py-14 text-center">
+        <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 dark:bg-input text-slate-400 dark:text-text-muted ring-1 ring-slate-200/70 dark:ring-border">
           <Filter size={22} strokeWidth={1.7} />
         </div>
-        <p className="text-[14.5px] font-semibold tracking-[-0.01em] text-[#111111]">
+        <p className="text-[14.5px] font-semibold tracking-[-0.01em] text-[#111111] dark:text-text-primary">
           Aucun document correspondant
         </p>
-        <p className="mt-1 max-w-sm text-[12.5px] leading-relaxed text-[#6B7280]">
+        <p className="mt-1 max-w-sm text-[12.5px] leading-relaxed text-[#6B7280] dark:text-text-secondary">
           Essayez d'ajuster votre recherche ou le filtre de statut pour voir plus de résultats.
         </p>
         <button
           type="button"
           onClick={onReset}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[#ECECEC] bg-white px-3.5 py-1.5 text-[12.5px] font-medium text-[#374151] transition-all duration-200 hover:bg-slate-50 active:scale-[0.97]"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[#ECECEC] dark:border-border bg-white dark:bg-card px-3.5 py-1.5 text-[12.5px] font-medium text-[#374151] dark:text-text-secondary transition-all duration-200 hover:bg-slate-50 dark:hover:dark:bg-input dark:bg-input active:scale-[0.97]"
         >
           <RefreshCw size={12} strokeWidth={2.2} />
           Réinitialiser les filtres
@@ -1191,10 +1191,10 @@ function EmptyState({
   }
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#ECECEC] bg-white px-4 py-16 text-center">
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#ECECEC] dark:border-border bg-white dark:bg-card px-4 py-16 text-center">
       {/* Illustration */}
       <div className="relative mb-5">
-        <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-b from-slate-50 to-slate-100 text-slate-400 ring-1 ring-slate-200/70">
+        <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-b from-slate-50 to-slate-100 dark:from-elevated dark:to-input text-slate-400 dark:text-text-muted ring-1 ring-slate-200/70 dark:ring-border">
           <FileText size={36} strokeWidth={1.4} />
         </div>
         <span className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white shadow-[0_4px_12px_-2px_rgba(59,130,246,0.5)]">
@@ -1202,14 +1202,14 @@ function EmptyState({
         </span>
       </div>
 
-      <p className="text-[16px] font-semibold tracking-[-0.01em] text-[#111111]">
+      <p className="text-[16px] font-semibold tracking-[-0.01em] text-[#111111] dark:text-text-primary">
         Aucun document pour l'instant.
       </p>
-      <p className="mt-1.5 max-w-sm text-[12.5px] leading-relaxed text-[#6B7280]">
+      <p className="mt-1.5 max-w-sm text-[12.5px] leading-relaxed text-[#6B7280] dark:text-text-secondary">
         Téléversez des protocoles et manuels PDF pour améliorer l'assistant IA.
       </p>
 
-      <p className="mt-5 text-[12.5px] font-medium text-[#111111]">
+      <p className="mt-5 text-[12.5px] font-medium text-[#111111] dark:text-text-primary">
         Téléversez votre premier document
       </p>
     </div>

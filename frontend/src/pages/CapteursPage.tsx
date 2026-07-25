@@ -42,8 +42,8 @@ export default function CapteursPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.85fr)]">
         <SensorsList capteurs={capteurs} onRefresh={loadCapteurs} />
         <div className="space-y-3">
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <label className="mb-2 block text-[12px] font-semibold text-slate-500">Historique d'un capteur</label>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-border dark:bg-card">
+            <label className="mb-2 block text-[12px] font-semibold text-slate-500 dark:text-text-secondary">Historique d'un capteur</label>
             <Select
               value={selected ? String(selected) : ''}
               onChange={v => setSelected(v ? Number(v) : null)}
@@ -64,9 +64,9 @@ export default function CapteursPage() {
           )}
 
           {selected && mesures.length === 0 && (
-            <div className="rounded-xl border border-dashed border-slate-200 bg-white p-10 text-center">
-              <Activity size={28} strokeWidth={1.5} className="mx-auto mb-2 text-slate-300" />
-              <p className="text-[13px] font-medium text-slate-400">Aucune mesure disponible pour ce capteur.</p>
+            <div className="rounded-xl border border-dashed border-slate-200 bg-white p-10 text-center dark:border-border dark:bg-card">
+              <Activity size={28} strokeWidth={1.5} className="mx-auto mb-2 text-slate-300 dark:text-text-muted" />
+              <p className="text-[13px] font-medium text-slate-400 dark:text-text-muted">Aucune mesure disponible pour ce capteur.</p>
             </div>
           )}
         </div>

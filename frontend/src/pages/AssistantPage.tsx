@@ -23,7 +23,7 @@ export default function AssistantPage() {
   return (
     <div
       className="mx-auto flex max-w-7xl flex-col gap-5 p-4 md:px-6"
-      style={{ color: '#111111', height: 'calc(100vh - 3.5rem)' }}
+      style={{ color: 'var(--text-primary)', height: 'calc(100vh - 3.5rem)' }}
     >
       <PageHeader
         category="Espace IA"
@@ -33,8 +33,8 @@ export default function AssistantPage() {
           <div className="flex flex-col items-end gap-2">
             {/* Status row — three quiet pills aligned to the right */}
             <div className="flex flex-wrap items-center justify-end gap-1.5">
-              <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-200/70 bg-white px-2.5 py-1 text-[11.5px] font-medium text-slate-600 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-                <BookOpen size={11} strokeWidth={2.2} className="shrink-0 text-slate-400" />
+              <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-200 dark:border-border bg-white dark:bg-card px-2.5 py-1 text-[11.5px] font-medium text-slate-600 dark:text-text-secondary shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+                <BookOpen size={11} strokeWidth={2.2} className="shrink-0 text-slate-400 dark:text-text-muted" />
                 <span className="tabular-nums">Documents indexés</span>
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-emerald-50/70 px-2.5 py-1 text-[11.5px] font-medium text-emerald-700">
@@ -45,8 +45,8 @@ export default function AssistantPage() {
                 <Sparkles size={10} strokeWidth={2.4} />
                 RAG · En ligne
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/70 bg-white px-2.5 py-1 text-[11.5px] font-medium text-slate-500 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-                <Calendar size={11} strokeWidth={2.2} className="shrink-0 text-slate-400" />
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-border bg-white dark:bg-card px-2.5 py-1 text-[11.5px] font-medium text-slate-500 dark:text-text-secondary shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+                <Calendar size={11} strokeWidth={2.2} className="shrink-0 text-slate-400 dark:text-text-muted" />
                 <span className="tabular-nums">{today}</span>
               </span>
             </div>
@@ -59,15 +59,15 @@ export default function AssistantPage() {
                 onClick={() => chatRef.current?.openHistory()}
                 title="Historique des conversations"
                 aria-label="Ouvrir l'historique des conversations"
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/70 bg-white px-3 py-1.5 text-[12.5px] font-medium text-slate-600 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 hover:shadow-[0_6px_18px_-8px_rgba(15,23,42,0.15)]"
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-border bg-white dark:bg-card px-3 py-1.5 text-[12.5px] font-medium text-slate-600 dark:text-text-secondary shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-slate-300 dark:hover:border-border-strong hover:bg-slate-50 dark:hover:dark:bg-input hover:text-slate-900 dark:text-text-primary hover:shadow-[0_6px_18px_-8px_rgba(15,23,42,0.15)]"
               >
                 <Clock3 size={13} strokeWidth={2.2} />
                 <span className="hidden sm:inline">Historique</span>
                 <span
                   aria-hidden="true"
-                  className="inline-flex h-4 min-w-[1rem] items-center justify-center gap-0.5 rounded-full bg-slate-100 px-1.5 text-[10px] font-semibold tabular-nums text-slate-600"
+                  className="inline-flex h-4 min-w-[1rem] items-center justify-center gap-0.5 rounded-full bg-slate-100 dark:bg-elevated px-1.5 text-[10px] font-semibold tabular-nums text-slate-600 dark:text-text-secondary"
                 >
-                  <MessageSquare size={9} strokeWidth={2.4} className="text-slate-400" />
+                  <MessageSquare size={9} strokeWidth={2.4} className="text-slate-400 dark:text-text-muted" />
                   {historyCount}
                 </span>
               </button>

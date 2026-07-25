@@ -2,10 +2,8 @@ import os
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
 from .database import engine, Base, SessionLocal
 from .mqtt_client import MqttIngestClient
 from .routers import auth, capteurs, mesures, alertes, documents, chat
@@ -16,14 +14,8 @@ from . import realtime as realtime_mod
 
 logger = logging.getLogger(__name__)
 
-
 # ── Background sweeper : purge les alertes > 24h ──────────────────
-# ``get_alertes`` filtre déjà les entrées trop vieilles côté lecture,
-# mais on supprime physiquement les lignes pour éviter que la table
-# grossisse sans borne. Le sweeper tourne sur sa propre tâche asyncio
-# avec un sleep long (1h) pour ne rien coûter.
 _SWEEPER_INTERVAL_SECONDS: int = 3600
-
 
 async def _alertes_sweeper() -> None:
     while True:
@@ -32,8 +24,6 @@ async def _alertes_sweeper() -> None:
         except asyncio.CancelledError:
             return
         try:
-            # Session jetable — l'opération est un DELETE unique, pas
-            # besoin d'un generator ``get_db``.
             db = SessionLocal()
             try:
                 deleted = crud.purge_old_alertes(db)
@@ -47,23 +37,14 @@ async def _alertes_sweeper() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Crée les tables au démarrage (idempotent). The Alembic migration is
-    # the source of truth for the schema; this is a safety net so a fresh
-    # DB without ``alembic upgrade head`` still boots.
     Base.metadata.create_all(bind=engine)
 
-    # Capture the running event loop BEFORE starting the MQTT thread,
-    # so the ingester can safely ``call_soon_threadsafe`` into our
-    # WebSocket subscribers' queues.
     realtime_mod.set_event_loop(asyncio.get_running_loop())
 
-    # Démarre le subscriber MQTT sur un thread en arrière-plan.
     mqtt_client = MqttIngestClient()
     mqtt_client.start()
     app.state.mqtt = mqtt_client
 
-    # Démarre le sweeper d'alertes sur la boucle asyncio (pas un thread
-    # séparé, on n'a pas besoin d'I/O bloquant).
     sweeper_task = asyncio.create_task(_alertes_sweeper())
     try:
         yield

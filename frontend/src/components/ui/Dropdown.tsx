@@ -162,7 +162,8 @@ export default function Dropdown({
       {label && (
         <label
           htmlFor={`${id}-trigger`}
-          className="mb-1.5 block text-[11.5px] font-medium uppercase tracking-wide text-slate-500"
+          className="mb-1.5 block text-[11.5px] font-medium uppercase tracking-wide"
+          style={{ color: 'var(--text-secondary)' }}
         >
           {label}
         </label>
@@ -177,28 +178,40 @@ export default function Dropdown({
         aria-expanded={open}
         aria-controls={`${id}-panel`}
         disabled={disabled}
-        className={`flex w-full items-center justify-between gap-2 rounded-xl bg-white text-left text-slate-900 shadow-[inset_0_0_0_1px_rgba(15,23,42,0.08)] transition-all duration-200 ease-out ${sizeClass} ${
-          open
-            ? 'shadow-[inset_0_0_0_1.5px_rgba(46,99,255,0.55),0_0_0_4px_rgba(46,99,255,0.08)]'
-            : 'hover:bg-slate-50 hover:shadow-[inset_0_0_0_1px_rgba(15,23,42,0.12)]'
+        className={`flex w-full items-center justify-between gap-2 rounded-xl text-left transition-all duration-200 ease-out ${sizeClass} ${
+          open ? '' : 'hover:bg-hover'
         } ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer active:scale-[0.99]'}`}
+        style={{
+          background: 'var(--bg-input)',
+          color: 'var(--text-primary)',
+          boxShadow: open
+            ? 'inset 0 0 0 1.5px color-mix(in srgb, var(--color-primary) 55%, transparent), 0 0 0 4px color-mix(in srgb, var(--color-primary) 10%, transparent)'
+            : 'inset 0 0 0 1px var(--border-color)',
+        }}
       >
         <span className="flex min-w-0 items-center gap-2">
           {leadingIcon && (
-            <span className="flex shrink-0 text-slate-400 transition-colors duration-200 group-data-[state=open]/drop:text-blue-500">
+            <span
+              className="flex shrink-0 transition-colors duration-200 group-data-[state=open]/drop:text-brand"
+              style={{ color: 'var(--text-muted)' }}
+            >
               {leadingIcon}
             </span>
           )}
-          <span className={`truncate ${selected ? '' : 'text-slate-400'}`}>
+          <span
+            className="truncate"
+            style={selected ? undefined : { color: 'var(--text-muted)' }}
+          >
             {selected ? selected.label : placeholder}
           </span>
         </span>
         <ChevronDown
           size={size === 'sm' ? 13 : 15}
           strokeWidth={2.4}
-          className={`shrink-0 text-slate-400 transition-all duration-300 ease-out group-data-[state=open]/drop:rotate-180 group-data-[state=open]/drop:text-blue-500 ${
-            open ? 'rotate-180 text-blue-500' : ''
+          className={`shrink-0 transition-all duration-300 ease-out group-data-[state=open]/drop:rotate-180 group-data-[state=open]/drop:text-brand ${
+            open ? 'rotate-180' : ''
           }`}
+          style={{ color: open ? 'var(--color-primary)' : 'var(--text-muted)' }}
         />
       </button>
 
@@ -209,17 +222,24 @@ export default function Dropdown({
         role="listbox"
         aria-labelledby={`${id}-trigger`}
         tabIndex={-1}
-        className={`absolute left-0 right-auto z-50 mt-1.5 origin-top overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-[0_18px_40px_-12px_rgba(15,23,42,0.18),0_4px_8px_-2px_rgba(15,23,42,0.04)] backdrop-blur-xl transition-all duration-200 ease-out ${
+        className={`absolute left-0 right-auto z-50 mt-1.5 origin-top overflow-hidden rounded-xl border backdrop-blur-xl transition-all duration-200 ease-out ${
           width ?? 'min-w-[14rem]'
         } ${
           open
             ? 'pointer-events-auto translate-y-0 scale-100 opacity-100'
             : 'pointer-events-none -translate-y-1 scale-[0.98] opacity-0'
         }`}
+        style={{
+          background: 'color-mix(in srgb, var(--bg-elevated) 96%, transparent)',
+          borderColor: 'var(--border-color)',
+          boxShadow: '0 18px 40px -12px var(--shadow-3), 0 4px 8px -2px var(--shadow-1)',
+        }}
       >
         <div className="max-h-72 overflow-y-auto p-1.5">
           {options.length === 0 && (
-            <p className="px-3 py-3 text-center text-[12.5px] text-slate-400">Aucune option</p>
+            <p className="px-3 py-3 text-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+              Aucune option
+            </p>
           )}
           {options.map((opt, i) => {
             const isSelected = opt.value === value
@@ -238,20 +258,26 @@ export default function Dropdown({
                 onMouseEnter={() => setActiveIdx(i)}
                 onClick={() => select(opt)}
                 className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors duration-150 ${
-                  isSelected
-                    ? 'bg-blue-50 text-blue-700'
+                  opt.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                }`}
+                style={{
+                  background: isSelected
+                    ? 'color-mix(in srgb, var(--color-primary) 12%, transparent)'
                     : isActive
-                    ? 'bg-slate-100 text-slate-900'
-                    : 'text-slate-700'
-                } ${opt.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                    ? 'var(--bg-hover)'
+                    : 'transparent',
+                  color: isSelected ? 'var(--color-primary)' : 'var(--text-primary)',
+                }}
               >
                 {opt.icon && (
                   <span
-                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-colors ${
-                      isSelected
-                        ? 'bg-blue-100 text-blue-600'
-                        : 'bg-slate-100 text-slate-500'
-                    }`}
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-colors"
+                    style={{
+                      background: isSelected
+                        ? 'color-mix(in srgb, var(--color-primary) 18%, transparent)'
+                        : 'var(--bg-hover)',
+                      color: isSelected ? 'var(--color-primary)' : 'var(--text-secondary)',
+                    }}
                   >
                     {opt.icon}
                   </span>
@@ -260,9 +286,12 @@ export default function Dropdown({
                   <span className="block truncate text-[12.5px] font-medium">{opt.label}</span>
                   {opt.description && (
                     <span
-                      className={`mt-0.5 block truncate text-[11px] ${
-                        isSelected ? 'text-blue-500/80' : 'text-slate-400'
-                      }`}
+                      className="mt-0.5 block truncate text-[11px]"
+                      style={{
+                        color: isSelected
+                          ? 'color-mix(in srgb, var(--color-primary) 75%, transparent)'
+                          : 'var(--text-muted)',
+                      }}
                     >
                       {opt.description}
                     </span>
@@ -273,7 +302,8 @@ export default function Dropdown({
                   <Check
                     size={14}
                     strokeWidth={2.6}
-                    className="shrink-0 text-blue-600"
+                    className="shrink-0"
+                    style={{ color: 'var(--color-primary)' }}
                   />
                 )}
               </button>

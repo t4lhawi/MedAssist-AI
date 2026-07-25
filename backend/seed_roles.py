@@ -1,6 +1,5 @@
 import sys
 sys.path.insert(0, '.')
-
 from app.database import engine, Base, SessionLocal
 from app import models
 from app.auth import hacher_mdp
@@ -12,9 +11,9 @@ db = SessionLocal()
 
 # (nom, email, password, role)
 SEED_USERS = [
-    ("Mohamed Talhaoui",  "admin@chuoujda.ma",     "Admin@2026!",      "admin"),
-    ("Mohamed Talhaoui",     "staff@chuoujda.ma",     "Staff@2026!",      "hospital_staff"),
-    ("Mohamed Talhaoui", "visitor@chuoujda.ma",   "Visitor@2026!",    "visitor"),
+    ("Mohamed Talhaoui",  "admin@chuoujda.ma"  ,     "Admin@2026!",    "admin"),
+    ("Mohamed Talhaoui",  "staff@chuoujda.ma"  ,     "Staff@2026!",    "hospital_staff"),
+    ("Mohamed Talhaoui",  "visitor@chuoujda.ma",   "Visitor@2026!",    "visitor"),
 ]
 
 for nom, email, password, role in SEED_USERS:

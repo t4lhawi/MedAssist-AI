@@ -67,35 +67,35 @@ const SEVERITY: Record<string, {
   critique: {
     label: 'Critique',
     dot: '#EF4444',
-    badge: 'bg-red-50 text-red-700 ring-1 ring-red-100',
+    badge: 'bg-red-50 text-red-700 ring-1 ring-red-100 dark:bg-red-500/15 dark:text-red-300 dark:ring-red-500/30',
     strip: 'alerts-strip-critique',
-    iconBg: 'bg-red-50',
+    iconBg: 'bg-red-50 dark:bg-red-500/15',
     iconColor: '#EF4444',
-    ring: 'ring-red-100',
+    ring: 'ring-red-100 dark:ring-red-500/30',
     glow: 'shadow-[0_0_0_4px_rgba(239,68,68,0.08)]',
-    text: 'text-red-700',
+    text: 'text-red-700 dark:text-red-300',
   },
   attention: {
     label: 'Attention',
     dot: '#F59E0B',
-    badge: 'bg-amber-50 text-amber-700 ring-1 ring-amber-100',
+    badge: 'bg-amber-50 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30',
     strip: 'alerts-strip-attention',
-    iconBg: 'bg-amber-50',
+    iconBg: 'bg-amber-50 dark:bg-amber-500/15',
     iconColor: '#F59E0B',
-    ring: 'ring-amber-100',
+    ring: 'ring-amber-100 dark:ring-amber-500/30',
     glow: '',
-    text: 'text-amber-700',
+    text: 'text-amber-700 dark:text-amber-300',
   },
   info: {
     label: 'Information',
     dot: '#3B82F6',
-    badge: 'bg-blue-50 text-blue-700 ring-1 ring-blue-100',
+    badge: 'bg-blue-50 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-500/15 dark:text-blue-300 dark:ring-blue-500/30',
     strip: 'alerts-strip-info',
-    iconBg: 'bg-blue-50',
+    iconBg: 'bg-blue-50 dark:bg-blue-500/15',
     iconColor: '#3B82F6',
-    ring: 'ring-blue-100',
+    ring: 'ring-blue-100 dark:ring-blue-500/30',
     glow: '',
-    text: 'text-blue-700',
+    text: 'text-blue-700 dark:text-blue-300',
   },
 }
 
@@ -162,10 +162,10 @@ function AIAnalysisCard({ explication }: { explication: string | null }) {
   if (explication === null || explication === undefined) {
     return (
       <div
-        className="relative overflow-hidden rounded-2xl border p-4"
-        style={{ borderColor: '#DBEAFE', background: 'linear-gradient(180deg, #F4F8FF 0%, #FFFFFF 100%)' }}
+        className="relative overflow-hidden rounded-2xl border p-4 dark:border-blue-500/30"
+        style={{ borderColor: 'color-mix(in srgb, var(--color-primary) 25%, transparent)', background: 'color-mix(in srgb, var(--color-primary) 6%, transparent)' }}
       >
-        <div className="flex items-center gap-2 text-[12px] font-semibold" style={{ color: '#1D4ED8' }}>
+        <div className="flex items-center gap-2 text-[12px] font-semibold" style={{ color: 'var(--color-primary)' }}>
           <Sparkles size={13} strokeWidth={2.2} />
           Analyse IA
         </div>
@@ -174,7 +174,7 @@ function AIAnalysisCard({ explication }: { explication: string | null }) {
           <div className="alerts-skeleton h-3 w-[72%]" />
           <div className="alerts-skeleton h-3 w-[60%]" />
         </div>
-        <div className="mt-3 flex items-center gap-1.5 text-[11.5px]" style={{ color: '#6B7280' }}>
+        <div className="mt-3 flex items-center gap-1.5 text-[11.5px]" style={{ color: 'var(--text-secondary)' }}>
           <Loader2 size={11} className="animate-spin" strokeWidth={2.4} />
           Génération de l'explication IA…
         </div>
@@ -185,7 +185,7 @@ function AIAnalysisCard({ explication }: { explication: string | null }) {
     return (
       <div
         className="rounded-2xl border px-4 py-3 text-[12px]"
-        style={{ borderColor: '#ECECEC', background: '#FAFAFA', color: '#9CA3AF' }}
+        style={{ borderColor: 'var(--border-color)', background: 'var(--bg-hover)', color: 'var(--text-muted)' }}
       >
         Aucune analyse IA disponible pour cette alerte.
       </div>
@@ -194,15 +194,15 @@ function AIAnalysisCard({ explication }: { explication: string | null }) {
 
   return (
     <div
-      className="overflow-hidden rounded-2xl border"
-      style={{ borderColor: '#DBEAFE', background: 'linear-gradient(180deg, #F4F8FF 0%, #FFFFFF 100%)' }}
+      className="overflow-hidden rounded-2xl border dark:border-blue-500/30"
+      style={{ borderColor: 'color-mix(in srgb, var(--color-primary) 25%, transparent)', background: 'color-mix(in srgb, var(--color-primary) 6%, transparent)' }}
     >
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
         className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-[12.5px] font-semibold transition-colors"
-        style={{ color: '#1D4ED8' }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(219, 234, 254, 0.35)' }}
+        style={{ color: 'var(--color-primary)' }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--color-primary) 10%, transparent)' }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
         aria-expanded={open}
       >
@@ -215,7 +215,7 @@ function AIAnalysisCard({ explication }: { explication: string | null }) {
       {open && (
         <div
           className="border-t px-4 py-3 text-[13px] leading-7"
-          style={{ borderColor: '#DBEAFE', background: 'rgba(255,255,255,0.65)', color: '#1F2937' }}
+          style={{ borderColor: 'color-mix(in srgb, var(--color-primary) 25%, transparent)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
         >
           <Markdown source={explication} />
         </div>
@@ -244,8 +244,8 @@ function StatCard({ label, value, icon: Icon, iconBg, iconColor, trend, tone }: 
     'text-emerald-600'
   return (
     <div
-      className="card relative overflow-hidden rounded-3xl bg-white p-5"
-      style={{ border: '1px solid #ECECEC' }}
+      className="card relative overflow-hidden rounded-3xl bg-white p-5 dark:bg-card"
+      style={{ border: '1px solid var(--border-color)' }}
     >
       <div className="flex items-start justify-between">
         <span
@@ -261,11 +261,11 @@ function StatCard({ label, value, icon: Icon, iconBg, iconColor, trend, tone }: 
         )}
       </div>
       <div className="mt-3 flex items-baseline gap-1.5">
-        <span className="text-[28px] font-semibold tracking-tight tabular-nums" style={{ color: '#111111' }}>
+        <span className="text-[28px] font-semibold tracking-tight tabular-nums" style={{ color: 'var(--text-primary)' }}>
           {value}
         </span>
       </div>
-      <p className="mt-0.5 text-[12.5px] font-medium" style={{ color: '#6B7280' }}>{label}</p>
+      <p className="mt-0.5 text-[12.5px] font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</p>
     </div>
   )
 }
@@ -383,8 +383,8 @@ function AlertToolbar({
 
   return (
     <div
-      className="rounded-2xl border bg-white"
-      style={{ borderColor: '#ECECEC' }}
+      className="rounded-2xl border bg-white dark:bg-card"
+      style={{ borderColor: 'var(--border-color)' }}
     >
       <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
         {/* Select all */}
@@ -395,7 +395,7 @@ function AlertToolbar({
             else setState(s => ({ ...s, selected: new Set(allFilteredIds) }))
           }}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors"
-          style={{ background: allSelected || someSelected ? '#111111' : '#F5F5F7', color: allSelected || someSelected ? 'white' : '#6B7280' }}
+          style={{ background: allSelected || someSelected ? 'var(--text-primary)' : 'var(--bg-hover)', color: allSelected || someSelected ? 'var(--bg-card)' : 'var(--text-secondary)' }}
           aria-label={allSelected ? 'Désélectionner tout' : 'Sélectionner tout'}
         >
           {allSelected ? <Check size={13} strokeWidth={2.6} /> : someSelected ? <span className="text-[10px] font-bold">–</span> : null}
@@ -404,16 +404,16 @@ function AlertToolbar({
         {/* Search */}
         <div
           className="group/field flex min-w-0 flex-1 items-center gap-2 rounded-xl px-3 py-1.5 transition-all"
-          style={{ background: '#F5F5F7' }}
+          style={{ background: 'var(--bg-hover)' }}
         >
-          <Search size={14} strokeWidth={2.2} style={{ color: '#6B7280' }} />
+          <Search size={14} strokeWidth={2.2} style={{ color: 'var(--text-secondary)' }} />
           <input
             type="text"
             value={state.q}
             onChange={e => setState(s => ({ ...s, q: e.target.value }))}
             placeholder="Rechercher par salle, message, capteur ou ESP32…"
             className="w-full bg-transparent text-[13px] font-medium outline-none placeholder:font-normal"
-            style={{ color: '#111111' }}
+            style={{ color: 'var(--text-primary)' }}
             aria-label="Rechercher"
           />
           {state.q && (
@@ -423,7 +423,7 @@ function AlertToolbar({
               className="rounded-full p-0.5 transition-colors hover:bg-black/5"
               aria-label="Effacer la recherche"
             >
-              <X size={12} strokeWidth={2.4} style={{ color: '#6B7280' }} />
+              <X size={12} strokeWidth={2.4} style={{ color: 'var(--text-secondary)' }} />
             </button>
           )}
         </div>
@@ -433,7 +433,7 @@ function AlertToolbar({
           type="button"
           onClick={() => setState(s => ({ ...s, sort: s.sort === 'newest' ? 'oldest' : 'newest' }))}
           className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[12px] font-medium transition-colors"
-          style={{ background: '#F5F5F7', color: '#374151' }}
+          style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
           aria-label="Trier"
         >
           {state.sort === 'newest' ? <ArrowDownAZ size={13} strokeWidth={2.2} /> : <ArrowUpAZ size={13} strokeWidth={2.2} />}
@@ -459,7 +459,7 @@ function AlertToolbar({
           onClick={onRefresh}
           disabled={refreshing}
           className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[12px] font-medium transition-colors disabled:opacity-60"
-          style={{ background: '#F5F5F7', color: '#374151' }}
+          style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
           aria-label="Rafraîchir"
         >
           <RefreshCw size={12} strokeWidth={2.2} className={refreshing ? 'animate-spin' : ''} />
@@ -474,8 +474,8 @@ function AlertToolbar({
             disabled={selectedCount === 0}
             className="relative inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[12px] font-medium transition-colors disabled:cursor-not-allowed"
             style={{
-              background: selectedCount > 0 ? '#111111' : '#F5F5F7',
-              color: selectedCount > 0 ? 'white' : '#6B7280',
+              background: selectedCount > 0 ? 'var(--text-primary)' : 'var(--bg-hover)',
+              color: selectedCount > 0 ? 'var(--bg-card)' : 'var(--text-secondary)',
             }}
             title="Bientôt disponible"
             aria-label="Actions en masse"
@@ -485,7 +485,7 @@ function AlertToolbar({
             {selectedCount > 0 && (
               <span
                 className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold"
-                style={{ background: 'rgba(255,255,255,0.2)' }}
+                style={{ background: 'color-mix(in srgb, var(--bg-card) 25%, transparent)' }}
               >
                 {selectedCount}
               </span>
@@ -497,13 +497,13 @@ function AlertToolbar({
       {/* Secondary filter row */}
       <div
         className="flex flex-wrap items-center gap-3 border-t px-3 py-2"
-        style={{ borderColor: '#F5F5F7' }}
+        style={{ borderColor: 'var(--bg-hover)' }}
       >
         <div className="inline-flex items-center gap-1">
-          <span className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Sévérité</span>
+          <span className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Sévérité</span>
           <div
             className="inline-flex rounded-xl p-0.5"
-            style={{ background: '#F5F5F7' }}
+            style={{ background: 'var(--bg-hover)' }}
           >
             {SEVERITY_PILL.map(p => {
               const active = state.severity === p.key
@@ -513,7 +513,7 @@ function AlertToolbar({
                   type="button"
                   onClick={() => setState(s => ({ ...s, severity: p.key }))}
                   className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11.5px] font-medium transition-all"
-                  style={active ? { background: '#FFFFFF', color: '#111111', boxShadow: '0 1px 3px -1px rgba(17,17,17,0.1)' } : { color: '#6B7280' }}
+                  style={active ? { background: 'var(--bg-card)', color: 'var(--text-primary)', boxShadow: '0 1px 3px -1px var(--shadow-1)' } : { color: 'var(--text-secondary)' }}
                 >
                   {p.dot && <span className="h-1.5 w-1.5 rounded-full" style={{ background: p.dot }} />}
                   {p.label}
@@ -526,10 +526,10 @@ function AlertToolbar({
         <span className="alerts-chip-dot" />
 
         <div className="inline-flex items-center gap-1">
-          <span className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Statut</span>
+          <span className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Statut</span>
           <div
             className="inline-flex rounded-xl p-0.5"
-            style={{ background: '#F5F5F7' }}
+            style={{ background: 'var(--bg-hover)' }}
           >
             {STATUS_PILL.map(p => {
               const active = state.status === p.key
@@ -539,15 +539,10 @@ function AlertToolbar({
                   type="button"
                   onClick={() => {
                     setState(s => ({ ...s, status: p.key }))
-                    // Propagate up so the page-level filter re-fetches the
-                    // right slice (otherwise the local status filter is
-                    // applied on top of stale data — the classic
-                    // "Traitées empty when alertes was last fetched as
-                    // actives" bug).
                     onStatusChange?.(p.key)
                   }}
                   className="rounded-lg px-2.5 py-1 text-[11.5px] font-medium transition-all"
-                  style={active ? { background: '#FFFFFF', color: '#111111', boxShadow: '0 1px 3px -1px rgba(17,17,17,0.1)' } : { color: '#6B7280' }}
+                  style={active ? { background: 'var(--bg-card)', color: 'var(--text-primary)', boxShadow: '0 1px 3px -1px var(--shadow-1)' } : { color: 'var(--text-secondary)' }}
                 >
                   {p.label}
                 </button>
@@ -606,7 +601,7 @@ function RoomFilter({ rooms, value, onChange }: {
         type="button"
         onClick={() => setOpen(v => !v)}
         className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[12px] font-medium transition-colors"
-        style={{ background: '#F5F5F7', color: '#374151' }}
+        style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
         aria-label="Filtrer par salle"
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -622,14 +617,14 @@ function RoomFilter({ rooms, value, onChange }: {
 
       {open && (
         <div
-          className="absolute right-0 top-[calc(100%+6px)] z-30 w-56 origin-top overflow-hidden rounded-2xl border bg-white shadow-[0_12px_36px_-12px_rgba(15,23,42,0.18)]"
+          className="absolute right-0 top-[calc(100%+6px)] z-30 w-56 origin-top overflow-hidden rounded-2xl border bg-white shadow-[0_12px_36px_-12px_rgba(15,23,42,0.18)] dark:bg-elevated"
           style={{
-            borderColor: '#ECECEC',
+            borderColor: 'var(--border-color)',
             animation: 'alertsRoomMenuIn 140ms cubic-bezier(0.25, 0.1, 0.25, 1) both',
           }}
           role="listbox"
         >
-          <div className="px-3 py-2 text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
+          <div className="px-3 py-2 text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
             Salle
           </div>
           <div className="max-h-64 overflow-y-auto pb-1.5">
@@ -647,18 +642,18 @@ function RoomFilter({ rooms, value, onChange }: {
                   }}
                   className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[12.5px] font-medium transition-colors"
                   style={{
-                    color: isSelected ? '#111111' : '#374151',
-                    background: isSelected ? '#F5F5F7' : 'transparent',
+                    color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    background: isSelected ? 'var(--bg-hover)' : 'transparent',
                   }}
                   onMouseEnter={(e) => {
-                    if (!isSelected) (e.currentTarget as HTMLElement).style.background = '#FAFAFA'
+                    if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)'
                   }}
                   onMouseLeave={(e) => {
                     if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent'
                   }}
                 >
                   <span className="truncate">{it.label}</span>
-                  {isSelected && <Check size={12} strokeWidth={2.6} style={{ color: '#111111' }} />}
+                  {isSelected && <Check size={12} strokeWidth={2.6} style={{ color: 'var(--text-primary)' }} />}
                 </button>
               )
             })}
@@ -711,23 +706,17 @@ function AlertIncidentCard({
 
   return (
     <div
-      className={`card-lift relative overflow-hidden rounded-2xl border bg-white ${
+      className={`card-lift relative overflow-hidden rounded-2xl border bg-white dark:bg-card ${
         isActiveCritical ? 'alerts-critical-pulse' : ''
       }`}
-      style={{ borderColor: '#ECECEC' }}
+      style={{ borderColor: 'var(--border-color)' }}
     >
       {/* Severity strip */}
       <span className={`alerts-strip ${a.traitee ? 'alerts-strip-processed' : sev.strip}`} />
 
       <div className="px-4 py-4 sm:px-5 sm:py-4">
         <div className="flex items-start gap-3">
-          {/* Checkbox — must sit ABOVE the absolute overlay button
-              (defined later in the DOM at the end of the card). Without
-              `position: relative; z-index: 2`, the overlay sits on top
-              of the checkbox because it appears later in the DOM and
-              the checkbox has no stacking context. ``stopPropagation``
-              alone is not enough: the overlay is a *sibling*, not a
-              parent, so the click never even reaches this button. */}
+          {/* Checkbox */}
           <button
             type="button"
             onClick={(e) => {
@@ -736,9 +725,9 @@ function AlertIncidentCard({
             }}
             className="relative z-20 mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md transition-colors"
             style={{
-              background: selected ? '#111111' : '#FFFFFF',
-              border: `1.5px solid ${selected ? '#111111' : '#E4E4E7'}`,
-              color: selected ? 'white' : 'transparent',
+              background: selected ? 'var(--text-primary)' : 'var(--bg-card)',
+              border: `1.5px solid ${selected ? 'var(--text-primary)' : 'var(--border-strong)'}`,
+              color: selected ? 'var(--bg-card)' : 'transparent',
             }}
             aria-label={selected ? 'Désélectionner' : 'Sélectionner'}
             aria-pressed={selected}
@@ -765,13 +754,13 @@ function AlertIncidentCard({
                 {sev.label}
               </span>
               {a.salle && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10.5px] font-semibold text-slate-700">
+                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10.5px] font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200">
                   {a.salle}
                 </span>
               )}
               <span
                 className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
-                style={{ background: 'rgba(59,130,246,0.08)', color: '#1D4ED8' }}
+                style={{ background: 'color-mix(in srgb, var(--color-primary) 10%, transparent)', color: 'var(--color-primary)' }}
               >
                 <SensorIcon size={10} strokeWidth={2.4} />
                 {sensor.title}
@@ -779,13 +768,13 @@ function AlertIncidentCard({
               {a.esp32_id != null && (
                 <span
                   className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
-                  style={{ background: '#F5F5F7', color: '#6B7280' }}
+                  style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
                 >
                   <Cpu size={10} strokeWidth={2.4} />
                   ESP32 #{a.esp32_id}
                 </span>
               )}
-              <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: '#9CA3AF' }}>
+              <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>
                 <Clock size={10} strokeWidth={2.2} />
                 {relativeTime(date)}
               </span>
@@ -794,7 +783,7 @@ function AlertIncidentCard({
             {/* Title */}
             <p
               className="text-[15px] font-medium leading-7 tracking-tight"
-              style={{ color: '#111111' }}
+              style={{ color: 'var(--text-primary)' }}
             >
               {a.message}
             </p>
@@ -815,9 +804,9 @@ function AlertIncidentCard({
                       onOpen(a)
                     }}
                     className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11.5px] font-semibold transition-colors"
-                    style={{ color: '#374151', background: '#F5F5F7' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#ECECEC' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#F5F5F7' }}
+                    style={{ color: 'var(--text-secondary)', background: 'var(--bg-hover)' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--border-color)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)' }}
                   >
                     Voir le détail
                   </button>
@@ -829,9 +818,9 @@ function AlertIncidentCard({
                     }}
                     disabled={processing}
                     className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11.5px] font-semibold text-white transition-all active:scale-95 disabled:opacity-60"
-                    style={{ background: '#111111' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#1F1F23' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#111111' }}
+                    style={{ background: 'var(--text-primary)' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.9' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
                   >
                     {processing ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} strokeWidth={2.6} />}
                     Marquer comme traitée
@@ -840,7 +829,7 @@ function AlertIncidentCard({
               ) : (
                 <>
                   <span
-                    className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-100"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-500/20 dark:text-emerald-300 dark:ring-emerald-500/30"
                   >
                     <Check size={11} strokeWidth={2.6} />
                     Traitée
@@ -854,9 +843,9 @@ function AlertIncidentCard({
                       }}
                       disabled={processing}
                       className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11.5px] font-semibold transition-colors disabled:opacity-60"
-                      style={{ color: '#B91C1C', background: '#FEF2F2' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FEE2E2' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FEF2F2' }}
+                      style={{ color: 'var(--color-danger)', background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--color-danger) 18%, transparent)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--color-danger) 10%, transparent)' }}
                       aria-label="Supprimer l'alerte"
                     >
                       <Trash2 size={11} strokeWidth={2.4} />
@@ -887,7 +876,7 @@ function AlertIncidentCard({
 
 function AlertSkeletonCard() {
   return (
-    <div className="relative overflow-hidden rounded-2xl border bg-white" style={{ borderColor: '#ECECEC' }}>
+    <div className="relative overflow-hidden rounded-2xl border bg-white dark:bg-card" style={{ borderColor: 'var(--border-color)' }}>
       <span className="alerts-strip alerts-strip-info opacity-50" />
       <div className="px-5 py-4">
         <div className="flex items-start gap-3">
@@ -914,23 +903,23 @@ function AlertSkeletonCard() {
 function AlertEmptyState({ onRefresh, refreshing }: { onRefresh: () => void; refreshing: boolean }) {
   return (
     <div
-      className="rounded-3xl border bg-white px-6 py-14 text-center"
-      style={{ borderColor: '#ECECEC' }}
+      className="rounded-3xl border bg-white px-6 py-14 text-center dark:bg-card"
+      style={{ borderColor: 'var(--border-color)' }}
     >
       <div
         className="relative mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full"
-        style={{ background: '#F0FDF4' }}
+        style={{ background: 'color-mix(in srgb, var(--color-success) 14%, transparent)' }}
       >
-        <CheckCircle2 size={32} strokeWidth={2.2} style={{ color: '#10B981' }} />
+        <CheckCircle2 size={32} strokeWidth={2.2} style={{ color: 'var(--color-success)' }} />
         <span
           className="absolute inset-0 rounded-full"
-          style={{ boxShadow: '0 0 0 6px rgba(16,185,129,0.10)' }}
+          style={{ boxShadow: '0 0 0 6px color-mix(in srgb, var(--color-success) 14%, transparent)' }}
         />
       </div>
-      <p className="text-[16px] font-semibold tracking-tight" style={{ color: '#111111' }}>
+      <p className="text-[16px] font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
         Aucune alerte active
       </p>
-      <p className="mx-auto mt-1.5 max-w-[34ch] text-[13px]" style={{ color: '#6B7280' }}>
+      <p className="mx-auto mt-1.5 max-w-[34ch] text-[13px]" style={{ color: 'var(--text-secondary)' }}>
         Tout fonctionne normalement. Les incidents apparaîtront ici dès qu'ils se produiront.
       </p>
       <button
@@ -938,7 +927,7 @@ function AlertEmptyState({ onRefresh, refreshing }: { onRefresh: () => void; ref
         onClick={onRefresh}
         disabled={refreshing}
         className="mt-5 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12.5px] font-semibold text-white transition-all active:scale-95 disabled:opacity-60"
-        style={{ background: '#111111' }}
+        style={{ background: 'var(--text-primary)', color: 'var(--bg-card)' }}
       >
         <RefreshCw size={12} strokeWidth={2.4} className={refreshing ? 'animate-spin' : ''} />
         Actualiser
@@ -950,28 +939,28 @@ function AlertEmptyState({ onRefresh, refreshing }: { onRefresh: () => void; ref
 function AlertNoResults({ onReset }: { onReset: () => void }) {
   return (
     <div
-      className="rounded-3xl border bg-white px-6 py-12 text-center"
-      style={{ borderColor: '#ECECEC' }}
+      className="rounded-3xl border bg-white px-6 py-12 text-center dark:bg-card"
+      style={{ borderColor: 'var(--border-color)' }}
     >
       <div
         className="relative mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full"
-        style={{ background: '#F5F5F7' }}
+        style={{ background: 'var(--bg-hover)' }}
       >
-        <Search size={24} strokeWidth={2.2} style={{ color: '#6B7280' }} />
+        <Search size={24} strokeWidth={2.2} style={{ color: 'var(--text-secondary)' }} />
       </div>
-      <p className="text-[15px] font-semibold tracking-tight" style={{ color: '#111111' }}>
+      <p className="text-[15px] font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
         Aucune alerte correspondante
       </p>
-      <p className="mx-auto mt-1.5 max-w-[32ch] text-[13px]" style={{ color: '#6B7280' }}>
+      <p className="mx-auto mt-1.5 max-w-[32ch] text-[13px]" style={{ color: 'var(--text-secondary)' }}>
         Essayez de modifier vos filtres ou de réinitialiser la recherche pour voir plus de résultats.
       </p>
       <button
         type="button"
         onClick={onReset}
         className="mt-4 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-colors"
-        style={{ color: '#374151', background: '#F5F5F7' }}
-        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#ECECEC' }}
-        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#F5F5F7' }}
+        style={{ color: 'var(--text-secondary)', background: 'var(--bg-hover)' }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--border-color)' }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)' }}
       >
         Réinitialiser les filtres
       </button>
@@ -1051,17 +1040,17 @@ function AlertDetailsModal({ alerte, onClose, onTreat, processing }: AlertDetail
         <ModalBody className="overflow-y-auto">
           {/* Message */}
           <section>
-            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
+            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
               Message
             </h3>
-            <p className="mt-2 text-[15px] leading-7 text-[#111111]">
+            <p className="mt-2 text-[15px] leading-7" style={{ color: 'var(--text-primary)' }}>
               {alerte.message}
             </p>
           </section>
 
           {/* AI Analysis */}
           <section className="mt-6">
-            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
+            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
               Analyse IA
             </h3>
             <div className="mt-2">
@@ -1071,10 +1060,10 @@ function AlertDetailsModal({ alerte, onClose, onTreat, processing }: AlertDetail
 
           {/* Context */}
           <section className="mt-6">
-            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
+            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
               Contexte
             </h3>
-            <div className="mt-2 grid grid-cols-2 gap-3 rounded-2xl border border-[#ECECEC] bg-[#FAFAFA] p-4">
+            <div className="mt-2 grid grid-cols-2 gap-3 rounded-2xl border p-4" style={{ borderColor: 'var(--border-color)', background: 'var(--bg-hover)' }}>
               <Field label="Salle" value={alerte.salle ?? '—'} />
               <Field label="ESP32" value={alerte.esp32_id != null ? `#${alerte.esp32_id}` : '—'} />
               <Field label="Capteur" value={sensor.title} />
@@ -1082,33 +1071,33 @@ function AlertDetailsModal({ alerte, onClose, onTreat, processing }: AlertDetail
               <Field
                 label="Statut"
                 value={alerte.traitee ? 'Traitée' : 'Active'}
-                valueClass={alerte.traitee ? 'text-emerald-600' : sev.text}
+                valueClass={alerte.traitee ? 'text-emerald-600 dark:text-emerald-300' : sev.text}
               />
             </div>
           </section>
 
           {/* Timeline */}
           <section className="mt-6">
-            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
+            <h3 className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
               Chronologie
             </h3>
             <ol className="mt-2 space-y-3 pl-1">
               <TimelineItem
-                dot={<CircleDot size={14} strokeWidth={2.4} style={{ color: alerte.traitee ? '#10B981' : '#3B82F6' }} />}
+                dot={<CircleDot size={14} strokeWidth={2.4} style={{ color: alerte.traitee ? 'var(--color-success)' : 'var(--color-primary)' }} />}
                 title="Alerte créée"
                 subtitle={fullDate(date)}
                 active
               />
               {alerte.traitee && (
                 <TimelineItem
-                  dot={<Check size={14} strokeWidth={2.6} style={{ color: '#10B981' }} />}
+                  dot={<Check size={14} strokeWidth={2.6} style={{ color: 'var(--color-success)' }} />}
                   title="Marquée comme traitée"
                   subtitle="Statut mis à jour"
                 />
               )}
               {!alerte.traitee && (
                 <TimelineItem
-                  dot={<Sparkles size={14} strokeWidth={2.2} style={{ color: '#3B82F6' }} />}
+                  dot={<Sparkles size={14} strokeWidth={2.2} style={{ color: 'var(--color-primary)' }} />}
                   title="En attente d'action"
                   subtitle="Résolvez l'alerte pour la clôturer"
                 />
@@ -1120,14 +1109,14 @@ function AlertDetailsModal({ alerte, onClose, onTreat, processing }: AlertDetail
           <section className="mt-6">
             <div
               className="flex items-start gap-3 rounded-2xl border border-dashed p-4"
-              style={{ borderColor: '#D4D4D8', background: 'rgba(245,245,247,0.6)' }}
+              style={{ borderColor: 'var(--border-strong)', background: 'var(--bg-hover)' }}
             >
-              <Sparkles size={15} strokeWidth={2.2} style={{ color: '#6B7280' }} />
+              <Sparkles size={15} strokeWidth={2.2} style={{ color: 'var(--text-secondary)' }} />
               <div>
-                <p className="text-[12.5px] font-semibold text-[#374151]">
+                <p className="text-[12.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
                   Plus d'actions à venir
                 </p>
-                <p className="mt-0.5 text-[11.5px] text-[#9CA3AF]">
+                <p className="mt-0.5 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
                   Assigner des responsables, escalader vers une salle et lancer des réponses automatisées depuis cet écran.
                 </p>
               </div>
@@ -1158,8 +1147,8 @@ function AlertDetailsModal({ alerte, onClose, onTreat, processing }: AlertDetail
 function Field({ label, value, valueClass }: { label: string; value: React.ReactNode; valueClass?: string }) {
   return (
     <div>
-      <p className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>{label}</p>
-      <p className={`mt-0.5 text-[13px] font-medium ${valueClass || ''}`} style={valueClass ? undefined : { color: '#111111' }}>
+      <p className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{label}</p>
+      <p className={`mt-0.5 text-[13px] font-medium ${valueClass || ''}`} style={valueClass ? undefined : { color: 'var(--text-primary)' }}>
         {value}
       </p>
     </div>
@@ -1171,12 +1160,12 @@ function TimelineItem({ dot, title, subtitle, active }: { dot: React.ReactNode; 
     <li className="relative pl-7">
       <span
         className="absolute left-0 top-0.5 flex h-5 w-5 items-center justify-center rounded-full"
-        style={{ background: active ? 'rgba(59,130,246,0.10)' : 'rgba(15,23,42,0.05)' }}
+        style={{ background: active ? 'color-mix(in srgb, var(--color-primary) 14%, transparent)' : 'var(--bg-hover)' }}
       >
         {dot}
       </span>
-      <p className="text-[12.5px] font-semibold" style={{ color: '#111111' }}>{title}</p>
-      <p className="text-[11.5px]" style={{ color: '#6B7280' }}>{subtitle}</p>
+      <p className="text-[12.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</p>
+      <p className="text-[11.5px]" style={{ color: 'var(--text-secondary)' }}>{subtitle}</p>
     </li>
   )
 }
@@ -1196,19 +1185,19 @@ function AlertGroupSection({ title, items, ...rest }: {
   return (
     <section>
       <header className="mb-3 flex items-center justify-between">
-        <h3 className="text-[11.5px] font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>
+        <h3 className="text-[11.5px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
           {title}
         </h3>
         <span
           className="rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
-          style={{ background: '#F5F5F7', color: '#6B7280' }}
+          style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
         >
           {items.length}
         </span>
       </header>
       <div
         className="mb-2 h-px w-full"
-        style={{ background: '#ECECEC' }}
+        style={{ background: 'var(--border-color)' }}
       />
       <div className="space-y-3">
         {items.map((a, idx) => (
@@ -1481,27 +1470,27 @@ export default function AlertsList({
             <span
               className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-medium"
               style={{
-                background: 'rgba(16,185,129,0.08)',
-                color: '#047857',
-                border: '1px solid rgba(16,185,129,0.15)',
+                background: 'color-mix(in srgb, var(--color-success) 12%, transparent)',
+                color: 'var(--color-success)',
+                border: '1px solid color-mix(in srgb, var(--color-success) 25%, transparent)',
               }}
             >
               <span
                 className="h-1.5 w-1.5 rounded-full"
-                style={{ background: '#10B981', boxShadow: '0 0 0 3px rgba(16,185,129,0.18)' }}
+                style={{ background: 'var(--color-success)', boxShadow: '0 0 0 3px color-mix(in srgb, var(--color-success) 22%, transparent)' }}
               />
               <span className="font-semibold">En direct</span>
-              <span style={{ color: '#6B7280' }}>· {updatedLabel}</span>
+              <span style={{ color: 'var(--text-secondary)' }}>· {updatedLabel}</span>
             </span>
             <button
               type="button"
               onClick={handleRefresh}
               disabled={refreshing}
               aria-label="Actualiser"
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#ECECEC] bg-white px-3.5 py-1.5 text-[12.5px] font-medium text-[#374151] shadow-[0_1px_2px_rgba(17,17,17,0.04)] transition-all duration-200 hover:-translate-y-px hover:bg-[#FAFAFA] active:scale-[0.97] disabled:opacity-60"
-              style={{ background: 'white', color: '#374151', borderColor: '#ECECEC' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F5F5F7' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'white' }}
+              className="inline-flex items-center gap-1.5 rounded-full border bg-white px-3.5 py-1.5 text-[12.5px] font-medium shadow-[0_1px_2px_var(--shadow-1)] transition-all duration-200 hover:-translate-y-px hover:bg-hover active:scale-[0.97] disabled:opacity-60 dark:bg-card"
+              style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-color)' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-card)' }}
             >
               <RefreshCw size={12} strokeWidth={2.4} className={refreshing ? 'animate-spin' : ''} />
               Actualiser
@@ -1529,21 +1518,21 @@ export default function AlertsList({
       {state.selected.size > 0 && (
         <div
           className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border px-4 py-2.5 text-[12.5px]"
-          style={{ background: 'rgba(59,130,246,0.05)', borderColor: 'rgba(59,130,246,0.2)', color: '#1D4ED8' }}
+          style={{ background: 'color-mix(in srgb, var(--color-primary) 8%, transparent)', borderColor: 'color-mix(in srgb, var(--color-primary) 25%, transparent)', color: 'var(--color-primary)' }}
         >
           <span className="font-semibold">{state.selected.size} sélectionnée(s)</span>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setState(s => ({ ...s, selected: new Set(allFilteredIds) }))}
-              className="rounded-full px-2.5 py-1 text-[11.5px] font-medium transition-colors hover:bg-white/60"
+              className="rounded-full px-2.5 py-1 text-[11.5px] font-medium transition-colors hover:bg-card/60"
             >
               Tout sélectionner (visibles)
             </button>
             <button
               type="button"
               onClick={() => setState(s => ({ ...s, selected: new Set() }))}
-              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-medium transition-colors hover:bg-white/60"
+              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-medium transition-colors hover:bg-card/60"
             >
               <Trash2 size={11} strokeWidth={2.4} />
               Effacer
@@ -1638,24 +1627,24 @@ export default function AlertsList({
         <div
           role="status"
           aria-live="polite"
-          className="pointer-events-none fixed bottom-6 right-6 z-[300] flex items-center gap-2.5 rounded-2xl border bg-white px-4 py-3 shadow-[0_12px_36px_-12px_rgba(15,23,42,0.25)]"
+          className="pointer-events-none fixed bottom-6 right-6 z-[300] flex items-center gap-2.5 rounded-2xl border bg-white px-4 py-3 shadow-[0_12px_36px_-12px_rgba(15,23,42,0.25)] dark:bg-elevated"
           style={{
-            borderColor: toast.tone === 'error' ? '#FECACA' : '#A7F3D0',
+            borderColor: toast.tone === 'error' ? 'color-mix(in srgb, var(--color-danger) 30%, transparent)' : 'color-mix(in srgb, var(--color-success) 30%, transparent)',
             animation: 'modalPanelIn 180ms cubic-bezier(0.25, 0.1, 0.25, 1) both',
           }}
         >
           <span
             className="flex h-7 w-7 items-center justify-center rounded-full"
             style={{
-              background: toast.tone === 'error' ? '#FEE2E2' : '#D1FAE5',
-              color: toast.tone === 'error' ? '#B91C1C' : '#047857',
+              background: toast.tone === 'error' ? 'color-mix(in srgb, var(--color-danger) 14%, transparent)' : 'color-mix(in srgb, var(--color-success) 14%, transparent)',
+              color: toast.tone === 'error' ? 'var(--color-danger)' : 'var(--color-success)',
             }}
           >
             {toast.tone === 'error'
               ? <X size={14} strokeWidth={2.6} />
               : <Check size={14} strokeWidth={2.6} />}
           </span>
-          <span className="text-[13px] font-medium" style={{ color: '#111111' }}>
+          <span className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>
             {toast.text}
           </span>
         </div>

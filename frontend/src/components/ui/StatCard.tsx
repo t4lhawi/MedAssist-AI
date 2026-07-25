@@ -4,7 +4,7 @@ import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react'
 /* ─────────────────────────────────────────────────────────────
  *  StatCard — compact premium KPI tile
  *
- *  - White surface, soft shadow, 20px radius
+ *  - Card surface, soft shadow, 16px radius
  *  - Horizontal layout (icon | content | trend)
  *  - Subtle accent color matched to the metric
  *  - Trend indicator (positive / negative / flat)
@@ -13,17 +13,17 @@ import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react'
 type Tone = 'emerald' | 'amber' | 'red' | 'blue' | 'slate'
 
 const TONE_BG: Record<Tone, string> = {
-  emerald: 'bg-emerald-50 text-emerald-600',
-  amber: 'bg-amber-50 text-amber-600',
-  red: 'bg-red-50 text-red-600',
-  blue: 'bg-[#EFF4FF] text-[#3B82F6]',
-  slate: 'bg-[#F5F5F7] text-[#6B7280]',
+  emerald: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300',
+  amber: 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300',
+  red: 'bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-300',
+  blue: 'bg-[#EFF4FF] text-[#3B82F6] dark:bg-blue-500/15 dark:text-blue-300',
+  slate: 'bg-hover text-text-secondary',
 }
 
 const TREND_TONE: Record<NonNullable<StatCardProps['trend']>, string> = {
-  up: 'text-emerald-600 bg-emerald-50',
-  down: 'text-red-600 bg-red-50',
-  flat: 'text-[#6B7280] bg-[#F5F5F7]',
+  up: 'text-emerald-600 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-500/15',
+  down: 'text-red-600 bg-red-50 dark:text-red-300 dark:bg-red-500/15',
+  flat: 'text-text-secondary bg-hover',
 }
 
 export interface StatCardProps {
@@ -51,7 +51,20 @@ export default function StatCard({
 }: StatCardProps) {
   return (
     <div
-      className={`group/stat relative flex items-center gap-3 rounded-2xl border border-[#ECECEC] bg-white px-3.5 py-2.5 shadow-[0_1px_2px_rgba(17,17,17,0.03),0_4px_14px_-8px_rgba(17,17,17,0.06)] transition-all duration-200 ease-out hover:-translate-y-px hover:shadow-[0_1px_2px_rgba(17,17,17,0.04),0_8px_20px_-8px_rgba(17,17,17,0.10)] ${className}`}
+      className={`group/stat relative flex items-center gap-3 rounded-2xl border px-3.5 py-2.5 transition-all duration-200 ease-out hover:-translate-y-px ${className}`}
+      style={{
+        background: 'var(--bg-card)',
+        borderColor: 'var(--border-color)',
+        boxShadow: '0 1px 2px var(--shadow-1), 0 4px 14px -8px var(--shadow-1)',
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLElement).style.boxShadow =
+          '0 1px 2px var(--shadow-1), 0 8px 20px -8px var(--shadow-2)'
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLElement).style.boxShadow =
+          '0 1px 2px var(--shadow-1), 0 4px 14px -8px var(--shadow-1)'
+      }}
     >
       <span
         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${TONE_BG[tone]}`}
@@ -59,15 +72,15 @@ export default function StatCard({
         {icon}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[10.5px] font-medium uppercase tracking-wide text-[#6B7280]">
+        <p className="truncate text-[10.5px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
           {label}
         </p>
         <div className="mt-0.5 flex items-baseline gap-1.5">
-          <span className="text-[18px] font-semibold leading-none tracking-[-0.01em] text-[#111111] tabular-nums">
+          <span className="text-[18px] font-semibold leading-none tracking-[-0.01em] tabular-nums" style={{ color: 'var(--text-primary)' }}>
             {value}
           </span>
           {hint && (
-            <span className="truncate text-[11px] font-medium text-[#6B7280]">{hint}</span>
+            <span className="truncate text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>{hint}</span>
           )}
         </div>
       </div>
