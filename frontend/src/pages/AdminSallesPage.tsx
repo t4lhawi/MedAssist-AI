@@ -14,6 +14,7 @@ import {
   updateEsp32,
   deleteEsp32,
 } from '../services/api'
+import { usePermissions } from '../hooks/usePermissions'
 import { useLiveSocket } from '../context/LiveSocketContext'
 import type { SalleStatus, UnregisteredSource, LiveMesureEventData } from '../types'
 import SalleCard from '../components/Admin/SalleCard'
@@ -33,6 +34,12 @@ const FILTER_LABELS: Record<Filter, string> = {
 
 export default function AdminSallesPage() {
   const { onMesure } = useLiveSocket()
+  // This entire page is admin-only (RequireAuth gates it at the
+  // route level), so every action is allowed here. The permission
+  // check is still pulled so we can hide the "Enregistrer un ESP32"
+  // trigger if a future role is ever granted read-only access.
+  const { permissions } = usePermissions()
+  const canManageDevices = permissions.canManageDevices
   const [salles, setSalles] = useState<SalleStatus[]>([])
   const [unregistered, setUnregistered] = useState<UnregisteredSource[]>([])
   const [loading, setLoading] = useState(true)
@@ -331,8 +338,8 @@ export default function AdminSallesPage() {
             })}
           </div>
 
-          {/* Add ESP32 trigger (opens modal inside Esp32Form) */}
-          <Esp32Form onCreated={load} />
+          {/* Add ESP32 trigger (admin only) */}
+          {canManageDevices && <Esp32Form onCreated={load} />}
         </div>
       </section>
 
@@ -346,8 +353,12 @@ export default function AdminSallesPage() {
         </div>
       )}
 
-      {/* ── Unknown ESP32 discovery section ──────────────────── */}
-      <UnregisteredList sources={unregistered} onClaimed={load} />
+      {/* ── Unknown ESP32 discovery section (admin only — claiming IPs
+            is a privileged action). Hidden for read-only viewers if
+            any are ever introduced. */}
+      {canManageDevices && (
+        <UnregisteredList sources={unregistered} onClaimed={load} />
+      )}
 
       {/* ── Room grid ─────────────────────────────────────────── */}
       {loading && salles.length === 0 ? (

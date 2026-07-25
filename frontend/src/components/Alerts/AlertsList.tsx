@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Alerte } from '../../types'
 import { deleteAlerte, deleteAlertesBulk, traiterAlerte } from '../../services/api'
+import { usePermissions } from '../../hooks/usePermissions'
 import {
   Activity,
   AlertOctagon,
@@ -375,6 +376,10 @@ function AlertToolbar({
   const selectedCount = state.selected.size
   const allSelected = allFilteredIds.length > 0 && allFilteredIds.every(id => state.selected.has(id))
   const someSelected = selectedCount > 0 && !allSelected
+  // Bulk delete is admin-only. The button disappears entirely for
+  // other roles rather than being disabled.
+  const { permissions } = usePermissions()
+  const canBulkDelete = permissions.canDeleteAlertes
 
   return (
     <div
@@ -461,30 +466,32 @@ function AlertToolbar({
           Actualiser
         </button>
 
-        {/* Bulk */}
-        <button
-          type="button"
-          onClick={onBulkAction}
-          disabled={selectedCount === 0}
-          className="relative inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[12px] font-medium transition-colors disabled:cursor-not-allowed"
-          style={{
-            background: selectedCount > 0 ? '#111111' : '#F5F5F7',
-            color: selectedCount > 0 ? 'white' : '#6B7280',
-          }}
-          title="Bientôt disponible"
-          aria-label="Actions en masse"
-        >
-          <MoreHorizontal size={13} strokeWidth={2.2} />
-          Actions
-          {selectedCount > 0 && (
-            <span
-              className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold"
-              style={{ background: 'rgba(255,255,255,0.2)' }}
-            >
-              {selectedCount}
-            </span>
-          )}
-        </button>
+        {/* Bulk — admin only (delete). Hidden otherwise. */}
+        {canBulkDelete && (
+          <button
+            type="button"
+            onClick={onBulkAction}
+            disabled={selectedCount === 0}
+            className="relative inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[12px] font-medium transition-colors disabled:cursor-not-allowed"
+            style={{
+              background: selectedCount > 0 ? '#111111' : '#F5F5F7',
+              color: selectedCount > 0 ? 'white' : '#6B7280',
+            }}
+            title="Bientôt disponible"
+            aria-label="Actions en masse"
+          >
+            <MoreHorizontal size={13} strokeWidth={2.2} />
+            Actions
+            {selectedCount > 0 && (
+              <span
+                className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold"
+                style={{ background: 'rgba(255,255,255,0.2)' }}
+              >
+                {selectedCount}
+              </span>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Secondary filter row */}
@@ -684,6 +691,10 @@ interface AlertIncidentCardProps {
 function AlertIncidentCard({
   alerte: a, selected, onToggleSelect, onOpen, onTreat, onDelete, processing,
 }: AlertIncidentCardProps) {
+  // Only admins may delete alertes. Hospital staff can mark them as
+  // treated but the delete button is hidden entirely for them.
+  const { permissions } = usePermissions()
+  const canDelete = permissions.canDeleteAlertes
   const sev = SEVERITY[a.niveau] || FALLBACK_SEVERITY
   const SevIcon = SEVERITY_ICONS[a.niveau] || Info
   const sensor = getMonitoringType(a.type ?? undefined)
@@ -834,22 +845,24 @@ function AlertIncidentCard({
                     <Check size={11} strokeWidth={2.6} />
                     Traitée
                   </span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onDelete(a.id)
-                    }}
-                    disabled={processing}
-                    className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11.5px] font-semibold transition-colors disabled:opacity-60"
-                    style={{ color: '#B91C1C', background: '#FEF2F2' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FEE2E2' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FEF2F2' }}
-                    aria-label="Supprimer l'alerte"
-                  >
-                    <Trash2 size={11} strokeWidth={2.4} />
-                    Supprimer
-                  </button>
+                  {canDelete && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onDelete(a.id)
+                      }}
+                      disabled={processing}
+                      className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11.5px] font-semibold transition-colors disabled:opacity-60"
+                      style={{ color: '#B91C1C', background: '#FEF2F2' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FEE2E2' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FEF2F2' }}
+                      aria-label="Supprimer l'alerte"
+                    >
+                      <Trash2 size={11} strokeWidth={2.4} />
+                      Supprimer
+                    </button>
+                  )}
                 </>
               )}
             </div>

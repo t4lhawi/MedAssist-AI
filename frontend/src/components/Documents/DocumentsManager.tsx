@@ -1,6 +1,7 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Document } from '../../types'
 import { deleteDocument, uploadDocument } from '../../services/api'
+import { usePermissions } from '../../hooks/usePermissions'
 import {
   AlertCircle,
   ArrowUpDown,
@@ -72,6 +73,11 @@ function statusMeta(indexed: boolean) {
 
 export default function DocumentsManager({ documents, onRefresh }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
+  // Permission gates for upload + delete actions. Hospital staff can
+  // read the knowledge base but cannot mutate it.
+  const { permissions } = usePermissions()
+  const canUpload = permissions.canUploadDocuments
+  const canDelete = permissions.canDeleteDocuments
 
   // Upload state machine
   const [uploading, setUploading] = useState(false)
@@ -229,24 +235,26 @@ export default function DocumentsManager({ documents, onRefresh }: Props) {
 
   return (
     <section className="space-y-4">
-      {/* ─── Hero Upload ─────────────────────────────────────── */}
-      <UploadHero
-        inputRef={inputRef}
-        dragging={dragging}
-        uploading={uploading}
-        uploadProgress={uploadProgress}
-        uploadName={uploadName}
-        uploadSuccess={uploadSuccess}
-        error={error}
-        onDragOver={e => {
-          e.preventDefault()
-          if (!uploading) setDragging(true)
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={handleDrop}
-        onPick={() => inputRef.current?.click()}
-        onChange={handleUpload}
-      />
+      {/* ─── Hero Upload (admin only) ───────────────────────── */}
+      {canUpload && (
+        <UploadHero
+          inputRef={inputRef}
+          dragging={dragging}
+          uploading={uploading}
+          uploadProgress={uploadProgress}
+          uploadName={uploadName}
+          uploadSuccess={uploadSuccess}
+          error={error}
+          onDragOver={e => {
+            e.preventDefault()
+            if (!uploading) setDragging(true)
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={handleDrop}
+          onPick={() => inputRef.current?.click()}
+          onChange={handleUpload}
+        />
+      )}
 
       {/* ─── Toolbar ─────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[#ECECEC] bg-white p-2 shadow-[0_1px_2px_rgba(17,17,17,0.04),0_4px_14px_-8px_rgba(17,17,17,0.06)]">
@@ -338,16 +346,18 @@ export default function DocumentsManager({ documents, onRefresh }: Props) {
           />
         </button>
 
-        {/* Upload button (secondary CTA in the toolbar, hero is primary) */}
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[#111111] px-3.5 py-2 text-[12.5px] font-medium text-white shadow-[0_2px_8px_-2px_rgba(17,17,17,0.35)] transition-all duration-200 hover:bg-[#1F1F23] hover:shadow-[0_6px_18px_-4px_rgba(17,17,17,0.4)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <UploadCloud size={14} strokeWidth={2.2} />
-          <span>Téléverser un PDF</span>
-        </button>
+        {/* Upload button (admin only — staff read the docs, admins curate) */}
+        {canUpload && (
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[#111111] px-3.5 py-2 text-[12.5px] font-medium text-white shadow-[0_2px_8px_-2px_rgba(17,17,17,0.35)] transition-all duration-200 hover:bg-[#1F1F23] hover:shadow-[0_6px_18px_-4px_rgba(17,17,17,0.4)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <UploadCloud size={14} strokeWidth={2.2} />
+            <span>Téléverser un PDF</span>
+          </button>
+        )}
       </div>
 
       {/* ─── Documents List / Grid ───────────────────────────── */}
@@ -362,12 +372,12 @@ export default function DocumentsManager({ documents, onRefresh }: Props) {
       ) : view === 'list' ? (
         <DocumentsList
           docs={sorted}
-          onDelete={d => setPendingDelete(d)}
+          onDelete={canDelete ? (d => setPendingDelete(d)) : undefined}
         />
       ) : (
         <DocumentsGrid
           docs={sorted}
-          onDelete={d => setPendingDelete(d)}
+          onDelete={canDelete ? (d => setPendingDelete(d)) : undefined}
         />
       )}
 
@@ -821,7 +831,7 @@ function DocumentsList({
   onDelete,
 }: {
   docs: Document[]
-  onDelete: (d: Document) => void
+  onDelete?: (d: Document) => void
 }) {
   return (
     <div className="rounded-2xl border border-[#ECECEC] bg-white shadow-[0_1px_2px_rgba(17,17,17,0.04),0_4px_14px_-8px_rgba(17,17,17,0.06)]">
@@ -839,7 +849,7 @@ function DocumentListRow({
   onDelete,
 }: {
   doc: Document
-  onDelete: (d: Document) => void
+  onDelete?: (d: Document) => void
 }) {
   const meta = statusMeta(doc.indexe)
   return (
@@ -873,17 +883,19 @@ function DocumentListRow({
       </span>
 
       {/* Actions */}
-      <div className="flex shrink-0 items-center gap-1">
-        <DocumentActionsMenu doc={doc} onDelete={onDelete} />
-        <ActionIconButton
-          title="Supprimer"
-          aria-label="Supprimer"
-          tone="red"
-          onClick={() => onDelete(doc)}
-        >
-          <Trash2 size={14} strokeWidth={2.2} />
-        </ActionIconButton>
-      </div>
+      {onDelete && (
+        <div className="flex shrink-0 items-center gap-1">
+          <DocumentActionsMenu doc={doc} onDelete={onDelete} />
+          <ActionIconButton
+            title="Supprimer"
+            aria-label="Supprimer"
+            tone="red"
+            onClick={() => onDelete(doc)}
+          >
+            <Trash2 size={14} strokeWidth={2.2} />
+          </ActionIconButton>
+        </div>
+      )}
     </li>
   )
 }
@@ -926,7 +938,7 @@ function DocumentsGrid({
   onDelete,
 }: {
   docs: Document[]
-  onDelete: (d: Document) => void
+  onDelete?: (d: Document) => void
 }) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -942,7 +954,7 @@ function DocumentCard({
   onDelete,
 }: {
   doc: Document
-  onDelete: (d: Document) => void
+  onDelete?: (d: Document) => void
 }) {
   const meta = statusMeta(doc.indexe)
   return (
@@ -975,17 +987,19 @@ function DocumentCard({
         </span>
       </div>
 
-      <div className="mt-3 flex items-center justify-end gap-1 border-t border-slate-100 pt-3">
-        <DocumentActionsMenu doc={doc} onDelete={onDelete} />
-        <ActionIconButton
-          title="Supprimer"
-          aria-label="Supprimer"
-          tone="red"
-          onClick={() => onDelete(doc)}
-        >
-          <Trash2 size={14} strokeWidth={2.2} />
-        </ActionIconButton>
-      </div>
+      {onDelete && (
+        <div className="mt-3 flex items-center justify-end gap-1 border-t border-slate-100 pt-3">
+          <DocumentActionsMenu doc={doc} onDelete={onDelete} />
+          <ActionIconButton
+            title="Supprimer"
+            aria-label="Supprimer"
+            tone="red"
+            onClick={() => onDelete(doc)}
+          >
+            <Trash2 size={14} strokeWidth={2.2} />
+          </ActionIconButton>
+        </div>
+      )}
     </article>
   )
 }
@@ -997,7 +1011,7 @@ function DocumentActionsMenu({
   onDelete,
 }: {
   doc: Document
-  onDelete: (d: Document) => void
+  onDelete?: (d: Document) => void
 }) {
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -1118,21 +1132,25 @@ function DocumentActionsMenu({
             </span>
             <span>Copier le nom</span>
           </button>
-          <div className="my-1 h-px bg-slate-100" />
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setOpen(false)
-              onDelete(doc)
-            }}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-red-600 transition-colors duration-150 hover:bg-red-50"
-          >
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-red-50 text-red-500">
-              <Trash2 size={12} strokeWidth={2.2} />
-            </span>
-            <span>Supprimer</span>
-          </button>
+          {onDelete && (
+            <>
+              <div className="my-1 h-px bg-slate-100" />
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false)
+                  onDelete(doc)
+                }}
+                className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-red-600 transition-colors duration-150 hover:bg-red-50"
+              >
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-red-50 text-red-500">
+                  <Trash2 size={12} strokeWidth={2.2} />
+                </span>
+                <span>Supprimer</span>
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>

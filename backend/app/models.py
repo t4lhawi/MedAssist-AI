@@ -12,7 +12,7 @@ class Utilisateur(Base):
     nom       = Column(String(100), nullable=False)
     email     = Column(String(150), unique=True, index=True, nullable=False)
     mdp_hash  = Column(String(255), nullable=False)
-    role      = Column(String(30), default="soignant")   # admin | technicien | soignant
+    role      = Column(String(30), default="visitor")   # admin | hospital_staff | visitor
     actif     = Column(Boolean, default=True)
     cree_le   = Column(DateTime(timezone=True), server_default=func.now())
     conversations = relationship("Conversation", back_populates="utilisateur")

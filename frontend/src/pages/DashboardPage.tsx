@@ -11,14 +11,14 @@ import {
   ShieldCheck,
   MessageCircle,
   Plus,
+  UserCircle,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import StatCard from '../components/Dashboard/StatCard'
-import SallesOverview from '../components/Dashboard/SallesOverview'
 import CombinedChart from '../components/Charts/CombinedChart'
-import AlertsList from '../components/Alerts/AlertsList'
 import { getAlertes, getDocuments, getMesures, getSallesStatus } from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import { usePermissions } from '../hooks/usePermissions'
 import { useLiveSocket } from '../context/LiveSocketContext'
 import { Alerte, Document, Mesure, SalleStatus, LiveMesureEventData, LiveAlerteEventData } from '../types'
 import { MONITORING_TYPES, getMonitoringType } from '../monitoring'
@@ -118,11 +118,228 @@ function LiveActivityFeed({ mesures, max = 6 }: { mesures: Mesure[]; max?: numbe
   )
 }
 
+/* ─── Visitor Welcome ─────────────────────────────────────────── */
+
+function VisitorWelcome({ nom }: { nom: string }) {
+  return (
+    <div className="mx-auto w-full max-w-7xl space-y-5 p-4 md:px-6">
+      {/* Hero — fills the available width instead of floating in a
+          768px column. The illustration panel is hidden below lg so
+          the hero still feels focused on mobile. */}
+      <div
+        className="relative overflow-hidden rounded-3xl border p-6 md:p-8"
+        style={{
+          background:
+            'linear-gradient(135deg, #3B82F6 0%, #2563EB 50%, #1D4ED8 100%)',
+          border: '1px solid rgba(255,255,255,0.12)',
+        }}
+      >
+        {/* Decorative blobs */}
+        <div
+          className="absolute -right-12 -top-12 h-44 w-44 rounded-full"
+          style={{ background: 'rgba(255,255,255,0.10)' }}
+        />
+        <div
+          className="absolute -bottom-16 right-1/3 h-40 w-40 rounded-full"
+          style={{ background: 'rgba(255,255,255,0.07)' }}
+        />
+
+        <div className="relative grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-center">
+          {/* Left: greeting + CTA */}
+          <div>
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wide"
+              style={{ background: 'rgba(255,255,255,0.18)', color: '#FFFFFF', backdropFilter: 'blur(8px)' }}
+            >
+              <Sparkles size={11} strokeWidth={2.4} />
+              Bienvenue
+            </span>
+            <h2
+              className="mt-3 text-[28px] font-semibold leading-[1.15] tracking-tight md:text-[34px]"
+              style={{ color: '#FFFFFF' }}
+            >
+              Bonjour {nom}
+            </h2>
+            <p className="mt-2 max-w-xl text-[14px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.86)' }}>
+              Posez vos questions à l'assistant IA pour interroger la base
+              documentaire indexée du CHU — protocoles, procédures, chiffres clés,
+              le tout en langage naturel.
+            </p>
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              <Link
+                to="/assistant"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-[13px] font-semibold transition-all hover:-translate-y-px active:scale-[0.97]"
+                style={{ color: '#1D4ED8' }}
+              >
+                <MessageCircle size={14} strokeWidth={2.4} />
+                Démarrer une conversation
+              </Link>
+              <Link
+                to="/profile"
+                className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-[13px] font-semibold transition-all hover:-translate-y-px active:scale-[0.97]"
+                style={{ background: 'rgba(255,255,255,0.14)', color: '#FFFFFF', backdropFilter: 'blur(8px)' }}
+              >
+                <UserCircle size={14} strokeWidth={2.2} />
+                Mon profil
+              </Link>
+            </div>
+          </div>
+
+          {/* Right: feature tile */}
+          <div
+            className="hidden rounded-2xl p-5 lg:block"
+            style={{ background: 'rgba(255,255,255,0.10)', backdropFilter: 'blur(8px)' }}
+          >
+            <p
+              className="text-[11px] font-semibold uppercase tracking-wide"
+              style={{ color: 'rgba(255,255,255,0.78)' }}
+            >
+              Ce que vous pouvez faire
+            </p>
+            <ul className="mt-3 space-y-2.5 text-[13px]" style={{ color: '#FFFFFF' }}>
+              <li className="flex items-start gap-2.5">
+                <span
+                  className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg"
+                  style={{ background: 'rgba(255,255,255,0.20)' }}
+                >
+                  <CheckCircle2 size={12} strokeWidth={2.4} />
+                </span>
+                Poser des questions en langage naturel à l'assistant IA.
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span
+                  className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg"
+                  style={{ background: 'rgba(255,255,255,0.20)' }}
+                >
+                  <CheckCircle2 size={12} strokeWidth={2.4} />
+                </span>
+                Consulter vos informations de profil.
+              </li>
+            </ul>
+            <p
+              className="mt-4 text-[11.5px] leading-relaxed"
+              style={{ color: 'rgba(255,255,255,0.74)' }}
+            >
+              La supervision en temps réel des salles, des capteurs et des
+              alertes est réservée au personnel hospitalier et aux administrateurs.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile-only version of the same info — shown below lg where
+          the right column of the hero is hidden. */}
+      <div
+        className="rounded-3xl border p-5 lg:hidden"
+        style={{ background: '#F5F5F7', border: '1px solid #ECECEC' }}
+      >
+        <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#3B82F6' }}>
+          Ce que vous pouvez faire
+        </p>
+        <ul className="mt-3 space-y-2 text-[13px]" style={{ color: '#374151' }}>
+          <li className="flex items-start gap-2">
+            <CheckCircle2 size={14} strokeWidth={2.4} style={{ color: '#10B981' }} className="mt-0.5 shrink-0" />
+            Poser des questions en langage naturel à l'assistant IA.
+          </li>
+          <li className="flex items-start gap-2">
+            <CheckCircle2 size={14} strokeWidth={2.4} style={{ color: '#10B981' }} className="mt-0.5 shrink-0" />
+            Consulter vos informations de profil.
+          </li>
+        </ul>
+        <p className="mt-4 text-[12px]" style={{ color: '#6B7280' }}>
+          La supervision en temps réel des salles, des capteurs et des alertes
+          est réservée au personnel hospitalier et aux administrateurs.
+        </p>
+      </div>
+
+      {/* Quick action tiles — three small cards. These fill the lower
+          half of the page so the visitor never sees a half-empty screen. */}
+      <div className="grid gap-3 md:grid-cols-3">
+        <Link
+          to="/assistant"
+          className="group flex items-center gap-3 rounded-2xl border p-4 transition-all duration-200 hover:-translate-y-px hover:shadow-sm"
+          style={{ background: '#FFFFFF', borderColor: '#ECECEC' }}
+        >
+          <span
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white"
+            style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)' }}
+          >
+            <MessageCircle size={16} strokeWidth={2.2} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13.5px] font-semibold" style={{ color: '#111111' }}>
+              Assistant IA
+            </p>
+            <p className="truncate text-[12px]" style={{ color: '#6B7280' }}>
+              Interroger la base documentaire
+            </p>
+          </div>
+          <Sparkles size={14} strokeWidth={2} style={{ color: '#9CA3AF' }} className="shrink-0 transition-transform group-hover:scale-110" />
+        </Link>
+
+        <Link
+          to="/profile"
+          className="group flex items-center gap-3 rounded-2xl border p-4 transition-all duration-200 hover:-translate-y-px hover:shadow-sm"
+          style={{ background: '#FFFFFF', borderColor: '#ECECEC' }}
+        >
+          <span
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+            style={{ background: '#F5F5F7' }}
+          >
+            <UserCircle size={16} strokeWidth={2.2} style={{ color: '#374151' }} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13.5px] font-semibold" style={{ color: '#111111' }}>
+              Mon profil
+            </p>
+            <p className="truncate text-[12px]" style={{ color: '#6B7280' }}>
+              Vos informations de compte
+            </p>
+          </div>
+          <Sparkles size={14} strokeWidth={2} style={{ color: '#9CA3AF' }} className="shrink-0 transition-transform group-hover:scale-110" />
+        </Link>
+
+        <div
+          className="flex items-center gap-3 rounded-2xl border p-4"
+          style={{ background: '#F5F5F7', borderColor: '#ECECEC' }}
+        >
+          <span
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+            style={{ background: '#FFFFFF' }}
+          >
+            <ShieldCheck size={16} strokeWidth={2.2} style={{ color: '#10B981' }} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13.5px] font-semibold" style={{ color: '#111111' }}>
+              Session sécurisée
+            </p>
+            <p className="truncate text-[12px]" style={{ color: '#6B7280' }}>
+              Connexion chiffrée de bout en bout
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ─── Dashboard Page ──────────────────────────────────────────── */
 
 export default function DashboardPage() {
   const { user } = useAuth()
-  const isAdmin = user?.role === 'admin'
+  const { permissions } = usePermissions()
+  const canViewAlertes = permissions.canViewAlertes
+  const canViewDocuments = permissions.canViewDocuments
+  const canViewSalles = permissions.canViewSalles
+
+  // Visitors get a dedicated welcome screen because the live dashboard
+  // would 403 on every endpoint it calls. The check is on
+  // `canViewRestrictedDashboard` (visitor-only) rather than
+  // `!canViewSalles` so hospital staff still get the full dashboard.
+  if (permissions.canViewRestrictedDashboard) {
+    return <VisitorWelcome nom={user?.nom?.split(' ')[0] || 'visiteur'} />
+  }
+
   const { onMesure, onAlerte } = useLiveSocket()
   const [salles, setSalles] = useState<SalleStatus[]>([])
   const [mesures, setMesures] = useState<Mesure[]>([])
@@ -134,18 +351,24 @@ export default function DashboardPage() {
   const load = useCallback(async () => {
     setError('')
     try {
-      const [s, m, a, d] = await Promise.all([
+      // The dashboard is only rendered for roles that can read every
+      // surface it shows, so we can call all four endpoints in
+      // parallel. allSettled is still used so a single transient
+      // failure doesn't blank the whole page.
+      const results = await Promise.allSettled([
         getSallesStatus(),
         getMesures({ limit: 80 }),
         getAlertes(false),
         getDocuments(),
       ])
-      setSalles(s.data)
-      setMesures(m.data)
-      setAlertes(a.data)
-      setDocuments(d.data)
-    } catch {
-      setError('Impossible de charger les données.')
+      const [s, m, a, d] = results
+      if (s.status === 'fulfilled') setSalles(s.value.data)
+      if (m.status === 'fulfilled') setMesures(m.value.data)
+      if (a.status === 'fulfilled') setAlertes(a.value.data)
+      if (d.status === 'fulfilled') setDocuments(d.value.data)
+      if (results.some(r => r.status === 'rejected')) {
+        setError('Impossible de charger certaines données.')
+      }
     } finally {
       setLoading(false)
     }
@@ -299,22 +522,26 @@ export default function DashboardPage() {
               sub={`${registeredSalles} enregistrée(s)`}
               tone="neutral"
             />
-            <StatCard
-              title="Alertes actives"
-              value={activeAlerts}
-              icon={Bell}
-              accent={activeAlerts > 0 ? '#F59E0B' : '#10B981'}
-              sub={activeAlerts > 0 ? 'À traiter' : 'Situation stable'}
-              tone={activeAlerts > 0 ? 'warning' : 'good'}
-            />
-            <StatCard
-              title="Documents"
-              value={documents.length}
-              icon={FileText}
-              accent="#8B5CF6"
-              sub={`${indexedDocuments} indexé(s)`}
-              tone={indexedDocuments === documents.length && documents.length > 0 ? 'good' : 'neutral'}
-            />
+            {canViewAlertes && (
+              <StatCard
+                title="Alertes actives"
+                value={activeAlerts}
+                icon={Bell}
+                accent={activeAlerts > 0 ? '#F59E0B' : '#10B981'}
+                sub={activeAlerts > 0 ? 'À traiter' : 'Situation stable'}
+                tone={activeAlerts > 0 ? 'warning' : 'good'}
+              />
+            )}
+            {canViewDocuments && (
+              <StatCard
+                title="Documents"
+                value={documents.length}
+                icon={FileText}
+                accent="#8B5CF6"
+                sub={`${indexedDocuments} indexé(s)`}
+                tone={indexedDocuments === documents.length && documents.length > 0 ? 'good' : 'neutral'}
+              />
+            )}
             <StatCard
               title="Capteurs actifs"
               value={activeMonitoringFamilies}
@@ -354,7 +581,7 @@ export default function DashboardPage() {
           <CombinedChart mesures={mesures} />
 
           {/* Admin Section */}
-          {isAdmin && (
+          {canViewSalles && (
             <div
               className="card rounded-3xl border p-5"
               style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}
@@ -388,8 +615,8 @@ export default function DashboardPage() {
 
         {/* Right Info Panel */}
         <div className="space-y-3">
-          {/* Recent Alerts */}
-          {recentAlertes.length > 0 && (
+          {/* Recent Alerts (hidden for visitors) */}
+          {canViewAlertes && recentAlertes.length > 0 && (
             <div
               className="card rounded-3xl border p-4"
               style={{ background: '#FFFFFF', border: '1px solid #ECECEC' }}

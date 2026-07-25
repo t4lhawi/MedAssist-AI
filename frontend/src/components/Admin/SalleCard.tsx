@@ -16,6 +16,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import type { SalleStatus } from '../../types'
+import { usePermissions } from '../../hooks/usePermissions'
 import { MONITORING_TYPES } from '../../monitoring'
 import { TextField } from '../ui/Field'
 import Modal, { ModalBody, ModalButton, ModalFooter, ModalHeader } from '../ui/Modal'
@@ -304,6 +305,11 @@ function ActionMenu({
 
 export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
   const sensorByType = Object.fromEntries(salle.sensors.map(s => [s.type, s]))
+  // The card is only rendered on the admin salle page, but a future
+  // read-only viewer role would still see the card. Hide the kebab
+  // menu + action buttons in that case.
+  const { permissions } = usePermissions()
+  const canManage = permissions.canManageRooms
 
   const [renaming, setRenaming] = useState(false)
   const [nameDraft, setNameDraft] = useState(salle.salle)
@@ -548,7 +554,7 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
             </div>
           </div>
 
-          {canEdit && (
+          {canEdit && canManage && (
             <ActionMenu
               salle={salle}
               onRename={openRename}

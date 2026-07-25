@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { usePermissions } from '../../hooks/usePermissions'
 import { Bell, LogOut, User, ChevronDown, UserCircle, Clock } from 'lucide-react'
 
 const LOGO = '../assets/favicon.ico';
@@ -12,6 +13,7 @@ interface Props {
 
 export default function Navbar({ alertCount }: Props) {
   const { user, logout } = useAuth()
+  const { roleLabel } = usePermissions()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const [now, setNow] = useState(new Date())
@@ -116,7 +118,7 @@ export default function Navbar({ alertCount }: Props) {
               </div>
               <div className="hidden max-w-32 text-left sm:block">
                 <p className="truncate text-[13px] font-medium">{user?.nom}</p>
-                <p className="truncate capitalize text-[10.5px]" style={{ color: '#9CA3AF' }}>{user?.role}</p>
+                <p className="truncate text-[10.5px]" style={{ color: '#9CA3AF' }}>{roleLabel}</p>
               </div>
               <ChevronDown
                 size={13}
@@ -137,7 +139,7 @@ export default function Navbar({ alertCount }: Props) {
               >
                 <div className="border-b px-3.5 py-3 sm:block hidden" style={{ borderColor: '#F5F5F7' }}>
                   <p className="truncate text-[13px] font-medium" style={{ color: '#111111' }}>{user?.nom}</p>
-                  <p className="truncate capitalize text-[11px]" style={{ color: '#9CA3AF' }}>{user?.role}</p>
+                  <p className="truncate text-[11px]" style={{ color: '#9CA3AF' }}>{roleLabel}</p>
                 </div>
                 <div className="p-1.5">
                   <button

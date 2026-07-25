@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { LiveSocketProvider } from './context/LiveSocketContext'
 import LoginPage from './components/Auth/LoginPage'
+import RequireAuth from './components/Auth/RequireAuth'
 import Navbar from './components/Dashboard/Navbar'
 import Sidebar, { MobileNav } from './components/Dashboard/Sidebar'
 import DashboardPage from './pages/DashboardPage'
@@ -13,17 +14,18 @@ import DocumentsPage from './pages/DocumentsPage'
 import AssistantPage from './pages/AssistantPage'
 import ProfilePage from './pages/ProfilePage'
 import { getAlertes } from './services/api'
+import { usePermissions } from './hooks/usePermissions'
 
 const LOGO = '../assets/favicon.ico';
 
 
 function Logo({ size = 175 }: { size?: number }) {
   return (
-      <img 
-        src={LOGO} 
-        alt="Logo" 
-        width={size} 
-        height={size} 
+      <img
+        src={LOGO}
+        alt="Logo"
+        width={size}
+        height={size}
       />
   )
 }
@@ -37,12 +39,54 @@ function AnimatedRoutes() {
     // from sessionStorage on mount (see ChatInterface.tsx).
     <div key={location.pathname} className="page-transition">
       <Routes location={location}>
-        <Route path="/" element={<DashboardPage />} />
-        <Route path="/admin/salles" element={<AdminSallesPage />} />
-        <Route path="/alertes" element={<AlertesPage />} />
-        <Route path="/documents" element={<DocumentsPage />} />
-        <Route path="/assistant" element={<AssistantPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
+        {/* Dashboard — open to every authenticated user. Visitors see
+            a restricted view of the dashboard (see DashboardPage). */}
+        <Route path="/" element={
+          <RequireAuth can="canViewDashboard">
+            <DashboardPage />
+          </RequireAuth>
+        } />
+
+        {/* Admin · Gestion des salles (admin only). */}
+        <Route path="/admin/salles" element={
+          <RequireAuth can="canViewSalles">
+            <AdminSallesPage />
+          </RequireAuth>
+        } />
+
+        {/* Alertes — staff + admin (visitors are excluded). */}
+        <Route path="/alertes" element={
+          <RequireAuth can="canViewAlertes">
+            <AlertesPage />
+          </RequireAuth>
+        } />
+
+        {/* Documents — staff + admin. Visitors can't read the
+            knowledge base directly; they query it via the assistant. */}
+        <Route path="/documents" element={
+          <RequireAuth can="canViewDocuments">
+            <DocumentsPage />
+          </RequireAuth>
+        } />
+
+        {/* Assistant — open to staff, admin, and visitors. */}
+        <Route path="/assistant" element={
+          <RequireAuth can="canViewAssistant">
+            <AssistantPage />
+          </RequireAuth>
+        } />
+
+        {/* Profile — every authenticated user. */}
+        <Route path="/profile" element={
+          <RequireAuth can="canViewProfile">
+            <ProfilePage />
+          </RequireAuth>
+        } />
+
+        {/* Any unknown path inside the app shell: send the user to
+            their dashboard. Unauthorized navigations are caught by
+            ``RequireAuth`` before this fallback fires. */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
   )
@@ -50,10 +94,17 @@ function AnimatedRoutes() {
 
 function Layout() {
   const { user, loading } = useAuth()
+  const { permissions } = usePermissions()
   const [alertCount, setAlertCount] = useState(0)
 
   useEffect(() => {
     if (!user) return
+    // Visitors don't have access to the alertes endpoint — skip the
+    // polling entirely so we don't keep 403-ing in the background.
+    if (!permissions.canViewAlertes) {
+      setAlertCount(0)
+      return
+    }
 
     const refreshAlertCount = () => {
       getAlertes(false)
@@ -64,7 +115,7 @@ function Layout() {
     refreshAlertCount()
     const t = setInterval(refreshAlertCount, 60000)
     return () => clearInterval(t)
-  }, [user])
+  }, [user, permissions.canViewAlertes])
 
   if (loading) {
     return (
@@ -85,6 +136,11 @@ function Layout() {
 
   if (!user) return <Navigate to="/login" />
 
+  // Visitors get a slim header + assistant-only experience; we hide
+  // the full sidebar because they only have a single nav entry. The
+  // mobile bottom nav still renders (it now shows just Assistant + Logout).
+  const showSidebar = permissions.canViewLiveDashboard
+
   return (
     <LiveSocketProvider>
       {/* ── 3-column layout: nav top + [sidebar | main | right panel] ── */}
@@ -93,8 +149,9 @@ function Layout() {
       <div className="flex h-screen flex-col overflow-hidden" style={{ background: '#F5F5F7' }}>
         <Navbar alertCount={alertCount} />
         <div className="flex flex-1 overflow-hidden">
-          {/* Left: fixed navigation sidebar */}
-          <Sidebar alertCount={alertCount} />
+          {/* Left: fixed navigation sidebar — hidden for visitors since
+              they only have a single nav entry (Assistant IA). */}
+          {showSidebar && <Sidebar alertCount={alertCount} />}
 
           {/* Center: scrollable main content */}
           <main className="flex-1 overflow-y-auto pb-20 md:pb-0">

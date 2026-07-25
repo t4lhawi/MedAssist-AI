@@ -20,6 +20,7 @@ import {
   Lock,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { usePermissions } from '../hooks/usePermissions'
 import { getSallesStatus, getDocuments } from '../services/api'
 import PageHeader from '../components/ui/PageHeader'
 
@@ -157,6 +158,7 @@ function Skeleton() {
 
 export default function ProfilePage() {
   const { user, logout } = useAuth()
+  const { roleLabel, permissions } = usePermissions()
   const [onlineSalles, setOnlineSalles] = useState(0)
   const [registeredSalles, setRegisteredSalles] = useState(0)
   const [documentsCount, setDocumentsCount] = useState(0)
@@ -255,11 +257,11 @@ export default function ProfilePage() {
               </p>
               <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                 <span
-                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold capitalize"
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
                   style={{ background: '#EEF2FF', color: '#4F46E5' }}
                 >
                   <ShieldCheck size={11} strokeWidth={2.4} />
-                  {user.role}
+                  {roleLabel}
                 </span>
                 {memberShort && (
                   <span
@@ -341,7 +343,7 @@ export default function ProfilePage() {
           </div>
           <div className="divide-y" style={{ borderColor: '#F5F5F7' }}>
             <InfoRow icon={Mail} label="Adresse e-mail" value={user.email} />
-            <InfoRow icon={ShieldCheck} label="Rôle" value={user.role} />
+            <InfoRow icon={ShieldCheck} label="Rôle" value={roleLabel} />
             <InfoRow icon={CalendarClock} label="Inscrit le" value={memberSince || '—'} />
             <InfoRow icon={Activity} label="Statut" value={user.actif ? 'Actif' : 'Désactivé'} />
           </div>
@@ -444,34 +446,42 @@ export default function ProfilePage() {
           </h4>
         </div>
         <div className="grid gap-2.5 sm:grid-cols-2">
-          <QuickAction
-            to="/assistant"
-            icon={MessageCircle}
-            title="Assistant IA"
-            description="Poser une question au système"
-            accent="#3B82F6"
-          />
-          <QuickAction
-            to="/alertes"
-            icon={Bell}
-            title="Voir les alertes"
-            description="Consulter les notifications actives"
-            accent="#EF4444"
-          />
-          <QuickAction
-            to="/documents"
-            icon={FileText}
-            title="Mes documents"
-            description="Parcourir la base documentaire"
-            accent="#F59E0B"
-          />
-          <QuickAction
-            to="/admin/salles"
-            icon={Building2}
-            title="Gestion des salles"
-            description="Administrer les capteurs ESP32"
-            accent="#8B5CF6"
-          />
+          {permissions.canUseAssistant && (
+            <QuickAction
+              to="/assistant"
+              icon={MessageCircle}
+              title="Assistant IA"
+              description="Poser une question au système"
+              accent="#3B82F6"
+            />
+          )}
+          {permissions.canViewAlertes && (
+            <QuickAction
+              to="/alertes"
+              icon={Bell}
+              title="Voir les alertes"
+              description="Consulter les notifications actives"
+              accent="#EF4444"
+            />
+          )}
+          {permissions.canViewDocuments && (
+            <QuickAction
+              to="/documents"
+              icon={FileText}
+              title="Mes documents"
+              description="Parcourir la base documentaire"
+              accent="#F59E0B"
+            />
+          )}
+          {permissions.canViewSalles && (
+            <QuickAction
+              to="/admin/salles"
+              icon={Building2}
+              title="Gestion des salles"
+              description="Administrer les capteurs ESP32"
+              accent="#8B5CF6"
+            />
+          )}
         </div>
       </div>
 

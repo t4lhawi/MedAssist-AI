@@ -5,19 +5,21 @@ from sqlalchemy.orm import Session
 from typing import List, cast
 from ..database import get_db, SessionLocal
 from ..schemas import DocumentOut
-from ..auth import get_current_user
+from ..auth import require_admin, require_hospital_staff
 from ..config import settings
 from .. import crud
 from ..rag.pipeline import indexer_pdf, supprimer_document_index
 
 router = APIRouter(prefix="/api/documents", tags=["Documents"])
 
+# Read-only access (list / download) is shared with hospital staff.
+# Uploads and deletes are admin-only.
 @router.post("/", response_model=DocumentOut)
 async def upload(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    user=Depends(require_admin),
 ):
     filename = os.path.basename(file.filename or "")
     if not filename.lower().endswith(".pdf"):
@@ -51,14 +53,17 @@ async def upload(
     return doc
 
 @router.get("/", response_model=List[DocumentOut])
-def lister(db: Session = Depends(get_db), user=Depends(get_current_user)):
+def lister(
+    db: Session = Depends(get_db),
+    user=Depends(require_hospital_staff),
+):
     return crud.get_documents(db)
 
 @router.get("/{doc_id}/file")
 def telecharger(
     doc_id: int,
     db: Session = Depends(get_db),
-    user=Depends(get_current_user),
+    user=Depends(require_hospital_staff),
 ):
     """Stream the original PDF for a document so the UI can offer a
     download action. The file is served with the original filename via
@@ -80,7 +85,11 @@ def telecharger(
     )
 
 @router.delete("/{doc_id}")
-def supprimer(doc_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def supprimer(
+    doc_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(require_admin),
+):
     doc = crud.get_document(db, doc_id)
     if not doc:
         raise HTTPException(404, "Document introuvable")

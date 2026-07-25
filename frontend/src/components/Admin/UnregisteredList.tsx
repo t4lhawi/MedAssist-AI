@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { ArrowUpRight, Hash, Radar, Search, Server } from 'lucide-react'
 import type { UnregisteredSource } from '../../types'
 import { claimIp } from '../../services/api'
+import { usePermissions } from '../../hooks/usePermissions'
 import { MONITORING_TYPES, getMonitoringType } from '../../monitoring'
 import { TextField } from '../ui/Field'
 import Modal, { ModalBody, ModalButton, ModalFooter, ModalHeader } from '../ui/Modal'
@@ -18,6 +19,11 @@ export default function UnregisteredList({ sources, onClaimed }: Props) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
+  // Claiming an unregistered IP is admin-only. The component is only
+  // rendered on the admin salle page today, but the permission gate
+  // makes it safe to drop on a read-only view in the future.
+  const { permissions } = usePermissions()
+  const canClaim = permissions.canManageDevices
 
   const filtered = useMemo(() => {
     if (!query.trim()) return sources
@@ -153,14 +159,16 @@ export default function UnregisteredList({ sources, onClaimed }: Props) {
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => openClaim(s.ip)}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[#111111] px-3.5 py-1.5 text-[12.5px] font-semibold text-white shadow-[0_2px_8px_-2px_rgba(17,17,17,0.35)] transition-all duration-200 hover:-translate-y-px hover:bg-[#1F1F23] active:scale-[0.97]"
-              >
-                Réclamer
-                <ArrowUpRight size={12} strokeWidth={2.6} />
-              </button>
+              {canClaim && (
+                <button
+                  type="button"
+                  onClick={() => openClaim(s.ip)}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#111111] px-3.5 py-1.5 text-[12.5px] font-semibold text-white shadow-[0_2px_8px_-2px_rgba(17,17,17,0.35)] transition-all duration-200 hover:-translate-y-px hover:bg-[#1F1F23] active:scale-[0.97]"
+                >
+                  Réclamer
+                  <ArrowUpRight size={12} strokeWidth={2.6} />
+                </button>
+              )}
             </li>
           )
         })}

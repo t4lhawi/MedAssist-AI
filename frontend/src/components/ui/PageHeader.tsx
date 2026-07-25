@@ -11,7 +11,7 @@ export interface LiveCount {
 interface Props {
   category: ReactNode
   title: string
-  subtitle?: string
+  subtitle?: ReactNode
   liveCount?: LiveCount
   actions?: ReactNode
   rightSlot?: ReactNode

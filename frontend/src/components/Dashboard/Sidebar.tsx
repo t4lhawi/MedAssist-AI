@@ -10,25 +10,36 @@ import {
   UserCircle,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { usePermissions } from '../../hooks/usePermissions'
+import type { Permissions } from '../../utils/permissions'
 
 interface NavItem {
   to: string
   icon: React.ElementType
   label: string
   short: string
-  adminOnly?: boolean
+  /** Permission required to see this item. */
+  requires?: keyof Permissions
   badge?: number
 }
 
-/** Shared nav items — used by both the desktop Sidebar and the mobile MobileNav. */
-function navItems(role: string | undefined, alertCount: number): NavItem[] {
-  return [
-    { to: '/', icon: LayoutDashboard, label: 'Tableau de bord', short: 'Accueil' },
-    { to: '/admin/salles', icon: Settings2, label: 'Gestion des salles', short: 'Salles', adminOnly: true },
-    { to: '/alertes', icon: Bell, label: 'Alertes', short: 'Alertes', badge: alertCount },
-    { to: '/documents', icon: FileText, label: 'Documents', short: 'Docs' },
-    { to: '/assistant', icon: MessageCircle, label: 'Assistant IA', short: 'Assistant' },
-  ].filter(n => !n.adminOnly || role === 'admin')
+/** Shared nav items — used by both the desktop Sidebar and the mobile MobileNav.
+ *  Items are filtered by the current user's permissions, never by
+ *  role strings directly. The filtering logic lives here once; the
+ *  mobile nav reuses the same function so the two views stay in sync. */
+function buildNavItems(perms: Permissions, alertCount: number): NavItem[] {
+  const all: NavItem[] = [
+    // "Tableau de bord" is the live dashboard. Visitors get a different
+    // welcome screen at `/`, so we hide this entry for them — otherwise
+    // it would point to a route that doesn't 404 but renders the same
+    // welcome page, which is confusing.
+    { to: '/', icon: LayoutDashboard, label: 'Tableau de bord', short: 'Accueil', requires: 'canViewLiveDashboard' },
+    { to: '/admin/salles', icon: Settings2, label: 'Gestion des salles', short: 'Salles', requires: 'canViewSalles' },
+    { to: '/alertes', icon: Bell, label: 'Alertes', short: 'Alertes', requires: 'canViewAlertes', badge: alertCount },
+    { to: '/documents', icon: FileText, label: 'Documents', short: 'Docs', requires: 'canViewDocuments' },
+    { to: '/assistant', icon: MessageCircle, label: 'Assistant IA', short: 'Assistant', requires: 'canViewAssistant' },
+  ]
+  return all.filter(n => !n.requires || perms[n.requires] === true)
 }
 
 interface Props {
@@ -36,8 +47,9 @@ interface Props {
 }
 
 export default function Sidebar({ alertCount = 0 }: Props) {
-  const { user, logout } = useAuth()
-  const items = navItems(user?.role, alertCount)
+  const { logout } = useAuth()
+  const { permissions } = usePermissions()
+  const items = buildNavItems(permissions, alertCount)
 
   return (
     <aside
@@ -150,8 +162,9 @@ export default function Sidebar({ alertCount = 0 }: Props) {
    nav items so routes / badges / admin-gating stay in sync. */
 
 export function MobileNav({ alertCount = 0 }: Props) {
-  const { user, logout } = useAuth()
-  const items = navItems(user?.role, alertCount)
+  const { logout } = useAuth()
+  const { permissions } = usePermissions()
+  const items = buildNavItems(permissions, alertCount)
 
   return (
     <nav

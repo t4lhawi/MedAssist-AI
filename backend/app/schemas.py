@@ -17,7 +17,22 @@ class UtilisateurCreate(BaseModel):
     nom: str
     email: str
     password: str
-    role: str = "soignant"
+    # The default role is the most restrictive one. Only an admin can
+    # promote a user to admin or hospital_staff through the user
+    # management endpoint.
+    role: str = "visitor"
+
+# `UtilisateurUpdate` is intentionally permissive: every field is
+# optional so a PATCH-style update can change just one thing (name,
+# email, password, role, or active flag). The router is the single
+# source of truth that decides which fields are honoured and that
+# normalises the role before persisting it.
+class UtilisateurUpdate(BaseModel):
+    nom: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+    role: Optional[str] = None
+    actif: Optional[bool] = None
 
 class UtilisateurOut(BaseModel):
     id: int
