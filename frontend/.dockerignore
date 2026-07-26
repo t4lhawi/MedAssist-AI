@@ -1,0 +1,20 @@
+# ---- Node / build outputs --------------------------------------------------
+node_modules
+**/node_modules
+dist
+build
+**/dist
+**/build
+coverage
+**/coverage
+
+# ---- VCS / IDE -------------------------------------------------------------
+.git
+.gitignore
+.dockerignore
+.idea
+.vscode
+
+# ---- Env / secrets ---------------------------------------------------------
+.env
+.env.*

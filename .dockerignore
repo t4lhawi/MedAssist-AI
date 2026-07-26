@@ -1,0 +1,26 @@
+# ---- VCS / docs ----------------------------------------------------------
+.git
+.gitignore
+LICENSE
+README.md
+
+# ---- Python --------------------------------------------------------------
+**/.venv
+**/venv
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+
+# ---- Node ----------------------------------------------------------------
+**/node_modules
+**/dist
+**/build
+
+# ---- Runtime data (mount via volumes in compose instead) -----------------
+**/chroma_db
+**/uploads
+**/conversations.db
+
+# ---- Secrets (use env_file in compose, not bake into images) -------------
+**/.env

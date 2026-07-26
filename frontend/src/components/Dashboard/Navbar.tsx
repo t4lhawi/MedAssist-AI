@@ -5,7 +5,7 @@ import { usePermissions } from '../../hooks/usePermissions'
 import { Bell, LogOut, User, ChevronDown, UserCircle, Clock } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 
-const LOGO = '../assets/favicon.ico';
+const LOGO = '/favicon.ico';
 
 interface Props {
   alertCount: number

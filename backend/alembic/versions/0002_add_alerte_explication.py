@@ -28,13 +28,12 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "alertes",
-        sa.Column("explication", sa.Text(), nullable=True),
-    )
-    op.add_column(
-        "alertes",
-        sa.Column("explication_cree_le", sa.DateTime(timezone=True), nullable=True),
+    # Idempotent : IF NOT EXISTS lets us re-run safely if a previous deploy
+    # partially applied this migration on an existing database.
+    op.execute("ALTER TABLE alertes ADD COLUMN IF NOT EXISTS explication TEXT")
+    op.execute(
+        "ALTER TABLE alertes ADD COLUMN IF NOT EXISTS "
+        "explication_cree_le TIMESTAMP WITH TIME ZONE"
     )
 
 

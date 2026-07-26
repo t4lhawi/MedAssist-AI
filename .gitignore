@@ -9,6 +9,11 @@ dist/
 build/
 chroma_db/
 uploads/
+conversations.db
 *.egg-info/
 .DS_Store
 Thumbs.db
+
+# IDE / tooling
+.vscode/
+.idea/

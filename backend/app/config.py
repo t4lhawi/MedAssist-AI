@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from pydantic_settings import BaseSettings
 
@@ -8,6 +9,29 @@ def _resolve_backend_path(value: str) -> str:
     if path.is_absolute():
         return str(path)
     return str((BACKEND_DIR / path).resolve())
+
+def _ensure_writable(path_str: str) -> str:
+    """Make sure the directory exists and is writable by the current
+    process. In Docker, named volumes mount on an existing directory and
+    keep the image's ownership — if the image shipped the directory as
+    root and the process runs as an unprivileged user, the upload would
+    silently fail with PermissionError. This is the runtime safety net
+    for that case."""
+    p = Path(path_str)
+    try:
+        p.mkdir(parents=True, exist_ok=True)
+    except PermissionError:
+        # We're not allowed to create it; that's a real error — let it
+        # surface so the user sees a clear failure instead of a silent
+        # one.
+        raise
+    if not os.access(p, os.W_OK):
+        raise PermissionError(
+            f"UPLOAD_DIR/CHROMA_PATH '{p}' is not writable by UID "
+            f"{os.getuid()}. Check the volume mount and directory "
+            f"ownership in the Dockerfile."
+        )
+    return str(p)
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://postgres:admin@postgres:5432/medassist"
@@ -45,5 +69,5 @@ class Settings(BaseSettings):
         env_file = str(BACKEND_DIR / ".env")
 
 settings = Settings()
-settings.CHROMA_PATH = _resolve_backend_path(settings.CHROMA_PATH)
-settings.UPLOAD_DIR = _resolve_backend_path(settings.UPLOAD_DIR)
+settings.CHROMA_PATH = _ensure_writable(_resolve_backend_path(settings.CHROMA_PATH))
+settings.UPLOAD_DIR = _ensure_writable(_resolve_backend_path(settings.UPLOAD_DIR))

@@ -1,0 +1,90 @@
+# ════════════════════════════════════════════════════════════
+#  MedAssist AI – Local stack
+#  Run with:  docker compose up -d --build
+#  Tear down (keep data):  docker compose down
+#  Tear down (wipe data):  docker compose down -v
+# ════════════════════════════════════════════════════════════
+
+services:
+  # ── Postgres ──────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB}
+      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - medassist
+
+  # ── Mosquitto (MQTT for IoT ingestion) ────────────────────
+  mosquitto:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    command: ["mosquitto", "-c", "/mosquitto-no-auth.conf"]
+    # Uncomment to expose MQTT to the host (e.g. for an ESP32 on the LAN).
+    # ports:
+    #   - "1883:1883"
+    volumes:
+      - mqttdata:/mosquitto/data
+    networks:
+      - medassist
+
+  # ── Backend (FastAPI) ─────────────────────────────────────
+  # LLM  : Groq      (GROQ_API_KEY, LLM_MODEL=llama-3.3-70b-versatile)
+  # Embed: OpenRouter (OPENROUTER_API_KEY, EMBEDDING_MODEL=...)
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      # Force the Alembic env and SQLAlchemy to point at the in-network DB.
+      DATABASE_URL: ${DATABASE_URL}
+      # Resolve chroma_db / uploads to the mounted /data volume.
+      CHROMA_PATH: /data/chroma
+      UPLOAD_DIR:  /data/uploads
+      # Force MQTT to talk to the in-network broker.
+      MQTT_HOST:   mosquitto
+    volumes:
+      - medassist-data:/data
+    ports:
+      - "8000:8000"
+    networks:
+      - medassist
+
+  # ── Frontend (nginx → SPA) ────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    networks:
+      - medassist
+
+# ── Persistent data ────────────────────────────────────────
+volumes:
+  pgdata:
+  mqttdata:
+  medassist-data:
+
+# ── Shared network ─────────────────────────────────────────
+networks:
+  medassist:
+    driver: bridge

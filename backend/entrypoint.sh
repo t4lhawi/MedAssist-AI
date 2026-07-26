@@ -34,9 +34,9 @@ alembic upgrade head || {
   python -c "from app.database import engine, Base; from app import models; Base.metadata.create_all(bind=engine)"
 }
 
-# 3) Seed admin (idempotent : sort tôt si l'admin existe déjà).
-log "Création du compte administrateur (si absent)..."
-python seed_admin.py
+# 3) Seed users (idempotent : sort tôt si les comptes existent déjà).
+log "Création des utilisateurs de départ (si absents)..."
+python seed_roles.py
 
 # 4) Démarrage de l'API.
 log "Démarrage d'Uvicorn sur 0.0.0.0:8000..."

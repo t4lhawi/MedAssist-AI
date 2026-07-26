@@ -16,7 +16,7 @@ import ProfilePage from './pages/ProfilePage'
 import { getAlertes } from './services/api'
 import { usePermissions } from './hooks/usePermissions'
 
-const LOGO = '../assets/favicon.ico';
+const LOGO = '/favicon.ico';
 
 
 function Logo({ size = 175 }: { size?: number }) {

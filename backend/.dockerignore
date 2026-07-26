@@ -1,0 +1,41 @@
+# ---- Local Python venvs (do NOT bake host Windows venvs into Linux image) ----
+venv
+.venv
+env
+.env-venv
+**/venv
+**/.venv
+**/Lib
+**/lib
+
+# ---- Python caches ----------------------------------------------------------
+__pycache__
+**/__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.egg-info
+**/*.egg-info
+
+# ---- Runtime data (mount via volumes in compose) ---------------------------
+chroma_db
+**/chroma_db
+uploads
+**/uploads
+conversations.db
+**/*.db
+
+# ---- Local dev artefacts ---------------------------------------------------
+.git
+.gitignore
+.dockerignore
+.idea
+.vscode
+*.log
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# ---- Secrets ---------------------------------------------------------------
+.env
+.env.*
