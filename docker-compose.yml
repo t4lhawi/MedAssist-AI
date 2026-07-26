@@ -29,9 +29,11 @@ services:
     image: eclipse-mosquitto:2
     restart: unless-stopped
     command: ["mosquitto", "-c", "/mosquitto-no-auth.conf"]
-    # Uncomment to expose MQTT to the host (e.g. for an ESP32 on the LAN).
-    # ports:
-    #   - "1883:1883"
+    # Expose MQTT on the host so ESP32 devices on the LAN can reach the
+    # broker. The ESP32 firmware points at the host's LAN IP (e.g.
+    # 192.168.1.100), so binding to 0.0.0.0 is required.
+    ports:
+      - "1883:1883"
     volumes:
       - mqttdata:/mosquitto/data
     networks:

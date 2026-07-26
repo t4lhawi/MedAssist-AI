@@ -1,6 +1,3 @@
-/* MedAssist logo — the favicon.ico (CHU Mohammed VI Oujda) is the
- * hospital logo. If the image fails to load, the dashed-border
- * placeholder shows the exact spot where the logo should go. */
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Loader2, Mail, Lock, ShieldCheck, ImagePlus, Eye, EyeOff, Check, AlertCircle } from 'lucide-react'
