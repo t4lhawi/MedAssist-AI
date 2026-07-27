@@ -59,16 +59,16 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-border dark:bg-card">
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h3 className="flex items-center gap-2 text-[15px] font-semibold tracking-[-0.01em] text-slate-900 dark:text-text-primary">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
+          <h3 className="flex items-center gap-2 text-[15px] font-semibold tracking-[-0.01em] text-text-primary">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-300">
               <Activity size={15} strokeWidth={2.2} />
             </span>
             Capteurs
           </h3>
-          <p className="mt-1 pl-9 text-[12.5px] text-slate-400 dark:text-text-muted">{capteurs.length} capteur(s) configuré(s)</p>
+          <p className="mt-1 pl-9 text-[12.5px] text-text-muted">{capteurs.length} capteur(s) configuré(s)</p>
         </div>
         <button
           onClick={() => setShowForm(v => !v)}
@@ -80,20 +80,20 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
       </div>
 
       {showForm && (
-        <form onSubmit={submit} className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-border dark:bg-input">
+        <form onSubmit={submit} className="mb-4 rounded-xl border border-border bg-input p-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="sm:col-span-2">
-              <span className="mb-1.5 block text-[12px] font-medium text-slate-500 dark:text-text-secondary">Nom du capteur</span>
+              <span className="mb-1.5 block text-[12px] font-medium text-text-secondary">Nom du capteur</span>
               <input
                 value={form.nom}
                 onChange={e => setForm({ ...form, nom: e.target.value })}
                 placeholder="Ex: CO2 chambre froide 02"
                 required
-                className="w-full rounded-xl border-0 bg-white px-3.5 py-2.5 text-[13.5px] text-slate-800 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] outline-none transition-shadow placeholder:text-slate-400 focus:shadow-[inset_0_0_0_1.5px_rgba(37,99,235,0.5)] dark:bg-elevated dark:text-text-primary dark:placeholder:text-text-muted"
+                className="w-full rounded-xl border-0 bg-card px-3.5 py-2.5 text-[13.5px] text-text-primary shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] outline-none transition-shadow placeholder:text-text-muted focus:shadow-[inset_0_0_0_1.5px_rgba(37,99,235,0.5)]"
               />
             </label>
             <label>
-              <span className="mb-1.5 block text-[12px] font-medium text-slate-500 dark:text-text-secondary">Type de capteur</span>
+              <span className="mb-1.5 block text-[12px] font-medium text-text-secondary">Type de capteur</span>
               <Select
                 value={form.type}
                 onChange={v => setForm({ ...form, type: v })}
@@ -101,12 +101,12 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
               />
             </label>
             <label>
-              <span className="mb-1.5 block text-[12px] font-medium text-slate-500 dark:text-text-secondary">Emplacement</span>
+              <span className="mb-1.5 block text-[12px] font-medium text-text-secondary">Emplacement</span>
               <input
                 value={form.emplacement}
                 onChange={e => setForm({ ...form, emplacement: e.target.value })}
                 placeholder="Salle 101, bloc, chambre froide..."
-                className="w-full rounded-xl border-0 bg-white px-3.5 py-2.5 text-[13.5px] text-slate-800 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] outline-none transition-shadow placeholder:text-slate-400 focus:shadow-[inset_0_0_0_1.5px_rgba(37,99,235,0.5)] dark:bg-elevated dark:text-text-primary dark:placeholder:text-text-muted"
+                className="w-full rounded-xl border-0 bg-card px-3.5 py-2.5 text-[13.5px] text-text-primary shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] outline-none transition-shadow placeholder:text-text-muted focus:shadow-[inset_0_0_0_1.5px_rgba(37,99,235,0.5)]"
               />
             </label>
           </div>
@@ -117,7 +117,7 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="rounded-full bg-white px-3.5 py-2 text-[13px] font-medium text-slate-600 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] transition-colors hover:bg-slate-100 dark:bg-elevated dark:text-text-secondary dark:hover:bg-hover"
+              className="rounded-full bg-card px-3.5 py-2 text-[13px] font-medium text-text-secondary shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] transition-colors hover:bg-hover"
             >
               Annuler
             </button>
@@ -140,30 +140,30 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
           const derniere = dernieres[c.id]
 
           return (
-            <div key={c.id} className="flex items-center gap-3 rounded-xl border border-transparent p-2.5 transition-colors hover:border-slate-200 hover:bg-slate-50 dark:hover:border-border dark:hover:bg-hover">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-elevated dark:text-text-secondary">
+            <div key={c.id} className="flex items-center gap-3 rounded-xl border border-transparent p-2.5 transition-colors hover:border-border hover:bg-hover">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-elevated text-text-secondary">
                 <Icon size={16} strokeWidth={2} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[13.5px] font-medium text-slate-800 dark:text-text-primary">{c.nom}</p>
-                <p className="truncate text-[12px] text-slate-400 dark:text-text-muted">
+                <p className="truncate text-[13.5px] font-medium text-text-primary">{c.nom}</p>
+                <p className="truncate text-[12px] text-text-muted">
                   {meta.title} · {c.emplacement || 'Emplacement non renseigné'}
                 </p>
               </div>
               <div className="shrink-0 text-right">
                 {derniere ? (
-                  <p className="text-[14px] font-semibold text-slate-900 dark:text-text-primary">
-                    {derniere.valeur} <span className="text-[12px] font-medium text-slate-400 dark:text-text-muted">{derniere.unite || meta.unit}</span>
+                  <p className="text-[14px] font-semibold text-text-primary">
+                    {derniere.valeur} <span className="text-[12px] font-medium text-text-muted">{derniere.unite || meta.unit}</span>
                   </p>
                 ) : (
-                  <p className="text-[12px] font-medium text-slate-300 dark:text-text-muted">Aucune mesure</p>
+                  <p className="text-[12px] font-medium text-text-muted">Aucune mesure</p>
                 )}
                 <span
                   className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                    c.actif ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300' : 'bg-slate-100 text-slate-400 dark:bg-elevated dark:text-text-muted'
+                    c.actif ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300' : 'bg-elevated text-text-muted'
                   }`}
                 >
-                  <span className={`h-1.5 w-1.5 rounded-full ${c.actif ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-text-muted'}`} />
+                  <span className={`h-1.5 w-1.5 rounded-full ${c.actif ? 'bg-emerald-500' : 'bg-text-muted'}`} />
                   {c.actif ? 'Actif' : 'Inactif'}
                 </span>
               </div>
@@ -172,14 +172,14 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
         })}
 
         {capteurs.length === 0 && (
-          <div className="relative overflow-hidden rounded-xl border border-dashed border-slate-200 bg-gradient-to-br from-slate-50 to-white px-4 py-10 text-center dark:border-border dark:from-input dark:to-card">
+          <div className="relative overflow-hidden rounded-xl border border-dashed border-border bg-gradient-to-br from-input to-card px-4 py-10 text-center">
             <div className="pointer-events-none absolute inset-0 opacity-30" style={{ background: 'radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 70%)' }} />
             <div className="relative">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 ring-4 ring-blue-50/50 dark:from-blue-500/15 dark:to-blue-500/25 dark:ring-blue-500/20">
                 <Activity size={22} strokeWidth={1.6} className="text-blue-500 dark:text-blue-300" />
               </div>
-              <p className="text-[14px] font-semibold tracking-[-0.01em] text-slate-800 dark:text-text-primary">Aucun capteur enregistré</p>
-              <p className="mt-1 text-[12.5px] text-slate-400 dark:text-text-muted">
+              <p className="text-[14px] font-semibold tracking-[-0.01em] text-text-primary">Aucun capteur enregistré</p>
+              <p className="mt-1 text-[12.5px] text-text-muted">
                 Cliquez sur « Ajouter » pour enregistrer votre premier capteur.
               </p>
             </div>

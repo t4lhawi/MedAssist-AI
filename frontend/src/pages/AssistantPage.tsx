@@ -33,8 +33,8 @@ export default function AssistantPage() {
           <div className="flex flex-col items-end gap-2">
             {/* Status row — three quiet pills aligned to the right */}
             <div className="flex flex-wrap items-center justify-end gap-1.5">
-              <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-200 dark:border-border bg-white dark:bg-card px-2.5 py-1 text-[11.5px] font-medium text-slate-600 dark:text-text-secondary shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-                <BookOpen size={11} strokeWidth={2.2} className="shrink-0 text-slate-400 dark:text-text-muted" />
+              <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-[11.5px] font-medium text-text-secondary shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+                <BookOpen size={11} strokeWidth={2.2} className="shrink-0 text-text-muted" />
                 <span className="tabular-nums">Documents indexés</span>
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-emerald-50/70 px-2.5 py-1 text-[11.5px] font-medium text-emerald-700">
@@ -45,8 +45,8 @@ export default function AssistantPage() {
                 <Sparkles size={10} strokeWidth={2.4} />
                 RAG · En ligne
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-border bg-white dark:bg-card px-2.5 py-1 text-[11.5px] font-medium text-slate-500 dark:text-text-secondary shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-                <Calendar size={11} strokeWidth={2.2} className="shrink-0 text-slate-400 dark:text-text-muted" />
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-[11.5px] font-medium text-text-secondary shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+                <Calendar size={11} strokeWidth={2.2} className="shrink-0 text-text-muted" />
                 <span className="tabular-nums">{today}</span>
               </span>
             </div>
@@ -59,15 +59,15 @@ export default function AssistantPage() {
                 onClick={() => chatRef.current?.openHistory()}
                 title="Historique des conversations"
                 aria-label="Ouvrir l'historique des conversations"
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-border bg-white dark:bg-card px-3 py-1.5 text-[12.5px] font-medium text-slate-600 dark:text-text-secondary shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-slate-300 dark:hover:border-border-strong hover:bg-slate-50 dark:hover:dark:bg-input hover:text-slate-900 dark:text-text-primary hover:shadow-[0_6px_18px_-8px_rgba(15,23,42,0.15)]"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[12.5px] font-medium text-text-secondary shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-border-strong hover:bg-hover hover:text-text-primary hover:shadow-[0_6px_18px_-8px_rgba(15,23,42,0.15)]"
               >
                 <Clock3 size={13} strokeWidth={2.2} />
                 <span className="hidden sm:inline">Historique</span>
                 <span
                   aria-hidden="true"
-                  className="inline-flex h-4 min-w-[1rem] items-center justify-center gap-0.5 rounded-full bg-slate-100 dark:bg-elevated px-1.5 text-[10px] font-semibold tabular-nums text-slate-600 dark:text-text-secondary"
+                  className="inline-flex h-4 min-w-[1rem] items-center justify-center gap-0.5 rounded-full bg-elevated px-1.5 text-[10px] font-semibold tabular-nums text-text-secondary"
                 >
-                  <MessageSquare size={9} strokeWidth={2.4} className="text-slate-400 dark:text-text-muted" />
+                  <MessageSquare size={9} strokeWidth={2.4} className="text-text-muted" />
                   {historyCount}
                 </span>
               </button>
@@ -77,7 +77,7 @@ export default function AssistantPage() {
                 onClick={() => chatRef.current?.startNew()}
                 title="Nouvelle conversation"
                 aria-label="Démarrer une nouvelle conversation"
-                className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-3 py-1.5 text-[12.5px] font-medium text-white shadow-[0_2px_8px_-2px_rgba(17,17,17,0.35)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-[0_8px_20px_-4px_rgba(17,17,17,0.45)]"
+                className="inline-flex items-center gap-1.5 rounded-full bg-text-primary px-3 py-1.5 text-[12.5px] font-medium text-card shadow-[0_2px_8px_-2px_rgba(17,17,17,0.35)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:opacity-90 hover:shadow-[0_8px_20px_-4px_rgba(17,17,17,0.45)]"
               >
                 <SquarePen size={13} strokeWidth={2.2} />
                 <span className="hidden sm:inline">Nouvelle conversation</span>

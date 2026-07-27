@@ -466,3 +466,30 @@ button:active:not(:disabled) {
   background: var(--border-strong);
   display: inline-block;
 }
+
+/* ─── Themed logo ───────────────────────────────────────────
+   The favicon is a colored hospital mark that reads clearly on a
+   light surface but disappears against the dark sidebar. In dark
+   mode the navbar uses `.logo-themed-dark` on a <div> with a
+   background-image of the favicon: we promote the image to a CSS
+   mask so its alpha channel becomes the silhouette and fill the
+   mask with the page text color (white in dark mode). */
+.logo-themed {
+  transition: filter var(--dur-base) var(--ease-out);
+}
+:where(.dark) .logo-themed {
+  filter: brightness(0) saturate(100%) invert(1);
+}
+
+/* Variant used by the navbar — div with a background image. */
+.logo-themed-dark {
+  background-color: var(--text-primary);
+  -webkit-mask-image: url('/favicon.ico');
+  mask-image: url('/favicon.ico');
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}

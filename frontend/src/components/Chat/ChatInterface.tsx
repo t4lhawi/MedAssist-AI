@@ -85,17 +85,17 @@ function SourceCard({
     <button
       type="button"
       tabIndex={0}
-      className="group/srcc flex items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-border bg-white dark:bg-card px-3 py-2 text-left transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_4px_14px_-6px_rgba(37,99,235,0.18)] focus-visible:border-blue-300 focus-visible:shadow-[0_0_0_3px_rgba(59,130,246,0.12)]"
+      className="group/srcc flex items-center gap-2.5 rounded-2xl border border-border bg-card px-3 py-2 text-left transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-[0_4px_14px_-6px_rgba(37,99,235,0.18)] focus-visible:border-brand focus-visible:shadow-[0_0_0_3px_rgba(59,130,246,0.12)]"
     >
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-colors group-hover/srcc:bg-blue-100">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand/15 text-brand transition-colors group-hover/srcc:bg-brand/25">
         <FileText size={14} strokeWidth={2.1} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[12.5px] font-medium text-slate-800 dark:text-text-primary">{source.document}</span>
-        <span className="mt-0.5 block text-[11px] text-slate-400 dark:text-text-muted">p. {source.page}</span>
+        <span className="block truncate text-[12.5px] font-medium text-text-primary">{source.document}</span>
+        <span className="mt-0.5 block text-[11px] text-text-muted">p. {source.page}</span>
       </span>
       {confidence !== null && (
-        <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[10.5px] font-semibold tabular-nums text-emerald-700">
+        <span className="shrink-0 rounded-full bg-ok/15 px-2 py-0.5 text-[10.5px] font-semibold tabular-nums text-ok">
           {confidence}%
         </span>
       )}
@@ -115,7 +115,7 @@ function ThinkingIndicator() {
   }, [])
 
   return (
-    <span className="inline-flex items-center gap-2.5 rounded-full border border-slate-200 dark:border-border bg-white dark:bg-card px-3 py-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+    <span className="inline-flex items-center gap-2.5 rounded-full border border-border bg-card px-3 py-1.5 shadow-soft">
       <span
         aria-hidden="true"
         className="flex h-5 w-5 items-center justify-center rounded-full text-white avatar-pulse"
@@ -124,7 +124,7 @@ function ThinkingIndicator() {
         <Stethoscope size={10} strokeWidth={2.4} />
       </span>
       <span className="shimmer-bar h-1.5 w-16 rounded-full" />
-      <span className="text-[12px] font-medium text-slate-500 dark:text-text-secondary">
+      <span className="text-[12px] font-medium text-text-secondary">
         {phase === 'searching' ? 'Recherche dans les documents indexés…' : 'Génération de la réponse…'}
       </span>
     </span>
@@ -153,7 +153,7 @@ function UserAvatar() {
   return (
     <span
       aria-hidden="true"
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 dark:bg-elevated text-slate-500 dark:text-text-secondary"
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-elevated text-text-secondary"
     >
       <UserIcon size={14} strokeWidth={2.2} />
     </span>
@@ -181,7 +181,7 @@ function MessageRow({
   if (isUser) {
     return (
       <article className="flex items-end justify-end gap-2">
-        <div className="max-w-[80%] rounded-3xl rounded-tr-md bg-slate-100 dark:bg-elevated px-4 py-2.5 text-[14.5px] leading-7 text-slate-800 dark:text-text-primary sm:max-w-[70%]">
+        <div className="max-w-[80%] rounded-3xl rounded-tr-md bg-elevated px-4 py-2.5 text-[14.5px] leading-7 text-text-primary sm:max-w-[70%]">
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
         </div>
         <UserAvatar />
@@ -193,7 +193,7 @@ function MessageRow({
     <article className="group flex gap-4">
       <AssistantAvatar />
       <div className="flex min-w-0 max-w-[92%] flex-1 flex-col gap-3 sm:max-w-[88%]">
-        <div className="text-[15px] leading-7 text-slate-800 dark:text-text-primary">
+        <div className="text-[15px] leading-7 text-text-primary">
           <Markdown source={message.content} />
         </div>
 
@@ -214,7 +214,7 @@ function MessageRow({
             onClick={onCopy}
             title={copied ? 'Copié' : 'Copier'}
             aria-label={copied ? 'Copié' : 'Copier le message'}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 dark:text-text-muted opacity-0 transition hover:bg-slate-100 dark:hover:dark:bg-elevated hover:text-slate-700 dark:text-text-secondary focus-visible:opacity-100 group-hover:opacity-100"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted opacity-0 transition hover:bg-hover hover:text-text-secondary focus-visible:opacity-100 group-hover:opacity-100"
           >
             {copied ? <Check size={14} strokeWidth={2.2} /> : <Clipboard size={14} strokeWidth={2.2} />}
           </button>
@@ -223,7 +223,7 @@ function MessageRow({
             disabled
             title="Régénérer (bientôt disponible)"
             aria-label="Régénérer la réponse"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 dark:text-text-muted opacity-0 transition hover:bg-slate-100 dark:hover:dark:bg-elevated hover:text-slate-700 dark:text-text-secondary focus-visible:opacity-100 group-hover:opacity-100 disabled:cursor-not-allowed"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted opacity-0 transition hover:bg-hover hover:text-text-secondary focus-visible:opacity-100 group-hover:opacity-100 disabled:cursor-not-allowed"
           >
             <RotateCcw size={13} strokeWidth={2.2} />
           </button>
@@ -232,11 +232,11 @@ function MessageRow({
             disabled
             title="Partager (bientôt disponible)"
             aria-label="Partager le message"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 dark:text-text-muted opacity-0 transition hover:bg-slate-100 dark:hover:dark:bg-elevated hover:text-slate-700 dark:text-text-secondary focus-visible:opacity-100 group-hover:opacity-100 disabled:cursor-not-allowed"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted opacity-0 transition hover:bg-hover hover:text-text-secondary focus-visible:opacity-100 group-hover:opacity-100 disabled:cursor-not-allowed"
           >
             <Share2 size={13} strokeWidth={2.2} />
           </button>
-          <span className="mx-1.5 hidden h-3.5 w-px bg-slate-200 dark:bg-elevated sm:inline-block" />
+          <span className="mx-1.5 hidden h-3.5 w-px bg-border sm:inline-block" />
           <button
             type="button"
             onClick={() => onFeedback('up')}
@@ -244,8 +244,8 @@ function MessageRow({
             aria-pressed={feedback === 'up'}
             className={`flex h-8 w-8 items-center justify-center rounded-full transition opacity-0 focus-visible:opacity-100 group-hover:opacity-100 ${
               feedback === 'up'
-                ? 'bg-emerald-50 text-emerald-600 opacity-100'
-                : 'text-slate-400 dark:text-text-muted hover:bg-slate-100 dark:hover:dark:bg-elevated hover:text-slate-700 dark:text-text-secondary'
+                ? 'bg-ok/15 text-ok opacity-100'
+                : 'text-text-muted hover:bg-hover hover:text-text-secondary'
             }`}
           >
             <ThumbsUp size={13} strokeWidth={2.2} />
@@ -257,8 +257,8 @@ function MessageRow({
             aria-pressed={feedback === 'down'}
             className={`flex h-8 w-8 items-center justify-center rounded-full transition opacity-0 focus-visible:opacity-100 group-hover:opacity-100 ${
               feedback === 'down'
-                ? 'bg-rose-50 text-rose-600 opacity-100'
-                : 'text-slate-400 dark:text-text-muted hover:bg-slate-100 dark:hover:dark:bg-elevated hover:text-slate-700 dark:text-text-secondary'
+                ? 'bg-bad/15 text-bad opacity-100'
+                : 'text-text-muted hover:bg-hover hover:text-text-secondary'
             }`}
           >
             <ThumbsDown size={13} strokeWidth={2.2} />
@@ -282,7 +282,7 @@ function HistoryCardSkeleton() {
   return (
     <div
       aria-hidden="true"
-      className="w-full rounded-[20px] border border-[#ECECEC] dark:border-border bg-white dark:bg-card p-4"
+      className="w-full rounded-[20px] border border-border bg-card p-4"
     >
       <div className="flex items-center gap-3">
         <div className="history-shimmer h-9 w-9 shrink-0 rounded-xl" />
@@ -361,10 +361,10 @@ function HistoryCard({
         }
       }}
       aria-label={`Ouvrir la conversation : ${item.question}`}
-      className={`group relative w-full cursor-pointer overflow-hidden rounded-[20px] border bg-white dark:bg-card text-left transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_10px_28px_-12px_rgba(15,23,42,0.18)] focus-visible:shadow-[0_0_0_3px_rgba(59,130,246,0.18)] ${
+      className={`group relative w-full cursor-pointer overflow-hidden rounded-[20px] border bg-card text-left transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_10px_28px_-12px_var(--shadow-3)] focus-visible:shadow-[0_0_0_3px_rgba(59,130,246,0.18)] ${
         isSelected
-          ? 'border-blue-300 shadow-[0_8px_24px_-10px_rgba(37,99,235,0.25)] ring-1 ring-blue-200/60'
-          : 'border-[#ECECEC] hover:border-[#DCDCDC]'
+          ? 'border-brand/50 shadow-[0_8px_24px_-10px_rgba(37,99,235,0.25)] ring-1 ring-brand/40'
+          : 'border-border hover:border-border-strong'
       }`}
       style={{
         animation: 'historyItemIn 200ms cubic-bezier(0.25, 0.1, 0.25, 1) both',
@@ -394,14 +394,14 @@ function HistoryCard({
         <div className="min-w-0 flex-1">
           {/* Title row */}
           <div className="flex items-start justify-between gap-2">
-            <p className="min-w-0 flex-1 truncate text-[15px] font-semibold tracking-[-0.005em] text-[#111111] dark:text-text-primary">
+            <p className="min-w-0 flex-1 truncate text-[15px] font-semibold tracking-[-0.005em] text-text-primary">
               {item.question}
             </p>
             {isFavorite && (
               <span
                 aria-label="Mise en favori"
                 title="Mise en favori"
-                className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-500"
+                className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-warn/15 text-warn"
               >
                 <Star size={10} strokeWidth={2.2} fill="currentColor" />
               </span>
@@ -409,15 +409,15 @@ function HistoryCard({
           </div>
 
           {/* Meta row — date + doc count */}
-          <div className="mt-1 flex items-center gap-2 text-[12px] text-[#6B7280] dark:text-text-secondary">
+          <div className="mt-1 flex items-center gap-2 text-[12px] text-text-secondary">
             <span className="inline-flex items-center gap-1">
               <Clock3 size={11} strokeWidth={2.2} className="shrink-0" />
               {formatHistoryDate(item.date)}
             </span>
             {sourceCount > 0 && (
               <>
-                <span className="h-0.5 w-0.5 rounded-full bg-slate-300" />
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#F5F5F7] px-1.5 py-0.5 text-[10.5px] font-medium text-[#6B7280] dark:text-text-secondary">
+                <span className="h-0.5 w-0.5 rounded-full bg-text-muted" />
+                <span className="inline-flex items-center gap-1 rounded-full bg-hover px-1.5 py-0.5 text-[10.5px] font-medium text-text-secondary">
                   <FileText size={10} strokeWidth={2.2} className="shrink-0" />
                   {sourceCount} doc{sourceCount > 1 ? 's' : ''}
                 </span>
@@ -426,7 +426,7 @@ function HistoryCard({
           </div>
 
           {/* Answer preview */}
-          <p className="mt-2 line-clamp-2 text-[13px] leading-5 text-[#6B7280] dark:text-text-secondary">
+          <p className="mt-2 line-clamp-2 text-[13px] leading-5 text-text-secondary">
             {item.reponse}
           </p>
 
@@ -443,7 +443,7 @@ function HistoryCard({
                 e.stopPropagation()
                 onSelect()
               }}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-[#6B7280] dark:text-text-secondary transition-all duration-200 hover:bg-[#F5F5F7] hover:text-[#111111] dark:text-text-primary"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-text-secondary transition-all duration-200 hover:bg-hover hover:text-text-primary"
             >
               <ArrowUp size={12} strokeWidth={2.2} className="rotate-45" />
             </button>
@@ -455,7 +455,7 @@ function HistoryCard({
                 e.stopPropagation()
                 onCopyQuestion()
               }}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-[#6B7280] dark:text-text-secondary transition-all duration-200 hover:bg-[#F5F5F7] hover:text-[#111111] dark:text-text-primary"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-text-secondary transition-all duration-200 hover:bg-hover hover:text-text-primary"
             >
               {copied ? <Check size={12} strokeWidth={2.4} /> : <Copy size={12} strokeWidth={2.2} />}
             </button>
@@ -470,8 +470,8 @@ function HistoryCard({
               }}
               className={`flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200 ${
                 isFavorite
-                  ? 'bg-amber-50 text-amber-500'
-                  : 'text-[#6B7280] dark:text-text-secondary hover:bg-[#F5F5F7] hover:text-[#111111] dark:text-text-primary'
+                  ? 'bg-warn/15 text-warn'
+                  : 'text-text-secondary hover:bg-hover hover:text-text-primary'
               }`}
             >
               <Star
@@ -485,11 +485,11 @@ function HistoryCard({
               title="Plus d'actions"
               aria-label="Plus d'actions"
               onClick={(e) => e.stopPropagation()}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-[#6B7280] dark:text-text-secondary transition-all duration-200 hover:bg-[#F5F5F7] hover:text-[#111111] dark:text-text-primary"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-text-secondary transition-all duration-200 hover:bg-hover hover:text-text-primary"
             >
               <MoreHorizontal size={13} strokeWidth={2.2} />
             </button>
-            <span className="mx-1 hidden h-3.5 w-px bg-[#ECECEC] sm:inline-block" />
+            <span className="mx-1 hidden h-3.5 w-px bg-border sm:inline-block" />
             <button
               type="button"
               title="Supprimer la conversation"
@@ -498,7 +498,7 @@ function HistoryCard({
                 e.stopPropagation()
                 onRequestDelete()
               }}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-[#9CA3AF] dark:text-text-muted transition-all duration-200 hover:bg-red-50 hover:text-red-600"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-text-muted transition-all duration-200 hover:bg-bad/10 hover:text-bad"
             >
               <Trash2 size={12} strokeWidth={2.2} />
             </button>
@@ -697,7 +697,7 @@ function HistoryPanel({
       <div
         onClick={onClose}
         aria-hidden="true"
-        className={`fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-[3px] transition-opacity duration-200 ${
+        className={`fixed inset-0 z-40 bg-black/40 backdrop-blur-[3px] transition-opacity duration-200 ${
           open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         }`}
       />
@@ -710,7 +710,7 @@ function HistoryPanel({
         aria-label="Historique des conversations"
         aria-hidden={!open}
         tabIndex={-1}
-        className={`fixed inset-y-0 right-0 z-50 flex w-full flex-col overflow-hidden border-l border-[#ECECEC] bg-[#F5F5F7] transition-transform duration-[220ms] ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
+        className={`fixed inset-y-0 right-0 z-50 flex w-full flex-col overflow-hidden border-l border-border bg-card transition-transform duration-[220ms] ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
           open ? 'translate-x-0' : 'translate-x-full pointer-events-none'
         } sm:left-auto sm:right-3 sm:top-3 sm:bottom-3 sm:max-h-[calc(100vh-1.5rem)] sm:w-[440px] sm:rounded-[28px] history-panel-edge sm:translate-x-0 ${
           open ? 'sm:scale-100 sm:opacity-100' : 'sm:scale-[0.985] sm:opacity-0 sm:translate-x-6'
@@ -723,7 +723,7 @@ function HistoryPanel({
       >
         {/* ── Header ─────────────────────────────────────────── */}
         <header
-          className="shrink-0 bg-gradient-to-b from-white to-white/80 px-5 pb-3 pt-5"
+          className="shrink-0 bg-gradient-to-b from-card to-card/80 px-5 pb-3 pt-5"
           style={{
             backdropFilter: 'blur(8px)',
           }}
@@ -738,10 +738,10 @@ function HistoryPanel({
                 <History size={17} strokeWidth={2.2} />
               </span>
               <div className="min-w-0">
-                <h2 className="truncate text-[18px] font-semibold tracking-[-0.01em] text-[#111111] dark:text-text-primary">
+                <h2 className="truncate text-[18px] font-semibold tracking-[-0.01em] text-text-primary">
                   Historique des conversations
                 </h2>
-                <p className="mt-0.5 text-[12px] leading-5 text-[#6B7280] dark:text-text-secondary">
+                <p className="mt-0.5 text-[12px] leading-5 text-text-secondary">
                   Parcourez et rouvrez vos précédentes conversations avec l'IA
                 </p>
               </div>
@@ -749,7 +749,7 @@ function HistoryPanel({
             <div className="flex shrink-0 items-center gap-1">
               <span
                 aria-label={`${history.length} conversations`}
-                className="inline-flex h-6 items-center gap-1 rounded-full bg-[#F5F5F7] px-2 text-[11px] font-semibold tabular-nums text-[#6B7280] dark:text-text-secondary"
+                className="inline-flex h-6 items-center gap-1 rounded-full bg-hover px-2 text-[11px] font-semibold tabular-nums text-text-secondary"
               >
                 {history.length}
               </span>
@@ -758,7 +758,7 @@ function HistoryPanel({
                 onClick={onRefresh}
                 title="Actualiser"
                 aria-label="Actualiser les conversations"
-                className="flex h-8 w-8 items-center justify-center rounded-full text-[#6B7280] dark:text-text-secondary transition-all duration-200 hover:bg-[#F5F5F7] hover:text-[#111111] dark:text-text-primary active:scale-90"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition-all duration-200 hover:bg-hover hover:text-text-primary active:scale-90"
               >
                 <RefreshCw size={14} strokeWidth={2.2} />
               </button>
@@ -767,7 +767,7 @@ function HistoryPanel({
                 onClick={onNewConversation}
                 title="Nouvelle conversation"
                 aria-label="Démarrer une nouvelle conversation"
-                className="hidden h-8 items-center gap-1.5 rounded-full bg-[#111111] px-3 text-[12px] font-medium text-white shadow-[0_2px_8px_-2px_rgba(17,17,17,0.35)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#1F1F23] hover:shadow-[0_6px_18px_-4px_rgba(17,17,17,0.4)] active:scale-95 sm:inline-flex"
+                className="hidden h-8 items-center gap-1.5 rounded-full bg-text-primary px-3 text-[12px] font-medium text-card shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 hover:shadow-card-hover active:scale-95 sm:inline-flex"
               >
                 <SquarePen size={12} strokeWidth={2.2} />
                 Nouvelle
@@ -777,7 +777,7 @@ function HistoryPanel({
                 onClick={onClose}
                 title="Fermer"
                 aria-label="Fermer le panneau"
-                className="flex h-8 w-8 items-center justify-center rounded-full text-[#6B7280] dark:text-text-secondary transition-all duration-200 hover:bg-[#F5F5F7] hover:text-[#111111] dark:text-text-primary active:scale-90"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition-all duration-200 hover:bg-hover hover:text-text-primary active:scale-90"
               >
                 <X size={16} strokeWidth={2.2} />
               </button>
@@ -792,13 +792,13 @@ function HistoryPanel({
 
         {history.length > 0 && (
           <div
-            className="history-sticky-top shrink-0 border-b border-[#ECECEC]/70 px-5 pb-3 pt-2"
+            className="history-sticky-top shrink-0 border-b border-border px-5 pb-3 pt-2"
           >
-            <div className="group/search relative flex items-center gap-2 rounded-2xl border border-[#ECECEC] dark:border-border bg-white dark:bg-card px-3.5 py-2.5 transition-all duration-200 focus-within:border-blue-300 focus-within:shadow-[0_0_0_4px_rgba(59,130,246,0.08)]">
+            <div className="group/search relative flex items-center gap-2 rounded-2xl border border-border bg-card px-3.5 py-2.5 transition-all duration-200 focus-within:border-brand focus-within:shadow-[0_0_0_4px_rgba(59,130,246,0.08)]">
               <Search
                 size={14}
                 strokeWidth={2.2}
-                className="shrink-0 text-[#9CA3AF] dark:text-text-muted transition-colors group-focus-within/search:text-blue-500"
+                className="shrink-0 text-text-muted transition-colors group-focus-within/search:text-brand"
               />
               <input
                 ref={searchInputRef}
@@ -806,7 +806,7 @@ function HistoryPanel({
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Rechercher dans vos conversations…"
                 aria-label="Rechercher dans les conversations"
-                className="min-w-0 flex-1 border-0 bg-transparent text-[13.5px] text-[#111111] dark:text-text-primary outline-none placeholder:text-[#9CA3AF] dark:text-text-muted focus:outline-none focus:ring-0"
+                className="min-w-0 flex-1 border-0 bg-transparent text-[13.5px] text-text-primary outline-none placeholder:text-text-muted focus:outline-none focus:ring-0"
               />
               {query && (
                 <button
@@ -814,7 +814,7 @@ function HistoryPanel({
                   onClick={() => setQuery('')}
                   title="Effacer la recherche"
                   aria-label="Effacer la recherche"
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[#9CA3AF] dark:text-text-muted transition-colors hover:bg-[#ECECEC] hover:text-[#111111] dark:text-text-primary"
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-hover hover:text-text-primary"
                 >
                   <X size={11} strokeWidth={2.4} />
                 </button>
@@ -837,8 +837,8 @@ function HistoryPanel({
                     onClick={() => setFilter(f.id)}
                     className={`shrink-0 rounded-full px-3 py-1.5 text-[12px] font-medium transition-all duration-200 active:scale-95 ${
                       active
-                        ? 'bg-[#111111] text-white shadow-[0_2px_8px_-2px_rgba(17,17,17,0.35)]'
-                        : 'bg-white dark:bg-card text-[#6B7280] dark:text-text-secondary border border-[#ECECEC] hover:-translate-y-0.5 hover:border-[#DCDCDC] hover:text-[#111111] dark:text-text-primary hover:shadow-[0_4px_12px_-6px_rgba(15,23,42,0.12)]'
+                        ? 'bg-text-primary text-card shadow-soft'
+                        : 'bg-card text-text-secondary border border-border hover:-translate-y-0.5 hover:border-border-strong hover:text-text-primary hover:shadow-[0_4px_12px_-6px_rgba(15,23,42,0.12)]'
                     }`}
                   >
                     {f.label}
@@ -860,7 +860,7 @@ function HistoryPanel({
           ) : historyError ? (
             <div
               role="alert"
-              className="rounded-2xl border border-red-200/60 bg-red-50/70 px-4 py-3.5 text-[13px] leading-5 text-red-700"
+              className="rounded-2xl border border-bad/30 bg-bad/10 px-4 py-3.5 text-[13px] leading-5 text-bad"
             >
               {historyError}
             </div>
@@ -885,17 +885,17 @@ function HistoryPanel({
                 </span>
               </div>
               <div>
-                <p className="text-[16px] font-semibold tracking-[-0.01em] text-[#111111] dark:text-text-primary">
+                <p className="text-[16px] font-semibold tracking-[-0.01em] text-text-primary">
                   Aucune conversation pour le moment
                 </p>
-                <p className="mt-1.5 max-w-[18rem] text-[13px] leading-5 text-[#6B7280] dark:text-text-secondary">
+                <p className="mt-1.5 max-w-[18rem] text-[13px] leading-5 text-text-secondary">
                   Vos conversations avec MedAssist AI apparaîtront ici.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={onNewConversation}
-                className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-[#111111] px-4 py-2 text-[12.5px] font-medium text-white shadow-[0_2px_8px_-2px_rgba(17,17,17,0.35)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#1F1F23] hover:shadow-[0_6px_18px_-4px_rgba(17,17,17,0.4)] active:scale-95"
+                className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-text-primary px-4 py-2 text-[12.5px] font-medium text-card shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 hover:shadow-card-hover active:scale-95"
               >
                 <SquarePen size={13} strokeWidth={2.2} />
                 Démarrer une conversation
@@ -914,16 +914,16 @@ function HistoryPanel({
                 />
                 <span
                   aria-hidden="true"
-                  className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-white dark:bg-card text-[#9CA3AF] dark:text-text-muted shadow-[0_4px_14px_-6px_rgba(15,23,42,0.12)]"
+                  className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-card text-text-muted shadow-soft"
                 >
                   <SearchX size={22} strokeWidth={1.9} />
                 </span>
               </div>
               <div>
-                <p className="text-[14.5px] font-semibold tracking-[-0.005em] text-[#111111] dark:text-text-primary">
+                <p className="text-[14.5px] font-semibold tracking-[-0.005em] text-text-primary">
                   Aucune conversation correspondante
                 </p>
-                <p className="mt-1 max-w-[18rem] text-[12.5px] leading-5 text-[#6B7280] dark:text-text-secondary">
+                <p className="mt-1 max-w-[18rem] text-[12.5px] leading-5 text-text-secondary">
                   Essayez un autre mot-clé
                   {filter !== 'all' ? ' ou retirez le filtre actif' : ''}.
                 </p>
@@ -932,7 +932,7 @@ function HistoryPanel({
                 <button
                   type="button"
                   onClick={() => setQuery('')}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[#ECECEC] dark:border-border bg-white dark:bg-card px-3 py-1.5 text-[12px] font-medium text-[#111111] dark:text-text-primary transition-all duration-200 hover:-translate-y-0.5 hover:border-[#DCDCDC] hover:shadow-[0_4px_12px_-6px_rgba(15,23,42,0.12)] active:scale-95"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[12px] font-medium text-text-primary transition-all duration-200 hover:-translate-y-0.5 hover:border-border-strong hover:shadow-soft active:scale-95"
                 >
                   <X size={11} strokeWidth={2.4} />
                   Effacer la recherche
@@ -967,11 +967,11 @@ function HistoryPanel({
 
         {/* ── Footer ────────────────────────────────────────── */}
         {history.length > 0 && (
-          <footer className="shrink-0 border-t border-[#ECECEC] dark:border-border bg-white dark:bg-card px-5 py-3 sm:hidden">
+          <footer className="shrink-0 border-t border-border bg-card px-5 py-3 sm:hidden">
             <button
               type="button"
               onClick={onNewConversation}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-[#111111] px-4 py-2.5 text-[13px] font-medium text-white shadow-[0_2px_8px_-2px_rgba(17,17,17,0.35)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#1F1F23] hover:shadow-[0_6px_18px_-4px_rgba(17,17,17,0.4)] active:scale-95"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-text-primary px-4 py-2.5 text-[13px] font-medium text-card shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 hover:shadow-card-hover active:scale-95"
             >
               <SquarePen size={14} strokeWidth={2.2} />
               Nouvelle conversation
@@ -1234,34 +1234,30 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(functi
 
   return (
     <section
-      className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-border shadow-[0_1px_2px_rgba(0,0,0,0.04),0_24px_48px_-16px_rgba(15,23,42,0.08)]"
+      className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-border shadow-card"
       style={{
         color: 'var(--text-primary)',
-        background: [
-          'radial-gradient(70% 55% at 12% 8%, rgba(59,130,246,0.06) 0%, rgba(99,102,241,0.03) 38%, transparent 72%)',
-          'radial-gradient(60% 50% at 92% 96%, rgba(99,102,241,0.05) 0%, rgba(59,130,246,0.03) 42%, transparent 74%)',
-          'radial-gradient(120% 45% at 50% -10%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 60%)',
-          '#FBFBFD',
-        ].join(', '),
+        background:
+          'linear-gradient(180deg, color-mix(in srgb, var(--bg-elevated) 80%, transparent) 0%, color-mix(in srgb, var(--bg-card) 100%, transparent) 26%)',
       }}
     >
       {/* Top-edge highlight — gives the card a soft "lifted" feel
-          against the #F5F5F7 page so the two surfaces contrast. */}
+          against the page background so the two surfaces contrast. */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 rounded-3xl"
         style={{
           background:
-            'linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 22%)',
+            'linear-gradient(180deg, color-mix(in srgb, var(--bg-elevated) 60%, transparent) 0%, color-mix(in srgb, var(--bg-elevated) 0%, transparent) 22%)',
         }}
       />
-      {/* Soft noise grain — adds depth without color. */}
+      {/* Subtle accent glow in the corners — adds depth without color. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-[0.04] mix-blend-multiply"
+        className="pointer-events-none absolute inset-0 opacity-60"
         style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>\")",
+          background:
+            'radial-gradient(60% 55% at 12% 8%, rgba(59,130,246,0.06) 0%, transparent 70%), radial-gradient(55% 50% at 92% 96%, rgba(99,102,241,0.05) 0%, transparent 70%)',
         }}
       />
       <div className="flex-1 overflow-y-auto">
@@ -1270,17 +1266,17 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(functi
             <div
               role="status"
               aria-live="polite"
-              className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-200/50 bg-amber-50/40 px-4 py-3 backdrop-blur-sm transition-all duration-200 ease-out sm:mb-6"
+              className="mb-5 flex items-start gap-3 rounded-2xl border border-warn/30 bg-warn/10 px-4 py-3 backdrop-blur-sm transition-all duration-200 ease-out sm:mb-6"
               style={{ animation: 'contentFade 220ms cubic-bezier(0.25, 0.1, 0.25, 1) both' }}
             >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-warn/20 text-warn">
                 <ShieldCheck size={15} strokeWidth={2.2} />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-semibold tracking-[-0.005em] text-amber-900">
+                <p className="text-[13px] font-semibold tracking-[-0.005em] text-warn">
                   Information médicale uniquement
                 </p>
-                <p className="mt-0.5 text-[12.5px] leading-relaxed text-amber-800/80">
+                <p className="mt-0.5 text-[12.5px] leading-relaxed text-warn/80">
                   MedAssist vous aide à retrouver des informations dans les documents hospitaliers indexés. Il ne remplace pas le
                   jugement d'un professionnel médical ou technique qualifié.
                 </p>
@@ -1290,7 +1286,7 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(functi
                 onClick={() => setDisclaimerDismissed(true)}
                 aria-label="Masquer l'avertissement"
                 title="Masquer"
-                className="flex h-7 w-7 shrink-0 items-center justify-center self-start rounded-full text-amber-700/70 transition hover:bg-amber-100 hover:text-amber-900"
+                className="flex h-7 w-7 shrink-0 items-center justify-center self-start rounded-full text-warn/70 transition hover:bg-warn/20 hover:text-warn"
               >
                 <X size={13} strokeWidth={2.4} />
               </button>
@@ -1300,10 +1296,10 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(functi
             <div className="relative flex flex-1 flex-col justify-center py-8">
 
               <div className="relative mx-auto flex w-full max-w-xl flex-col items-center text-center">
-                <h2 className="text-[28px] font-semibold tracking-[-0.02em] text-slate-900 dark:text-text-primary sm:text-[30px]">
+                <h2 className="text-[28px] font-semibold tracking-[-0.02em] text-text-primary sm:text-[30px]">
                   Comment puis-je vous aider aujourd'hui ?
                 </h2>
-                <p className="mt-2 max-w-md text-[14px] leading-6 text-slate-500 dark:text-text-secondary">{WELCOME_MESSAGE}</p>
+                <p className="mt-2 max-w-md text-[14px] leading-6 text-text-secondary">{WELCOME_MESSAGE}</p>
 
                 <div className="mt-7 flex max-w-xl flex-wrap items-center justify-center gap-1.5">
                   {SUGGESTIONS.map((suggestion, i) => (
@@ -1315,11 +1311,11 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(functi
                         animation: 'suggestionIn 380ms cubic-bezier(0.16, 1, 0.3, 1) both',
                         animationDelay: `${200 + i * 60}ms`,
                       }}
-                      className="group/sugg inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-200 dark:border-border bg-white/85 px-3 py-1.5 text-[12.5px] font-medium text-slate-700 dark:text-text-secondary backdrop-blur-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-blue-200 hover:bg-white dark:bg-card hover:text-slate-900 dark:text-text-primary hover:shadow-[0_6px_18px_-8px_rgba(37,99,235,0.22)] active:scale-[0.97]"
+                      className="group/sugg inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-card/80 px-3 py-1.5 text-[12.5px] font-medium text-text-secondary backdrop-blur-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-brand/40 hover:bg-card hover:text-text-primary hover:shadow-[0_6px_18px_-8px_rgba(37,99,235,0.22)] active:scale-[0.97]"
                     >
                       <span
                         aria-hidden="true"
-                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 transition-colors group-hover/sugg:bg-blue-100"
+                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand/15 text-brand transition-colors group-hover/sugg:bg-brand/25"
                       >
                         {SUGGESTION_META[i] ? (
                           React.cloneElement(SUGGESTION_META[i].icon as React.ReactElement, {
@@ -1378,7 +1374,7 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(functi
             e.preventDefault()
             send()
           }}
-          className="group/chat relative mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border border-slate-200 dark:border-border bg-white dark:bg-card p-2 pl-3.5 shadow-[0_2px_10px_-4px_rgba(15,23,42,0.08),0_24px_48px_-12px_rgba(15,23,42,0.06)] transition-all duration-200 ease-out focus-within:border-blue-300 focus-within:shadow-[0_8px_28px_-6px_rgba(46,99,255,0.25),0_0_0_4px_rgba(46,99,255,0.06)]"
+          className="group/chat relative mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border border-border bg-card p-2 pl-3.5 shadow-[0_2px_10px_-4px_rgba(15,23,42,0.08),0_24px_48px_-12px_rgba(15,23,42,0.06)] transition-all duration-200 ease-out focus-within:border-blue-300 focus-within:shadow-[0_8px_28px_-6px_rgba(46,99,255,0.25),0_0_0_4px_rgba(46,99,255,0.06)]"
         >
           <textarea
             ref={inputRef}
@@ -1393,7 +1389,7 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(functi
             placeholder="Posez une question sur les documents hospitaliers indexés…"
             disabled={loading}
             rows={1}
-            className="max-h-40 min-h-[2.5rem] min-w-0 flex-1 resize-none bg-transparent px-1 py-2 text-[14.5px] leading-6 text-slate-900 dark:text-text-primary outline-none placeholder:text-slate-400 dark:placeholder:dark:text-text-muted focus:outline-none focus:ring-0 focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 disabled:cursor-not-allowed disabled:opacity-60"
+            className="max-h-40 min-h-[2.5rem] min-w-0 flex-1 resize-none bg-transparent px-1 py-2 text-[14.5px] leading-6 text-text-primary outline-none placeholder:text-text-muted focus:outline-none focus:ring-0 focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 disabled:cursor-not-allowed disabled:opacity-60"
           />
 
           {loading ? (
@@ -1423,7 +1419,7 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(functi
             </button>
           )}
         </form>
-        <p className="mx-auto mt-2.5 max-w-3xl text-center text-[11px] text-slate-400 dark:text-text-muted">
+        <p className="mx-auto mt-2.5 max-w-3xl text-center text-[11px] text-text-muted">
           MedAssist peut commettre des erreurs. Vérifiez les informations importantes.
         </p>
       </footer>
@@ -1454,18 +1450,18 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(functi
           subtitle="Cette action supprimera définitivement la conversation de votre historique."
         />
         <ModalBody>
-          <div className="rounded-2xl border border-[#ECECEC] bg-[#F5F5F7] px-4 py-3">
-            <p className="text-[13.5px] font-medium leading-6 text-[#111111] dark:text-text-primary">
+          <div className="rounded-2xl border border-border bg-hover px-4 py-3">
+            <p className="text-[13.5px] font-medium leading-6 text-text-primary">
               « {truncatedQuestion} »
             </p>
             {pendingDateLabel && (
-              <p className="mt-1.5 flex items-center gap-1.5 text-[11.5px] text-[#6B7280] dark:text-text-secondary">
+              <p className="mt-1.5 flex items-center gap-1.5 text-[11.5px] text-text-secondary">
                 <Calendar size={11} strokeWidth={2.2} className="shrink-0" />
                 <span>Créée le {pendingDateLabel}</span>
               </p>
             )}
           </div>
-          <p className="mt-3 text-[12.5px] leading-5 text-[#6B7280] dark:text-text-secondary">
+          <p className="mt-3 text-[12.5px] leading-5 text-text-secondary">
             Cette action est irréversible. Vous perdrez la réponse ainsi que les sources
             associées à cette conversation.
           </p>

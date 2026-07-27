@@ -244,7 +244,7 @@ function StatCard({ label, value, icon: Icon, iconBg, iconColor, trend, tone }: 
     'text-emerald-600'
   return (
     <div
-      className="card relative overflow-hidden rounded-3xl bg-white p-5 dark:bg-card"
+      className="card relative overflow-hidden rounded-3xl bg-card p-5"
       style={{ border: '1px solid var(--border-color)' }}
     >
       <div className="flex items-start justify-between">
@@ -383,7 +383,7 @@ function AlertToolbar({
 
   return (
     <div
-      className="rounded-2xl border bg-white dark:bg-card"
+      className="rounded-2xl border bg-card"
       style={{ borderColor: 'var(--border-color)' }}
     >
       <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
@@ -617,7 +617,7 @@ function RoomFilter({ rooms, value, onChange }: {
 
       {open && (
         <div
-          className="absolute right-0 top-[calc(100%+6px)] z-30 w-56 origin-top overflow-hidden rounded-2xl border bg-white shadow-[0_12px_36px_-12px_rgba(15,23,42,0.18)] dark:bg-elevated"
+          className="absolute right-0 top-[calc(100%+6px)] z-30 w-56 origin-top overflow-hidden rounded-2xl border bg-elevated shadow-[0_12px_36px_-12px_rgba(15,23,42,0.18)]"
           style={{
             borderColor: 'var(--border-color)',
             animation: 'alertsRoomMenuIn 140ms cubic-bezier(0.25, 0.1, 0.25, 1) both',
@@ -706,7 +706,7 @@ function AlertIncidentCard({
 
   return (
     <div
-      className={`card-lift relative overflow-hidden rounded-2xl border bg-white dark:bg-card ${
+      className={`card-lift relative overflow-hidden rounded-2xl border bg-card ${
         isActiveCritical ? 'alerts-critical-pulse' : ''
       }`}
       style={{ borderColor: 'var(--border-color)' }}
@@ -754,7 +754,7 @@ function AlertIncidentCard({
                 {sev.label}
               </span>
               {a.salle && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10.5px] font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                <span className="inline-flex items-center gap-1 rounded-full bg-elevated px-2 py-0.5 text-[10.5px] font-semibold text-text-secondary">
                   {a.salle}
                 </span>
               )}
@@ -876,7 +876,7 @@ function AlertIncidentCard({
 
 function AlertSkeletonCard() {
   return (
-    <div className="relative overflow-hidden rounded-2xl border bg-white dark:bg-card" style={{ borderColor: 'var(--border-color)' }}>
+    <div className="relative overflow-hidden rounded-2xl border bg-card" style={{ borderColor: 'var(--border-color)' }}>
       <span className="alerts-strip alerts-strip-info opacity-50" />
       <div className="px-5 py-4">
         <div className="flex items-start gap-3">
@@ -903,7 +903,7 @@ function AlertSkeletonCard() {
 function AlertEmptyState({ onRefresh, refreshing }: { onRefresh: () => void; refreshing: boolean }) {
   return (
     <div
-      className="rounded-3xl border bg-white px-6 py-14 text-center dark:bg-card"
+      className="rounded-3xl border bg-card px-6 py-14 text-center"
       style={{ borderColor: 'var(--border-color)' }}
     >
       <div
@@ -939,7 +939,7 @@ function AlertEmptyState({ onRefresh, refreshing }: { onRefresh: () => void; ref
 function AlertNoResults({ onReset }: { onReset: () => void }) {
   return (
     <div
-      className="rounded-3xl border bg-white px-6 py-12 text-center dark:bg-card"
+      className="rounded-3xl border bg-card px-6 py-12 text-center"
       style={{ borderColor: 'var(--border-color)' }}
     >
       <div
@@ -1012,15 +1012,15 @@ function AlertDetailsModal({ alerte, onClose, onTreat, processing }: AlertDetail
           title={alerte.message}
           subtitle={
             <span className="inline-flex flex-wrap items-center gap-1.5">
-              <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
+              <span className="text-[10.5px] font-semibold uppercase tracking-wide text-text-muted">
                 Incident · #{alerte.id}
               </span>
-              <span className="text-[#D4D4D8]">·</span>
+              <span className="text-text-muted">·</span>
               <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${sev.badge}`}>
                 {sev.label}
               </span>
               {alerte.salle && (
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10.5px] font-semibold text-slate-700">
+                <span className="rounded-full bg-elevated px-2 py-0.5 text-[10.5px] font-semibold text-text-secondary">
                   {alerte.salle}
                 </span>
               )}
@@ -1487,7 +1487,7 @@ export default function AlertsList({
               onClick={handleRefresh}
               disabled={refreshing}
               aria-label="Actualiser"
-              className="inline-flex items-center gap-1.5 rounded-full border bg-white px-3.5 py-1.5 text-[12.5px] font-medium shadow-[0_1px_2px_var(--shadow-1)] transition-all duration-200 hover:-translate-y-px hover:bg-hover active:scale-[0.97] disabled:opacity-60 dark:bg-card"
+              className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3.5 py-1.5 text-[12.5px] font-medium shadow-[0_1px_2px_var(--shadow-1)] transition-all duration-200 hover:-translate-y-px hover:bg-hover active:scale-[0.97] disabled:opacity-60"
               style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-color)' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)' }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-card)' }}
@@ -1627,7 +1627,7 @@ export default function AlertsList({
         <div
           role="status"
           aria-live="polite"
-          className="pointer-events-none fixed bottom-6 right-6 z-[300] flex items-center gap-2.5 rounded-2xl border bg-white px-4 py-3 shadow-[0_12px_36px_-12px_rgba(15,23,42,0.25)] dark:bg-elevated"
+          className="pointer-events-none fixed bottom-6 right-6 z-[300] flex items-center gap-2.5 rounded-2xl border bg-elevated px-4 py-3 shadow-[0_12px_36px_-12px_rgba(15,23,42,0.25)]"
           style={{
             borderColor: toast.tone === 'error' ? 'color-mix(in srgb, var(--color-danger) 30%, transparent)' : 'color-mix(in srgb, var(--color-success) 30%, transparent)',
             animation: 'modalPanelIn 180ms cubic-bezier(0.25, 0.1, 0.25, 1) both',

@@ -177,10 +177,10 @@ function HeaderPill({
   tone: 'slate' | 'emerald' | 'amber' | 'blue'
 }) {
   const palette: Record<typeof tone, string> = {
-    slate: 'bg-[#F5F5F7] text-[#6B7280] dark:text-text-secondary',
+    slate: 'bg-hover text-text-secondary',
     emerald: 'bg-emerald-50 text-emerald-700',
     amber: 'bg-amber-50 text-amber-700',
-    blue: 'bg-[#EFF4FF] text-[#3B82F6]',
+    blue: 'bg-blue-500/15 text-blue-600 dark:text-blue-300',
   }
   return (
     <span
@@ -215,19 +215,19 @@ function InsightsPanel({
   return (
     <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       {/* Knowledge Base Status */}
-      <article className="card rounded-2xl border border-[#ECECEC] dark:border-border bg-white dark:bg-card p-5">
+      <article className="card rounded-2xl border border-border bg-card p-5">
         <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#EFF4FF] text-[#3B82F6]">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-300">
             <BookOpen size={15} strokeWidth={2.2} />
           </span>
-          <h3 className="text-[14.5px] font-semibold tracking-[-0.01em] text-[#111111] dark:text-text-primary">
+          <h3 className="text-[14.5px] font-semibold tracking-[-0.01em] text-text-primary">
             État de la base de connaissances
           </h3>
         </div>
 
         <div className="mt-4 flex items-center gap-2.5">
           <span
-            className={`relative flex h-2.5 w-2.5 ${aiReady ? 'text-emerald-500' : total > 0 ? 'text-amber-500' : 'text-slate-300 dark:text-text-muted'}`}
+            className={`relative flex h-2.5 w-2.5 ${aiReady ? 'text-emerald-500' : total > 0 ? 'text-amber-500' : 'text-text-muted'}`}
           >
             <span
               className={`absolute inset-0 rounded-full ${aiReady ? 'bg-emerald-500' : total > 0 ? 'bg-amber-500' : 'bg-slate-300'} opacity-60 ${
@@ -238,7 +238,7 @@ function InsightsPanel({
               className={`relative h-2.5 w-2.5 rounded-full ${aiReady ? 'bg-emerald-500' : total > 0 ? 'bg-amber-500' : 'bg-slate-300'}`}
             />
           </span>
-          <span className="text-[13px] font-medium text-[#111111] dark:text-text-primary">
+          <span className="text-[13px] font-medium text-text-primary">
             {total === 0
               ? 'Aucun document'
               : aiReady
@@ -247,7 +247,7 @@ function InsightsPanel({
           </span>
         </div>
 
-        <p className="mt-1.5 text-[12px] leading-relaxed text-[#6B7280] dark:text-text-secondary">
+        <p className="mt-1.5 text-[12px] leading-relaxed text-text-secondary">
           {total === 0
             ? 'Téléversez des fichiers PDF pour alimenter l\'assistant IA.'
             : aiReady
@@ -257,11 +257,11 @@ function InsightsPanel({
 
         {total > 0 && (
           <div className="mt-4">
-            <div className="mb-1 flex items-center justify-between text-[11.5px] font-medium text-[#6B7280] dark:text-text-secondary">
+            <div className="mb-1 flex items-center justify-between text-[11.5px] font-medium text-text-secondary">
               <span>Santé de l'indexation</span>
-              <span className="tabular-nums text-[#111111] dark:text-text-primary">{indexedPct}%</span>
+              <span className="tabular-nums text-text-primary">{indexedPct}%</span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-elevated">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-elevated">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
                   indexedPct === 100 ? 'bg-emerald-500' : 'bg-blue-500'
@@ -274,33 +274,33 @@ function InsightsPanel({
       </article>
 
       {/* Recent Uploads */}
-      <article className="card rounded-2xl border border-[#ECECEC] dark:border-border bg-white dark:bg-card p-5">
+      <article className="card rounded-2xl border border-border bg-card p-5">
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
             <Sparkles size={15} strokeWidth={2.2} />
           </span>
-          <h3 className="text-[14.5px] font-semibold tracking-[-0.01em] text-[#111111] dark:text-text-primary">
+          <h3 className="text-[14.5px] font-semibold tracking-[-0.01em] text-text-primary">
             Téléversements récents
           </h3>
         </div>
 
         {recents.length === 0 ? (
-          <div className="mt-4 flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 dark:border-border px-3 py-6 text-center">
-            <FileText size={18} className="text-slate-300 dark:text-text-muted" strokeWidth={1.8} />
-            <p className="mt-2 text-[12.5px] font-medium text-slate-500 dark:text-text-secondary">Aucun téléversement récent</p>
-            <p className="mt-0.5 text-[11.5px] text-slate-400 dark:text-text-muted">Les nouveaux documents ajoutés apparaîtront ici.</p>
+          <div className="mt-4 flex flex-col items-center justify-center rounded-xl border border-dashed border-border px-3 py-6 text-center">
+            <FileText size={18} className="text-text-muted" strokeWidth={1.8} />
+            <p className="mt-2 text-[12.5px] font-medium text-text-secondary">Aucun téléversement récent</p>
+            <p className="mt-0.5 text-[11.5px] text-text-muted">Les nouveaux documents ajoutés apparaîtront ici.</p>
           </div>
         ) : (
           <ul className="mt-3 space-y-1">
             {recents.map(d => (
               <li
                 key={d.id}
-                className="flex items-center gap-2.5 rounded-lg p-1.5 transition-colors hover:bg-slate-50 dark:hover:dark:bg-input"
+                className="flex items-center gap-2.5 rounded-lg p-1.5 transition-colors hover:bg-hover"
               >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 dark:bg-elevated text-slate-500 dark:text-text-secondary">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-elevated text-text-secondary">
                   <FileText size={12} strokeWidth={2} />
                 </span>
-                <p className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-slate-700 dark:text-text-secondary">
+                <p className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-text-secondary">
                   {d.nom}
                 </p>
                 <span
@@ -324,28 +324,28 @@ function InsightsPanel({
       </article>
 
       {/* Knowledge Tips */}
-      <article className="card rounded-2xl border border-[#ECECEC] dark:border-border bg-white dark:bg-card p-5">
+      <article className="card rounded-2xl border border-border bg-card p-5">
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
             <CheckCircle2 size={15} strokeWidth={2.2} />
           </span>
-          <h3 className="text-[14.5px] font-semibold tracking-[-0.01em] text-[#111111] dark:text-text-primary">
+          <h3 className="text-[14.5px] font-semibold tracking-[-0.01em] text-text-primary">
             Astuces de la base
           </h3>
         </div>
 
-        <ul className="mt-3 space-y-2.5 text-[12.5px] leading-relaxed text-[#374151] dark:text-text-secondary">
+        <ul className="mt-3 space-y-2.5 text-[12.5px] leading-relaxed text-text-secondary">
           <li className="flex gap-2">
             <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-blue-500" />
             <span>
-              Utilisez la recherche par <strong className="font-semibold text-[#111111] dark:text-text-primary">nom de fichier</strong> et{' '}
-              <strong className="font-semibold text-[#111111] dark:text-text-primary">statut</strong> pour trouver un document rapidement.
+              Utilisez la recherche par <strong className="font-semibold text-text-primary">nom de fichier</strong> et{' '}
+              <strong className="font-semibold text-text-primary">statut</strong> pour trouver un document rapidement.
             </span>
           </li>
           <li className="flex gap-2">
             <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-blue-500" />
             <span>
-              L'assistant IA ne cite que les documents <strong className="font-semibold text-[#111111] dark:text-text-primary">indexés</strong>.
+              L'assistant IA ne cite que les documents <strong className="font-semibold text-text-primary">indexés</strong>.
             </span>
           </li>
           <li className="flex gap-2">
@@ -356,9 +356,9 @@ function InsightsPanel({
           </li>
         </ul>
 
-        <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-50 dark:bg-input px-3 py-2.5 text-[11.5px] text-[#6B7280] dark:text-text-secondary">
+        <div className="mt-4 flex items-center justify-between rounded-xl bg-input px-3 py-2.5 text-[11.5px] text-text-secondary">
           <div>
-            <p className="font-semibold text-[#111111] dark:text-text-primary">Dernière indexation</p>
+            <p className="font-semibold text-text-primary">Dernière indexation</p>
             <p>
               {lastIndexed
                 ? format(new Date(lastIndexed.uploade_le), 'dd MMM yyyy', { locale: fr })
@@ -367,7 +367,7 @@ function InsightsPanel({
           </div>
           {oldestIso && (
             <div className="text-right">
-              <p className="font-semibold text-[#111111] dark:text-text-primary">Base créée</p>
+              <p className="font-semibold text-text-primary">Base créée</p>
               <p>{format(new Date(oldestIso), 'MMM yyyy', { locale: fr })}</p>
             </div>
           )}

@@ -1,32 +1,34 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Loader2, Mail, Lock, ShieldCheck, ImagePlus, Eye, EyeOff, Check, AlertCircle } from 'lucide-react'
+import { Loader2, Mail, Lock, ShieldCheck, Eye, EyeOff, Check, AlertCircle } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { TextField } from '../ui/Field'
 
 const LOGO_SRC: string = '/favicon.ico'
 
 function LogoMark({ size = 40 }: { size?: number }) {
-  const [failed, setFailed] = useState(false)
-  if (failed) {
-    return (
-      <div
-        style={{ width: size, height: size }}
-        className="flex shrink-0 items-center justify-center rounded-xl border border-dashed border-slate-300"
-        title="Logo CHU introuvable"
-      >
-        <ImagePlus size={Math.round(size * 0.42)} strokeWidth={1.6} className="text-slate-300" />
-      </div>
-    )
-  }
   return (
-    <img
-      src={LOGO_SRC}
-      alt="CHU Mohammed VI Oujda"
-      style={{ width: size, height: size }}
-      className="shrink-0 object-contain"
-      onError={() => setFailed(true)}
-    />
+    <>
+      {/* Light-mode logo: colored favicon as-is (hidden in dark mode) */}
+      <span
+        aria-label="CHU Mohammed VI Oujda"
+        role="img"
+        style={{
+          width: size,
+          height: size,
+          backgroundImage: `url(${LOGO_SRC})`,
+        }}
+        className="inline-block shrink-0 bg-no-repeat bg-center bg-contain align-middle [.dark_&]:hidden"
+      />
+      {/* Dark-mode logo: same favicon used as a CSS mask, filled with white
+          via the .logo-themed-dark class in index.css (hidden in light mode) */}
+      <span
+        aria-label="CHU Mohammed VI Oujda"
+        role="img"
+        style={{ width: size, height: size }}
+        className="logo-themed-dark hidden shrink-0 align-middle [.dark_&]:inline-block"
+      />
+    </>
   )
 }
 
@@ -296,7 +298,7 @@ export default function LoginPage() {
                   leadingIcon={<Mail size={16} strokeWidth={2.1} />}
                   fieldSize="md"
                   containerClassName="!mb-0"
-                  className="!rounded-[14px] !bg-slate-50"
+                  className="!rounded-[14px] !bg-input"
                 />
               </div>
 

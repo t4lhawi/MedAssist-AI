@@ -52,14 +52,19 @@ export default function Navbar({ alertCount }: Props) {
       <div className="flex h-full items-center justify-between px-5">
         {/* Left: Logo + Brand */}
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl">
-            <img
-              src={LOGO}
-              alt="Logo"
-              width={65}
-              height={65}
-            />
-          </div>
+          {/* Light-mode logo: the colored favicon as-is */}
+          <div
+            className="h-8 w-8 shrink-0 bg-no-repeat bg-center bg-contain [.dark_&]:hidden"
+            style={{ backgroundImage: `url(${LOGO})` }}
+            aria-label="Logo"
+            role="img"
+          />
+          {/* Dark-mode logo: same favicon used as a CSS mask, filled with text-primary (white) */}
+          <div
+            className="logo-themed-dark hidden h-8 w-8 shrink-0 [.dark_&]:block"
+            aria-label="Logo"
+            role="img"
+          />
           <div>
             <h1 className="text-[14px] font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
               MedAssist AI

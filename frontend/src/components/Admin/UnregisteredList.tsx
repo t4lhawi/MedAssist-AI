@@ -77,7 +77,7 @@ export default function UnregisteredList({ sources, onClaimed }: Props) {
   return (
     <section
       aria-label="ESP32 non enregistrés"
-      className="overflow-hidden rounded-3xl border border-amber-200/70 bg-white dark:bg-card shadow-[0_1px_2px_rgba(17,17,17,0.04),0_8px_24px_-12px_rgba(245,158,11,0.18)]"
+      className="overflow-hidden rounded-3xl border border-amber-200/70 bg-card shadow-[0_1px_2px_rgba(17,17,17,0.04),0_8px_24px_-12px_rgba(245,158,11,0.18)]"
     >
       {/* Header strip — amber accent */}
       <div className="flex flex-wrap items-center gap-3 border-b border-amber-100 bg-gradient-to-r from-amber-50/80 via-amber-50/40 to-transparent px-6 py-4">
@@ -86,14 +86,14 @@ export default function UnregisteredList({ sources, onClaimed }: Props) {
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-[14px] font-semibold tracking-[-0.01em] text-[#111111] dark:text-text-primary">
+            <h3 className="text-[14px] font-semibold tracking-[-0.01em] text-text-primary">
               ESP32 non enregistrés
             </h3>
             <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 tabular-nums">
               {sources.length}
             </span>
           </div>
-          <p className="mt-0.5 text-[12.5px] text-[#6B7280] dark:text-text-secondary">
+          <p className="mt-0.5 text-[12.5px] text-text-secondary">
             Ces IP ont publié des mesures mais ne sont pas (ou plus) associées à une salle. Réclamez-les pour
             afficher leurs données dans la grille.
           </p>
@@ -104,54 +104,54 @@ export default function UnregisteredList({ sources, onClaimed }: Props) {
             <Search
               size={13}
               strokeWidth={2.2}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] dark:text-text-muted"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
             />
             <input
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="Filtrer par IP ou type…"
-              className="w-full rounded-full border border-transparent bg-[#F5F5F7] py-1.5 pl-8 pr-3 text-[12.5px] text-[#111111] dark:text-text-primary outline-none placeholder:text-[#9CA3AF] dark:text-text-muted transition-colors duration-200 focus:bg-white dark:bg-card focus:border-[#FCD34D] focus:shadow-[0_0_0_3px_rgba(245,158,11,0.12)]"
+              className="w-full rounded-full border border-transparent bg-input py-1.5 pl-8 pr-3 text-[12.5px] text-text-primary outline-none placeholder:text-text-muted transition-colors duration-200 focus:bg-card focus:border-amber-300 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.12)]"
             />
           </div>
         )}
       </div>
 
       {/* Discovery list */}
-      <ul className="divide-y divide-[#F0F0F0]">
+      <ul className="divide-y divide-border">
         {filtered.map(s => {
           const meta = s.last_type ? getMonitoringType(String(s.last_type)) : null
           const Icon = meta?.icon ?? Server
           return (
             <li
               key={s.ip}
-              className="flex flex-wrap items-center gap-4 px-6 py-4 transition-colors duration-200 hover:bg-[#FAFAFA] dark:bg-hover dark:hover:bg-hover"
+              className="flex flex-wrap items-center gap-4 px-6 py-4 transition-colors duration-200 hover:bg-hover"
             >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#F5F5F7] text-[#6B7280] dark:text-text-secondary">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-input text-text-secondary">
                 <Icon size={16} strokeWidth={2.2} />
               </span>
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-[13.5px] font-semibold tracking-tight text-[#111111] dark:text-text-primary">
+                  <span className="font-mono text-[13.5px] font-semibold tracking-tight text-text-primary">
                     {s.ip}
                   </span>
-                  <span className="rounded-full bg-[#F5F5F7] px-2 py-0.5 text-[11px] font-medium text-[#6B7280] dark:text-text-secondary">
+                  <span className="rounded-full bg-input px-2 py-0.5 text-[11px] font-medium text-text-secondary">
                     {meta ? meta.title : (s.last_type || 'Inconnu')}
                   </span>
                 </div>
-                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12px] text-[#6B7280] dark:text-text-secondary">
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12px] text-text-secondary">
                   <span>
                     Dernière mesure :{' '}
-                    <span className="font-medium text-[#374151] dark:text-text-secondary">
+                    <span className="font-medium text-text-secondary">
                       {s.last_valeur !== null && s.last_valeur !== undefined
                         ? `${s.last_valeur} ${s.last_unite || ''}`
                         : '—'}
                     </span>
                   </span>
-                  <span className="hidden h-1 w-1 rounded-full bg-[#D1D5DB] sm:inline-block" />
+                  <span className="hidden h-1 w-1 rounded-full bg-border-strong sm:inline-block" />
                   <span>
                     Total :{' '}
-                    <span className="font-medium text-[#374151] dark:text-text-secondary tabular-nums">
+                    <span className="font-medium text-text-secondary tabular-nums">
                       {s.measurement_count}
                     </span>{' '}
                     mesure{s.measurement_count > 1 ? 's' : ''}
@@ -163,7 +163,7 @@ export default function UnregisteredList({ sources, onClaimed }: Props) {
                 <button
                   type="button"
                   onClick={() => openClaim(s.ip)}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#111111] px-3.5 py-1.5 text-[12.5px] font-semibold text-white shadow-[0_2px_8px_-2px_rgba(17,17,17,0.35)] transition-all duration-200 hover:-translate-y-px hover:bg-[#1F1F23] active:scale-[0.97]"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-text-primary px-3.5 py-1.5 text-[12.5px] font-semibold text-card shadow-[0_2px_8px_-2px_rgba(17,17,17,0.35)] transition-all duration-200 hover:-translate-y-px hover:opacity-90 active:scale-[0.97]"
                 >
                   Réclamer
                   <ArrowUpRight size={12} strokeWidth={2.6} />
@@ -174,15 +174,15 @@ export default function UnregisteredList({ sources, onClaimed }: Props) {
         })}
 
         {filtered.length === 0 && (
-          <li className="px-6 py-8 text-center text-[12.5px] text-[#6B7280] dark:text-text-secondary">
+          <li className="px-6 py-8 text-center text-[12.5px] text-text-secondary">
             Aucune IP ne correspond à « {query} ».
           </li>
         )}
       </ul>
 
-      <div className="border-t border-[#F0F0F0] bg-[#FAFAFA] dark:bg-hover px-6 py-3 text-[11.5px] text-[#6B7280] dark:text-text-secondary">
+      <div className="border-t border-border bg-hover px-6 py-3 text-[11.5px] text-text-secondary">
         Types de capteurs connus :{' '}
-        <span className="font-medium text-[#374151] dark:text-text-secondary">
+        <span className="font-medium text-text-secondary">
           {MONITORING_TYPES.map(m => m.title).join(', ')}
         </span>
         .
@@ -208,19 +208,19 @@ export default function UnregisteredList({ sources, onClaimed }: Props) {
 
           <ModalBody>
             {/* IP summary */}
-            <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-[#ECECEC] bg-[#FAFAFA] dark:bg-hover px-4 py-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-card text-[#6B7280] dark:text-text-secondary shadow-[inset_0_0_0_1px_rgba(15,23,42,0.06)]">
+            <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-hover px-4 py-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-card text-text-secondary shadow-[inset_0_0_0_1px_rgba(15,23,42,0.06)]">
                 <Server size={14} strokeWidth={2.2} />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="font-mono text-[13.5px] font-semibold tracking-tight text-[#111111] dark:text-text-primary">
+                <p className="font-mono text-[13.5px] font-semibold tracking-tight text-text-primary">
                   {claimingSource?.ip}
                 </p>
-                <p className="mt-0.5 text-[12px] text-[#6B7280] dark:text-text-secondary">
+                <p className="mt-0.5 text-[12px] text-text-secondary">
                   {claimingSource?.measurement_count ?? 0} mesure
                   {(claimingSource?.measurement_count ?? 0) > 1 ? 's' : ''} reçue
                   {(claimingSource?.measurement_count ?? 0) > 1 ? 's' : ''} · dernière valeur :{' '}
-                  <span className="font-medium text-[#374151] dark:text-text-secondary">
+                  <span className="font-medium text-text-secondary">
                     {claimingSource?.last_valeur !== null && claimingSource?.last_valeur !== undefined
                       ? `${claimingSource.last_valeur} ${claimingSource.last_unite || ''}`
                       : '—'}

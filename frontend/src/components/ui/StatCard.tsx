@@ -16,7 +16,7 @@ const TONE_BG: Record<Tone, string> = {
   emerald: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300',
   amber: 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300',
   red: 'bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-300',
-  blue: 'bg-[#EFF4FF] text-[#3B82F6] dark:bg-blue-500/15 dark:text-blue-300',
+  blue: 'bg-blue-500/15 text-blue-600 dark:text-blue-300',
   slate: 'bg-hover text-text-secondary',
 }
 
