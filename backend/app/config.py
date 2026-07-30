@@ -26,17 +26,17 @@ def _ensure_writable(path_str: str) -> str:
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://postgres:admin@postgres:5432/medassist"
-    SECRET_KEY: str = "medassist_secret_key_changez_moi_svp_2026"
+    SECRET_KEY: str = ""
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     # LLM
-    GROQ_API_KEY: str = "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"
+    GROQ_API_KEY: str
     LLM_MODEL: str = "llama-3.3-70b-versatile"
     LLM_MAX_TOKENS: int = 256
     LLM_TIMEOUT_SECONDS: int = 60
 
     # Embedding
-    OPENROUTER_API_KEY: str = "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"
+    OPENROUTER_API_KEY: str
     EMBEDDING_MODEL: str = "nvidia/llama-nemotron-embed-vl-1b-v2:free"
 
     RAG_RETRIEVAL_K: int = 4
