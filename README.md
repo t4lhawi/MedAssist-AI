@@ -37,7 +37,6 @@ MedAssist AI centralise les données environnementales et physiologiques des sal
 
 <img width="1536" height="1024" alt="arch" src="https://github.com/user-attachments/assets/061179f0-3019-416c-94b3-e8dbf3a973ff" />
 
-
 ---
 
 ## Stack technique
@@ -61,10 +60,9 @@ MedAssist AI centralise les données environnementales et physiologiques des sal
 **Prérequis :** Docker ≥ 24, 2 Go RAM, ports 8000/8080/1883 libres.
 
 ```bash
-git clone https://github.com/votre-org/medassist.git
+git clone https://github.com/t4lhawi/medassist.git
 cd medassist
-# Créer/éditer le fichier .env à la racine et renseigner au minimum :
-#   SECRET_KEY, POSTGRES_PASSWORD, GROQ_API_KEY, OPENROUTER_API_KEY
+cp .env.example .env   # renseigner SECRET_KEY, POSTGRES_PASSWORD, GROQ_API_KEY, OPENROUTER_API_KEY
 
 docker compose up -d --build
 ```
@@ -101,7 +99,7 @@ MQTT_HOST=mosquitto
 MQTT_TOPIC_PREFIX=medassist/salle
 ```
 
-Pour la production : régénérer `SECRET_KEY`, changer `POSTGRES_PASSWORD`, utiliser vos propres clés API et activer HTTPS via un reverse-proxy.
+Un modèle sans secrets est fourni dans `.env.example`. Pour la production : régénérer `SECRET_KEY`, changer `POSTGRES_PASSWORD`, utiliser vos propres clés API et activer HTTPS via un reverse-proxy.
 
 ---
 
