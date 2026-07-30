@@ -35,19 +35,8 @@ MedAssist AI centralise les données environnementales et physiologiques des sal
 
 ## Architecture
 
-```
-ESP32 (DHT11, BMP280, SGP40)
-        │ MQTT
-        ▼
-   Mosquitto Broker
-        │
-        ▼
-   FastAPI Backend ──► PostgreSQL (mesures, utilisateurs, alertes)
-        │        └──► ChromaDB + Groq (RAG)
-        │
-        ▼
-   WebSocket temps réel ──► React SPA (nginx)
-```
+<img width="1536" height="1024" alt="arch" src="https://github.com/user-attachments/assets/061179f0-3019-416c-94b3-e8dbf3a973ff" />
+
 
 ---
 
