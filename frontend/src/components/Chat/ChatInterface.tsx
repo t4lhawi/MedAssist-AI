@@ -1335,7 +1335,7 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(functi
                   <button
                     type="button"
                     onClick={() => setHistoryOpen(true)}
-                    className="mt-7 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium text-blue-600 transition-colors hover:bg-blue-50"
+                    className="mt-7 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium text-blue-600 dark:text-blue-300 transition-colors hover:bg-blue-500/15"
                   >
                     <Clock3 size={13} strokeWidth={2.2} />
                     Reprendre une conversation précédente
@@ -1374,7 +1374,7 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(functi
             e.preventDefault()
             send()
           }}
-          className="group/chat relative mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border border-border bg-card p-2 pl-3.5 shadow-[0_2px_10px_-4px_rgba(15,23,42,0.08),0_24px_48px_-12px_rgba(15,23,42,0.06)] transition-all duration-200 ease-out focus-within:border-blue-300 focus-within:shadow-[0_8px_28px_-6px_rgba(46,99,255,0.25),0_0_0_4px_rgba(46,99,255,0.06)]"
+          className="group/chat relative mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border border-border bg-card p-2 pl-3.5 shadow-[0_2px_10px_-4px_rgba(15,23,42,0.08),0_24px_48px_-12px_rgba(15,23,42,0.06)] transition-all duration-200 ease-out focus-within:border-blue-300 dark:focus-within:border-blue-500/60 focus-within:shadow-[0_8px_28px_-6px_rgba(46,99,255,0.25),0_0_0_4px_rgba(46,99,255,0.06)]"
         >
           <textarea
             ref={inputRef}
@@ -1408,7 +1408,7 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(functi
               disabled={!input.trim()}
               title="Envoyer"
               aria-label="Envoyer le message"
-              className="mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl text-white shadow-[0_4px_12px_-2px_rgba(46,99,255,0.5)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_18px_-2px_rgba(46,99,255,0.55)] active:scale-95 disabled:cursor-not-allowed disabled:from-slate-200 disabled:to-slate-200 disabled:shadow-none disabled:text-slate-400 dark:text-text-muted"
+              className="mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl text-white shadow-[0_4px_12px_-2px_rgba(46,99,255,0.5)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_18px_-2px_rgba(46,99,255,0.55)] active:scale-95 disabled:cursor-not-allowed disabled:from-slate-200 dark:disabled:from-elevated disabled:to-slate-200 dark:disabled:to-elevated disabled:shadow-none disabled:text-slate-400 dark:disabled:text-text-muted dark:text-text-muted"
               style={{
                 background: input.trim()
                   ? 'linear-gradient(135deg, #3B82F6, #2563EB)'

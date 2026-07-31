@@ -238,10 +238,10 @@ interface StatCardProps {
 
 function StatCard({ label, value, icon: Icon, iconBg, iconColor, trend, tone }: StatCardProps) {
   const trendTone =
-    tone === 'critique' ? 'text-red-600' :
-    tone === 'attention' ? 'text-amber-600' :
-    tone === 'info' ? 'text-blue-600' :
-    'text-emerald-600'
+    tone === 'critique' ? 'text-red-600 dark:text-red-300' :
+    tone === 'attention' ? 'text-amber-600 dark:text-amber-300' :
+    tone === 'info' ? 'text-blue-600 dark:text-blue-300' :
+    'text-emerald-600 dark:text-emerald-300'
   return (
     <div
       className="card relative overflow-hidden rounded-3xl bg-card p-5"
@@ -294,7 +294,7 @@ function AlertStatsRow({ alertes }: { alertes: Alerte[] }) {
         label="Alertes critiques"
         value={c}
         icon={AlertOctagon}
-        iconBg="bg-red-50"
+        iconBg="bg-red-500/15"
         iconColor="#EF4444"
         trend={cToday}
         tone="critique"
@@ -303,7 +303,7 @@ function AlertStatsRow({ alertes }: { alertes: Alerte[] }) {
         label="Alertes d'attention"
         value={w}
         icon={AlertTriangle}
-        iconBg="bg-amber-50"
+        iconBg="bg-amber-500/15"
         iconColor="#F59E0B"
         trend={wToday}
         tone="attention"
@@ -312,7 +312,7 @@ function AlertStatsRow({ alertes }: { alertes: Alerte[] }) {
         label="Alertes d'information"
         value={i}
         icon={Info}
-        iconBg="bg-blue-50"
+        iconBg="bg-blue-500/15"
         iconColor="#3B82F6"
         trend={iToday}
         tone="info"
@@ -321,7 +321,7 @@ function AlertStatsRow({ alertes }: { alertes: Alerte[] }) {
         label="Traitées aujourd'hui"
         value={processedToday}
         icon={CheckCircle2}
-        iconBg="bg-emerald-50"
+        iconBg="bg-emerald-500/15"
         iconColor="#10B981"
         tone="success"
       />
@@ -420,7 +420,7 @@ function AlertToolbar({
             <button
               type="button"
               onClick={() => setState(s => ({ ...s, q: '' }))}
-              className="rounded-full p-0.5 transition-colors hover:bg-black/5"
+              className="rounded-full p-0.5 transition-colors hover:bg-hover"
               aria-label="Effacer la recherche"
             >
               <X size={12} strokeWidth={2.4} style={{ color: 'var(--text-secondary)' }} />
@@ -458,8 +458,7 @@ function AlertToolbar({
           type="button"
           onClick={onRefresh}
           disabled={refreshing}
-          className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[12px] font-medium transition-colors disabled:opacity-60"
-          style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-hover px-3 py-1.5 text-[12px] font-medium text-text-secondary transition-colors hover:bg-elevated disabled:opacity-60 dark:bg-white dark:text-slate-900 dark:hover:bg-white/90"
           aria-label="Rafraîchir"
         >
           <RefreshCw size={12} strokeWidth={2.2} className={refreshing ? 'animate-spin' : ''} />
@@ -1487,10 +1486,7 @@ export default function AlertsList({
               onClick={handleRefresh}
               disabled={refreshing}
               aria-label="Actualiser"
-              className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3.5 py-1.5 text-[12.5px] font-medium shadow-[0_1px_2px_var(--shadow-1)] transition-all duration-200 hover:-translate-y-px hover:bg-hover active:scale-[0.97] disabled:opacity-60"
-              style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-color)' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-card)' }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1.5 text-[12.5px] font-medium text-text-secondary shadow-[0_1px_2px_var(--shadow-1)] transition-all duration-200 hover:-translate-y-px hover:bg-hover active:scale-[0.97] disabled:opacity-60 dark:border-transparent dark:bg-white dark:text-slate-900 dark:hover:bg-white/90"
             >
               <RefreshCw size={12} strokeWidth={2.4} className={refreshing ? 'animate-spin' : ''} />
               Actualiser

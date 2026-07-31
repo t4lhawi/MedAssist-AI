@@ -158,7 +158,7 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps & React.Inp
             style={{ color: 'var(--text-secondary)' }}
           >
             {label}
-            {success && <Check size={12} className="text-emerald-500" strokeWidth={2.6} />}
+            {success && <Check size={12} className="text-emerald-500 dark:text-emerald-300" strokeWidth={2.6} />}
           </span>
         )}
         <FieldShell
@@ -182,7 +182,7 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps & React.Inp
         </FieldShell>
         {(error || hint) && (
           <p
-            className={`mt-1.5 flex items-start gap-1 text-[11.5px] ${error ? 'font-medium text-red-600' : ''}`}
+            className={`mt-1.5 flex items-start gap-1 text-[11.5px] ${error ? 'font-medium text-red-600 dark:text-red-300' : ''}`}
             style={error ? undefined : { color: 'var(--text-muted)' }}
           >
             {error ? (
@@ -270,7 +270,7 @@ export function SelectField({
       </div>
       {(error || hint) && (
         <p
-          className={`mt-1.5 text-[11.5px] ${error ? 'font-medium text-red-600' : ''}`}
+          className={`mt-1.5 text-[11.5px] ${error ? 'font-medium text-red-600 dark:text-red-300' : ''}`}
           style={error ? undefined : { color: 'var(--text-muted)' }}
         >
           {error || hint}

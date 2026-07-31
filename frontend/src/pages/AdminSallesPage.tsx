@@ -179,7 +179,7 @@ export default function AdminSallesPage() {
             <span className="mx-1.5 text-text-muted">·</span>
             <span
               className={`font-medium ${
-                unregistered.length > 0 ? 'text-amber-600' : 'text-text-secondary'
+                unregistered.length > 0 ? 'text-amber-600 dark:text-amber-300' : 'text-text-secondary'
               }`}
             >
               {unregistered.length} appareil{unregistered.length > 1 ? 's' : ''} inconnu
@@ -207,7 +207,7 @@ export default function AdminSallesPage() {
             onClick={load}
             disabled={loading}
             aria-label="Actualiser"
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1.5 text-[12.5px] font-medium text-text-secondary shadow-[0_1px_2px_rgba(17,17,17,0.04)] transition-all duration-200 hover:-translate-y-px hover:bg-hover active:scale-[0.97] disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1.5 text-[12.5px] font-medium text-text-secondary shadow-[0_1px_2px_rgba(17,17,17,0.04)] transition-all duration-200 hover:-translate-y-px hover:bg-hover active:scale-[0.97] disabled:opacity-60 dark:border-transparent dark:bg-white dark:text-slate-900 dark:hover:bg-white/90"
           >
             <RefreshCw size={12} strokeWidth={2.4} className={loading ? 'animate-spin' : ''} />
             Actualiser
@@ -344,7 +344,7 @@ export default function AdminSallesPage() {
       {error && (
         <div
           role="alert"
-          className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-medium text-red-600"
+          className="flex items-center gap-2 rounded-2xl border border-red-200 dark:border-red-500/30 bg-red-500/15 px-4 py-3 text-[13px] font-medium text-red-600 dark:text-red-300"
         >
           {error}
         </div>

@@ -42,9 +42,9 @@ export type SensorState = 'active' | 'offline' | 'not_installed' | 'warning' | '
 
 export const STATE_TONE: Record<SensorState, { dot: string; bg: string; text: string; label: string; badge: string }> = {
   active:       { dot: 'bg-emerald-500',       bg: 'bg-emerald-50 dark:bg-emerald-500/15',       text: 'text-emerald-600 dark:text-emerald-300',       label: 'En ligne',       badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300' },
-  offline:      { dot: 'bg-amber-500',         bg: 'bg-amber-50 dark:bg-amber-500/15',         text: 'text-amber-600 dark:text-amber-300',         label: 'Hors ligne',     badge: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300' },
+  offline:      { dot: 'bg-text-muted',        bg: 'bg-elevated',                              text: 'text-amber-600 dark:text-amber-300',         label: 'Hors ligne',     badge: 'bg-elevated text-text-secondary' },
   not_installed:{ dot: 'bg-slate-300 dark:bg-slate-500',         bg: 'bg-slate-50 dark:bg-slate-700/40',         text: 'text-slate-500 dark:text-slate-300',         label: 'Non installé',   badge: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-200' },
-  warning:      { dot: 'bg-amber-500 animate-pulse', bg: 'bg-amber-50 dark:bg-amber-500/15',    text: 'text-amber-700 dark:text-amber-300',         label: 'Données anciennes', badge: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300' },
+  warning:      { dot: 'bg-text-muted animate-pulse', bg: 'bg-elevated',                          text: 'text-amber-600 dark:text-amber-300',         label: 'Données anciennes', badge: 'bg-elevated text-text-secondary' },
   error:        { dot: 'bg-red-500',           bg: 'bg-red-50 dark:bg-red-500/15',           text: 'text-red-700 dark:text-red-300',           label: 'Erreur',         badge: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300' },
 }
 
@@ -66,8 +66,8 @@ export const STATE_BORDER: Record<SensorState, string> = {
 
 export const STATE_BG: Record<SensorState, string> = {
   active: 'bg-emerald-50 dark:bg-emerald-500/15',
-  offline: 'bg-amber-50 dark:bg-amber-500/15',
+  offline: 'bg-elevated',
   not_installed: 'bg-slate-50 dark:bg-slate-700/40',
-  warning: 'bg-amber-50 dark:bg-amber-500/15',
+  warning: 'bg-elevated',
   error: 'bg-red-50 dark:bg-red-500/15',
 }

@@ -53,7 +53,7 @@ function LiveActivityFeed({ mesures, max = 6 }: { mesures: Mesure[]; max?: numbe
         </p>
       </div>
 
-      <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
+      <div className="divide-y divide-border">
         {items.map((m, idx) => {
           const mt = (m.type && getMonitoringType(m.type)) || MONITORING_TYPES[0]
           const Icon = mt.icon

@@ -341,7 +341,7 @@ export default function ProfilePage() {
               <KeyRound size={14} strokeWidth={2.2} style={{ color: 'var(--text-secondary)' }} />
             </span>
           </div>
-          <div className="divide-y" style={{ borderColor: 'var(--bg-hover)' }}>
+          <div className="divide-y divide-border">
             <InfoRow icon={Mail} label="Adresse e-mail" value={user.email} />
             <InfoRow icon={ShieldCheck} label="Rôle" value={roleLabel} />
             <InfoRow icon={CalendarClock} label="Inscrit le" value={memberSince || '—'} />

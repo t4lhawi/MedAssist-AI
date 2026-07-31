@@ -77,11 +77,11 @@ export default function UnregisteredList({ sources, onClaimed }: Props) {
   return (
     <section
       aria-label="ESP32 non enregistrés"
-      className="overflow-hidden rounded-3xl border border-amber-200/70 bg-card shadow-[0_1px_2px_rgba(17,17,17,0.04),0_8px_24px_-12px_rgba(245,158,11,0.18)]"
+      className="overflow-hidden rounded-3xl border border-amber-200/70 dark:border-amber-500/30 bg-card shadow-[0_1px_2px_rgba(17,17,17,0.04),0_8px_24px_-12px_rgba(245,158,11,0.18)]"
     >
       {/* Header strip — amber accent */}
-      <div className="flex flex-wrap items-center gap-3 border-b border-amber-100 bg-gradient-to-r from-amber-50/80 via-amber-50/40 to-transparent px-6 py-4">
-        <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+      <div className="flex flex-wrap items-center gap-3 border-b border-amber-200/70 dark:border-amber-500/20 bg-gradient-to-r from-amber-50/80 via-amber-50/40 to-transparent dark:from-amber-500/15 dark:via-amber-500/10 dark:to-transparent px-6 py-4">
+        <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-700 dark:text-amber-300">
           <Radar size={16} strokeWidth={2.2} />
         </span>
         <div className="min-w-0 flex-1">
@@ -89,7 +89,7 @@ export default function UnregisteredList({ sources, onClaimed }: Props) {
             <h3 className="text-[14px] font-semibold tracking-[-0.01em] text-text-primary">
               ESP32 non enregistrés
             </h3>
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 tabular-nums">
+            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300 tabular-nums">
               {sources.length}
             </span>
           </div>
@@ -110,7 +110,7 @@ export default function UnregisteredList({ sources, onClaimed }: Props) {
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="Filtrer par IP ou type…"
-              className="w-full rounded-full border border-transparent bg-input py-1.5 pl-8 pr-3 text-[12.5px] text-text-primary outline-none placeholder:text-text-muted transition-colors duration-200 focus:bg-card focus:border-amber-300 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.12)]"
+              className="w-full rounded-full border border-transparent bg-input py-1.5 pl-8 pr-3 text-[12.5px] text-text-primary outline-none placeholder:text-text-muted transition-colors duration-200 focus:bg-card focus:border-amber-300 dark:focus:border-amber-500/50 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.12)]"
             />
           </div>
         )}
@@ -255,7 +255,7 @@ export default function UnregisteredList({ sources, onClaimed }: Props) {
             {error && (
               <div
                 role="alert"
-                className="mt-4 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-[12.5px] font-medium text-red-600"
+                className="mt-4 flex items-start gap-2 rounded-2xl border border-red-200 dark:border-red-500/30 bg-red-500/15 px-4 py-2.5 text-[12.5px] font-medium text-red-600 dark:text-red-300"
               >
                 {error}
               </div>

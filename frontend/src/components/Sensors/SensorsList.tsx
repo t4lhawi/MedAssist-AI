@@ -89,7 +89,7 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
                 onChange={e => setForm({ ...form, nom: e.target.value })}
                 placeholder="Ex: CO2 chambre froide 02"
                 required
-                className="w-full rounded-xl border-0 bg-card px-3.5 py-2.5 text-[13.5px] text-text-primary shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] outline-none transition-shadow placeholder:text-text-muted focus:shadow-[inset_0_0_0_1.5px_rgba(37,99,235,0.5)]"
+                className="w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-[13.5px] text-text-primary outline-none transition-shadow placeholder:text-text-muted focus:border-blue-500 focus:shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-primary)_30%,transparent)]"
               />
             </label>
             <label>
@@ -106,7 +106,7 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
                 value={form.emplacement}
                 onChange={e => setForm({ ...form, emplacement: e.target.value })}
                 placeholder="Salle 101, bloc, chambre froide..."
-                className="w-full rounded-xl border-0 bg-card px-3.5 py-2.5 text-[13.5px] text-text-primary shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] outline-none transition-shadow placeholder:text-text-muted focus:shadow-[inset_0_0_0_1.5px_rgba(37,99,235,0.5)]"
+                className="w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-[13.5px] text-text-primary outline-none transition-shadow placeholder:text-text-muted focus:border-blue-500 focus:shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-primary)_30%,transparent)]"
               />
             </label>
           </div>
@@ -117,7 +117,7 @@ export default function SensorsList({ capteurs, onRefresh }: Props) {
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="rounded-full bg-card px-3.5 py-2 text-[13px] font-medium text-text-secondary shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] transition-colors hover:bg-hover"
+              className="rounded-full border border-border bg-card px-3.5 py-2 text-[13px] font-medium text-text-secondary transition-colors hover:bg-hover"
             >
               Annuler
             </button>

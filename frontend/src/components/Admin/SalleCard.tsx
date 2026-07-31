@@ -46,20 +46,20 @@ const CONNECTION_TONE: Record<
   online: {
     dot: 'bg-emerald-500',
     pulse: 'bg-emerald-400',
-    chip: 'bg-emerald-50 text-emerald-700',
-    chipText: 'text-emerald-700',
+    chip: 'bg-elevated text-text-secondary',
+    chipText: 'text-text-secondary',
     label: 'En ligne',
   },
   offline: {
     dot: 'bg-amber-500',
     pulse: 'bg-amber-400',
-    chip: 'bg-amber-50 text-amber-700',
-    chipText: 'text-amber-700',
+    chip: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
+    chipText: 'text-amber-700 dark:text-amber-300',
     label: 'Hors ligne',
   },
   inactive: {
-    dot: 'bg-[#9CA3AF]',
-    pulse: 'bg-[#9CA3AF]',
+    dot: 'bg-slate-400 dark:bg-slate-500',
+    pulse: 'bg-slate-400 dark:bg-slate-500',
     chip: 'bg-input text-text-secondary',
     chipText: 'text-text-secondary',
     label: 'Inactive',
@@ -102,9 +102,9 @@ function SensorTile({
       data-sensor={type}
       className={`group/sensor relative overflow-hidden rounded-xl border p-2.5 transition-all duration-200 ${
         isActive
-          ? 'border-border bg-card hover:border-border-strong hover:shadow-[0_4px_14px_-6px_rgba(15,23,42,0.08)]'
+          ? 'border-emerald-200 dark:border-emerald-500/30 bg-card hover:border-border-strong hover:shadow-[0_4px_14px_-6px_rgba(15,23,42,0.08)]'
           : isOffline
-          ? 'border-amber-200/70 bg-amber-50/30'
+          ? 'border-amber-200 dark:border-amber-500/30 bg-elevated'
           : 'border-dashed border-border bg-hover'
       }`}
     >
@@ -115,7 +115,7 @@ function SensorTile({
               isActive
                 ? 'bg-blue-500/15 text-blue-600 dark:text-blue-300'
                 : isOffline
-                ? 'bg-amber-100 text-amber-700'
+                ? 'bg-input text-amber-600 dark:text-amber-300'
                 : 'bg-input text-text-muted'
             }`}
           >
@@ -125,8 +125,8 @@ function SensorTile({
         </div>
         {isActive && (
           <span className="relative flex h-1.5 w-1.5 shrink-0" aria-label="Capteur actif">
-            <span className="absolute inset-0 animate-ping rounded-full bg-[#3B82F6] opacity-60" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#3B82F6]" />
+            <span className="absolute inset-0 animate-ping rounded-full bg-blue-500 opacity-60" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-blue-500" />
           </span>
         )}
       </div>
@@ -149,7 +149,7 @@ function SensorTile({
           </p>
           <p
             className={`mt-1 flex items-center gap-1 truncate text-[10px] font-medium ${
-              isActive ? 'text-emerald-600' : 'text-amber-600'
+              isActive ? 'text-emerald-600 dark:text-emerald-300' : 'text-text-secondary'
             }`}
           >
             <Activity size={8} strokeWidth={2.6} />
@@ -245,7 +245,7 @@ function ActionMenu({
             }}
             className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-text-primary transition-colors duration-150 hover:bg-hover"
           >
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-50 text-amber-600">
+            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300">
               <StickyNote size={12} strokeWidth={2.2} />
             </span>
             {salle.note ? 'Modifier la note' : 'Ajouter une note'}
@@ -263,8 +263,8 @@ function ActionMenu({
             <span
               className={`flex h-6 w-6 items-center justify-center rounded-md ${
                 salle.actif
-                  ? 'bg-amber-50 text-amber-600'
-                  : 'bg-emerald-50 text-emerald-600'
+                  ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+                  : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
               }`}
             >
               {salle.actif ? (
@@ -283,9 +283,9 @@ function ActionMenu({
               setOpen(false)
               onDelete()
             }}
-            className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-red-600 transition-colors duration-150 hover:bg-red-50"
+            className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-red-600 dark:text-red-300 transition-colors duration-150 hover:bg-red-500/15"
           >
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-red-50 text-red-600">
+            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-red-500/15 text-red-600 dark:text-red-300">
               <Trash2 size={12} strokeWidth={2.2} />
             </span>
             Supprimer
@@ -463,9 +463,9 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
 
   const qualityTone =
     quality === 'good'
-      ? 'text-emerald-600'
+      ? 'text-emerald-600 dark:text-emerald-300'
       : quality === 'fair'
-      ? 'text-amber-600'
+      ? 'text-amber-600 dark:text-amber-300'
       : 'text-text-secondary'
 
   return (
@@ -483,9 +483,9 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
               <div
                 className={`flex h-10 w-10 items-center justify-center rounded-xl ${
                   state === 'online'
-                    ? 'bg-emerald-50 text-emerald-600'
+                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
                     : state === 'offline'
-                    ? 'bg-amber-50 text-amber-600'
+                    ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
                     : 'bg-input text-text-secondary'
                 }`}
               >
@@ -509,7 +509,7 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
                   {tone.label}
                 </span>
                 {state === 'offline' && salle.actif && (
-                  <span className="text-[10px] text-amber-600/80">— activité &gt; 5 min</span>
+                  <span className="text-[10px] text-amber-600/80 dark:text-amber-300/80">— activité &gt; 5 min</span>
                 )}
                 {canEdit && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-input px-1.5 py-0.5 text-[9.5px] font-medium text-text-secondary">
@@ -575,12 +575,12 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
           >
             {toastActif === 'on' ? (
               <>
-                <Power size={11} strokeWidth={2.4} className="text-emerald-600" />
+                <Power size={11} strokeWidth={2.4} className="text-emerald-600 dark:text-emerald-300" />
                 Salle activée
               </>
             ) : (
               <>
-                <PowerOff size={11} strokeWidth={2.4} className="text-amber-600" />
+                <PowerOff size={11} strokeWidth={2.4} className="text-amber-600 dark:text-amber-300" />
                 Salle désactivée
               </>
             )}
@@ -613,9 +613,9 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
             <span
               className={`flex h-4 w-4 items-center justify-center rounded-full ${
                 activeSensors === totalSensors && totalSensors > 0
-                  ? 'bg-emerald-100 text-emerald-600'
+                  ? 'bg-elevated text-text-secondary'
                   : activeSensors > 0
-                  ? 'bg-amber-100 text-amber-600'
+                  ? 'bg-elevated text-text-secondary'
                   : 'bg-input text-text-muted'
               }`}
             >
@@ -764,7 +764,7 @@ export default function SalleCard({ salle, onUpdate, onDelete, busy }: Props) {
             {deleteError && (
               <div
                 role="alert"
-                className="mt-3 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-[12.5px] font-medium text-red-600"
+                className="mt-3 flex items-start gap-2 rounded-2xl border border-red-200 dark:border-red-500/30 bg-red-500/15 px-4 py-2.5 text-[12.5px] font-medium text-red-600 dark:text-red-300"
               >
                 {deleteError}
               </div>

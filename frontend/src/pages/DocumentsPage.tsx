@@ -178,8 +178,8 @@ function HeaderPill({
 }) {
   const palette: Record<typeof tone, string> = {
     slate: 'bg-hover text-text-secondary',
-    emerald: 'bg-emerald-50 text-emerald-700',
-    amber: 'bg-amber-50 text-amber-700',
+    emerald: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+    amber: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
     blue: 'bg-blue-500/15 text-blue-600 dark:text-blue-300',
   }
   return (
@@ -230,12 +230,12 @@ function InsightsPanel({
             className={`relative flex h-2.5 w-2.5 ${aiReady ? 'text-emerald-500' : total > 0 ? 'text-amber-500' : 'text-text-muted'}`}
           >
             <span
-              className={`absolute inset-0 rounded-full ${aiReady ? 'bg-emerald-500' : total > 0 ? 'bg-amber-500' : 'bg-slate-300'} opacity-60 ${
+              className={`absolute inset-0 rounded-full ${aiReady ? 'bg-emerald-500' : total > 0 ? 'bg-amber-500' : 'bg-text-muted'} opacity-60 ${
                 !aiReady && total > 0 ? 'animate-ping' : ''
               }`}
             />
             <span
-              className={`relative h-2.5 w-2.5 rounded-full ${aiReady ? 'bg-emerald-500' : total > 0 ? 'bg-amber-500' : 'bg-slate-300'}`}
+              className={`relative h-2.5 w-2.5 rounded-full ${aiReady ? 'bg-emerald-500' : total > 0 ? 'bg-amber-500' : 'bg-text-muted'}`}
             />
           </span>
           <span className="text-[13px] font-medium text-text-primary">
@@ -276,7 +276,7 @@ function InsightsPanel({
       {/* Recent Uploads */}
       <article className="card rounded-2xl border border-border bg-card p-5">
         <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-300">
             <Sparkles size={15} strokeWidth={2.2} />
           </span>
           <h3 className="text-[14.5px] font-semibold tracking-[-0.01em] text-text-primary">
@@ -306,8 +306,8 @@ function InsightsPanel({
                 <span
                   className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                     d.indexe
-                      ? 'bg-emerald-50 text-emerald-700'
-                      : 'bg-amber-50 text-amber-700'
+                      ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                      : 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
                   }`}
                 >
                   <span
@@ -326,7 +326,7 @@ function InsightsPanel({
       {/* Knowledge Tips */}
       <article className="card rounded-2xl border border-border bg-card p-5">
         <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-300">
             <CheckCircle2 size={15} strokeWidth={2.2} />
           </span>
           <h3 className="text-[14.5px] font-semibold tracking-[-0.01em] text-text-primary">

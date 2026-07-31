@@ -59,13 +59,13 @@ function statusMeta(indexed: boolean) {
   return indexed
     ? {
         label: 'Indexé',
-        className: 'bg-emerald-50 text-emerald-700',
+        className: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
         dot: 'bg-emerald-500',
         icon: <CheckCircle2 size={12} strokeWidth={2.4} />,
       }
     : {
         label: 'En attente',
-        className: 'bg-amber-50 text-amber-700',
+        className: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
         dot: 'bg-amber-500',
         icon: <Clock3 size={12} strokeWidth={2.4} />,
       }
@@ -342,7 +342,7 @@ export default function DocumentsManager({ documents, onRefresh }: Props) {
           <RefreshCw
             size={14}
             strokeWidth={2.2}
-            className={refreshing ? 'animate-spin text-blue-500' : ''}
+            className={refreshing ? 'animate-spin text-blue-600 dark:text-blue-400' : ''}
           />
         </button>
 
@@ -502,7 +502,7 @@ function UploadHero({
     <article
       className={`relative overflow-hidden rounded-3xl border bg-card transition-all duration-200 ${
         state === 'dragging'
-          ? 'border-blue-400 shadow-[0_0_0_4px_rgba(59,130,246,0.10),0_12px_32px_-8px_rgba(59,130,246,0.18)]'
+          ? 'border-blue-400 dark:border-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.10),0_12px_32px_-8px_rgba(59,130,246,0.18)]'
           : 'border-border shadow-[0_1px_2px_rgba(17,17,17,0.04),0_8px_24px_-12px_rgba(17,17,17,0.10)]'
       }`}
     >
@@ -515,11 +515,11 @@ function UploadHero({
           onDrop={onDrop}
           className={`relative flex min-h-[14rem] cursor-pointer flex-col items-center justify-center gap-3 px-6 py-8 text-center transition-colors duration-200 ${
             state === 'dragging'
-              ? 'bg-blue-50/60'
+              ? 'bg-blue-500/15'
               : state === 'success'
-              ? 'bg-emerald-50/40'
+              ? 'bg-emerald-500/15'
               : state === 'error'
-              ? 'bg-red-50/30'
+              ? 'bg-red-500/15'
               : 'bg-card hover:bg-hover'
           } ${uploading ? 'pointer-events-none' : ''}`}
         >
@@ -531,7 +531,7 @@ function UploadHero({
                 : state === 'success'
                 ? 'bg-emerald-600 text-white'
                 : state === 'error'
-                ? 'bg-red-100 text-red-600'
+                ? 'bg-red-500/15 text-red-600 dark:text-red-300'
                 : 'bg-blue-500/15 text-blue-600 dark:text-blue-300'
             }`}
           >
@@ -549,7 +549,7 @@ function UploadHero({
           <div className="space-y-1">
             <p
               className={`text-[15px] font-semibold tracking-[-0.01em] ${
-                state === 'error' ? 'text-red-700' : 'text-text-primary'
+                state === 'error' ? 'text-red-700 dark:text-red-300' : 'text-text-primary'
               }`}
             >
               {state === 'uploading'
@@ -613,9 +613,9 @@ function UploadHero({
               <span
                 className={`tabular-nums ${
                   state === 'success'
-                    ? 'text-emerald-600'
+                    ? 'text-emerald-600 dark:text-emerald-300'
                     : state === 'error'
-                    ? 'text-red-600'
+                    ? 'text-red-600 dark:text-red-300'
                     : 'text-text-primary'
                 }`}
               >
@@ -642,7 +642,7 @@ function UploadHero({
               </p>
             )}
             {state === 'success' && uploadName && (
-              <p className="mt-2 truncate text-[11.5px] text-emerald-700">
+              <p className="mt-2 truncate text-[11.5px] text-emerald-700 dark:text-emerald-300">
                 <span className="font-medium">Ajouté :</span> {uploadName}
               </p>
             )}
@@ -694,8 +694,8 @@ function SegmentButton({
 }) {
   const activeBg: Record<typeof tone, string> = {
     blue: 'bg-card text-text-primary shadow-sm',
-    emerald: 'bg-card text-emerald-700 shadow-sm',
-    amber: 'bg-card text-amber-700 shadow-sm',
+    emerald: 'bg-card text-emerald-700 dark:text-emerald-300 shadow-sm',
+    amber: 'bg-card text-amber-700 dark:text-amber-300 shadow-sm',
   }
   return (
     <button
@@ -715,9 +715,9 @@ function SegmentButton({
           className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
             active
               ? tone === 'emerald'
-                ? 'bg-emerald-50 text-emerald-700'
+                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
                 : tone === 'amber'
-                ? 'bg-amber-50 text-amber-700'
+                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
                 : 'bg-elevated text-text-secondary'
               : 'bg-elevated text-text-secondary'
           }`}
@@ -810,12 +810,12 @@ function SortMenu({
               }}
               className={`flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] transition-colors duration-150 ${
                 value === k
-                  ? 'bg-blue-50 text-blue-700 font-medium'
+                  ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300 font-medium'
                   : 'text-text-secondary hover:bg-hover'
               }`}
             >
               <span>{labels[k]}</span>
-              {value === k && <CheckCircle2 size={12} className="text-blue-500" strokeWidth={2.4} />}
+              {value === k && <CheckCircle2 size={12} className="text-blue-600 dark:text-blue-400" strokeWidth={2.4} />}
             </button>
           ))}
         </div>
@@ -835,7 +835,7 @@ function DocumentsList({
 }) {
   return (
     <div className="rounded-2xl border border-border bg-card shadow-[0_1px_2px_rgba(17,17,17,0.04),0_4px_14px_-8px_rgba(17,17,17,0.06)]">
-      <ul className="divide-y divide-slate-100">
+      <ul className="divide-y divide-border">
         {docs.map(d => (
           <DocumentListRow key={d.id} doc={d} onDelete={onDelete} />
         ))}
@@ -988,7 +988,7 @@ function DocumentCard({
       </div>
 
       {onDelete && (
-        <div className="mt-3 flex items-center justify-end gap-1 border-t border-slate-100 dark:border-border pt-3">
+        <div className="mt-3 flex items-center justify-end gap-1 border-t border-border pt-3">
           <DocumentActionsMenu doc={doc} onDelete={onDelete} />
           <ActionIconButton
             title="Supprimer"
@@ -1142,9 +1142,9 @@ function DocumentActionsMenu({
                   setOpen(false)
                   onDelete(doc)
                 }}
-                className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-red-600 transition-colors duration-150 hover:bg-red-50"
+                className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-red-600 dark:text-red-300 transition-colors duration-150 hover:bg-red-500/15"
               >
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-red-50 text-red-500">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-red-500/15 text-red-600 dark:text-red-300">
                   <Trash2 size={12} strokeWidth={2.2} />
                 </span>
                 <span>Supprimer</span>

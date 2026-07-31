@@ -186,7 +186,7 @@ export default function Esp32Form({ onCreated }: Props) {
             {error && (
               <div
                 role="alert"
-                className="mt-4 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-[12.5px] font-medium text-red-600"
+                className="mt-4 flex items-start gap-2 rounded-2xl border border-red-200 dark:border-red-500/30 bg-red-500/15 px-4 py-2.5 text-[12.5px] font-medium text-red-600 dark:text-red-300"
               >
                 {error}
               </div>
@@ -195,7 +195,7 @@ export default function Esp32Form({ onCreated }: Props) {
             {justSaved && !error && (
               <div
                 role="status"
-                className="mt-4 flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-[12.5px] font-medium text-emerald-700"
+                className="mt-4 flex items-center gap-2 rounded-2xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-500/15 px-4 py-2.5 text-[12.5px] font-medium text-emerald-700 dark:text-emerald-300"
               >
                 <CheckCircle2 size={14} strokeWidth={2.4} />
                 ESP32 enregistré avec succès

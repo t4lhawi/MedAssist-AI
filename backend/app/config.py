@@ -57,10 +57,8 @@ class Settings(BaseSettings):
     MQTT_KEEPALIVE: int = 30
 
     class Config:
-        # Single source of truth: project root .env (also loaded by
-        # docker-compose). Works whether you run the backend from the
-        # project root or from backend/.
         env_file = str(BACKEND_DIR.parent / ".env")
+        extra = "ignore"
 
 settings = Settings()
 settings.CHROMA_PATH = _ensure_writable(_resolve_backend_path(settings.CHROMA_PATH))

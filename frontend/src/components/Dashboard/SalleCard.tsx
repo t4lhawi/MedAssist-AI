@@ -93,19 +93,19 @@ function SensorTile({ type, sensor, isExpanded, onToggle }: {
             <span className={`font-medium ${tone.text}`}>{lastSeen}</span>
           </div>
           {state === 'error' && (
-            <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 rounded-full px-2.5 py-1.5">
+            <div className="flex items-center gap-1.5 text-xs text-text-secondary bg-elevated rounded-full px-2.5 py-1.5">
               <AlertTriangle size={11} />
               <span>Erreur de lecture du capteur</span>
             </div>
           )}
           {state === 'warning' && (
-            <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 rounded-full px-2.5 py-1.5">
+            <div className="flex items-center gap-1.5 text-xs text-text-secondary bg-elevated rounded-full px-2.5 py-1.5">
               <AlertTriangle size={11} />
               <span>Données anciennes (&gt; 10 min)</span>
             </div>
           )}
           {state === 'active' && (
-            <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 rounded-full px-2.5 py-1.5">
+            <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 rounded-full px-2.5 py-1.5">
               <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500" />
               <span>Données à jour</span>
             </div>
@@ -200,8 +200,11 @@ export default function SalleCard({ salle }: { salle: SalleStatus }) {
                 className={`
                   ${onlineClass}
                   rounded-full transition-all duration-200
-                  ${salle.online ? 'bg-emerald-500' : 'bg-text-muted'}
-                  ${!salle.actif && 'bg-text-muted'}
+                  ${salle.actif
+                    ? salle.online
+                      ? 'bg-emerald-500'
+                      : 'bg-amber-500'
+                    : 'bg-text-muted'}
                 `}
                 title={salle.actif ? (salle.online ? 'En ligne · Données récentes' : 'Hors ligne · Aucune donnée récente') : 'Salle désactivée'}
               />
@@ -219,7 +222,7 @@ export default function SalleCard({ salle }: { salle: SalleStatus }) {
                   onKeyDown={e => e.key === 'Enter' && handleRename()}
                   onBlur={handleRename}
                   autoFocus
-                  className="w-full rounded-xl border border-border bg-input px-2.5 py-1 text-sm font-semibold text-text-primary outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/15"
+                  className="w-full rounded-xl border border-border bg-input px-2.5 py-1 text-sm font-semibold text-text-primary outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 dark:focus:ring-blue-500/25"
                 />
               ) : (
                 <h3 className="truncate text-base font-semibold tracking-tight text-text-primary">
@@ -240,7 +243,7 @@ export default function SalleCard({ salle }: { salle: SalleStatus }) {
                   </span>
                 )}
                 {salle.actif && !salle.online && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
                     <WifiOff className="h-3 w-3" />
                     Hors ligne
                   </span>
@@ -272,7 +275,7 @@ export default function SalleCard({ salle }: { salle: SalleStatus }) {
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={busy}
                 title="Supprimer"
-                className="relative flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-all duration-150 hover:bg-red-500/15 hover:text-red-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-all duration-150 hover:bg-red-500/15 hover:text-red-600 dark:hover:text-red-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Trash2 size={14} />
               </button>
@@ -305,7 +308,7 @@ export default function SalleCard({ salle }: { salle: SalleStatus }) {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111111]/30 animate-fade-in">
             <div className="w-full max-w-md rounded-[24px] bg-card p-6 shadow-[0_24px_60px_-16px_rgba(17,17,17,0.28)] animate-slide-up">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-red-500">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/15 text-red-600 dark:text-red-300">
                   <AlertTriangle size={20} />
                 </div>
                 <h3 className="text-lg font-semibold text-text-primary">Supprimer la salle</h3>

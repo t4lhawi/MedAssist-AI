@@ -71,7 +71,7 @@ function LiveActivityFeed({ mesures, max = 6 }: { mesures: Mesure[]; max?: numbe
         </p>
       </div>
 
-      <div className="divide-y" style={{ borderColor: 'var(--bg-hover)' }}>
+      <div className="divide-y divide-border">
         {items.map((m, idx) => {
           const mt = (m.type && getMonitoringType(m.type)) || MONITORING_TYPES[0]
           const Icon = mt.icon
@@ -487,10 +487,7 @@ export default function DashboardPage() {
           <button
             onClick={load}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition-all hover:-translate-y-px hover:bg-hover active:scale-[0.97] disabled:opacity-60"
-            style={{ background: 'var(--bg-card)', color: 'var(--text-secondary)', borderColor: 'var(--border-color)' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-card)' }}
+            className="group inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1.5 text-[12.5px] font-medium text-text-secondary transition-all hover:-translate-y-px hover:bg-hover active:scale-[0.97] disabled:opacity-60 dark:border-transparent dark:bg-white dark:text-slate-900 dark:hover:bg-white/90"
             aria-label="Actualiser"
           >
             <RefreshCw size={12} strokeWidth={2.4} className={loading ? 'animate-spin' : ''} />
