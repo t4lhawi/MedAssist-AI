@@ -60,7 +60,7 @@ MedAssist AI centralise les données environnementales et physiologiques des sal
 **Prérequis :** Docker ≥ 24, 2 Go RAM, ports 8000/8080/1883 libres.
 
 ```bash
-git clone https://github.com/t4lhawi/medassist.git
+git clone https://github.com/t4lhawi/MedAssist-AI.git
 cd medassist
 cp .env.example .env   # renseigner SECRET_KEY, POSTGRES_PASSWORD, GROQ_API_KEY, OPENROUTER_API_KEY
 
