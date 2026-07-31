@@ -15,11 +15,11 @@ import {
   Droplets,
   Ellipsis,
   FileText,
-  Filter,
+  Thermometer,
   History,
   Inbox,
-  Loader2,
-  MessageCircle,
+  Activity,
+  Wind,
   MessageSquare,
   MoreHorizontal,
   RefreshCw,
@@ -32,7 +32,7 @@ import {
   SquarePen,
   Star,
   Stethoscope,
-  Thermometer,
+  Building2,
   ThumbsDown,
   ThumbsUp,
   Trash2,
@@ -43,17 +43,17 @@ import { SearchField } from '../ui/Field'
 import Modal, { ModalBody, ModalButton, ModalFooter, ModalHeader } from '../ui/Modal'
 
 const SUGGESTIONS = [
-  "Quelle est la température recommandée pour une salle de soins ?",
-  "Quelles sont les procédures de désinfection des équipements ?",
-  "Comment interpréter une humidité de 75% ?",
-  "Quels sont les protocoles en cas d'alerte critique ?",
+  "Une température de 29°C est-elle conforme pour une salle hospitalière ?",
+  "Une humidité de 75 % présente-t-elle un risque ?",
+  "Quels sont les paramètres environnementaux à surveiller dans un laboratoire ?",
+  "Pourquoi la ventilation est-elle essentielle dans les établissements de santé ?",
 ]
 
 const SUGGESTION_META: { title: string; icon: React.ReactNode }[] = [
-  { title: 'Température de la salle', icon: <Thermometer size={17} strokeWidth={2.1} /> },
-  { title: 'Désinfection', icon: <Droplets size={17} strokeWidth={2.1} /> },
-  { title: 'Humidité', icon: <Droplets size={17} strokeWidth={2.1} /> },
-  { title: 'Alertes critiques', icon: <AlertTriangle size={17} strokeWidth={2.1} /> },
+  {title: 'Température', icon: <Thermometer  size={17} strokeWidth={2.1} />},
+  {title: 'Humidité', icon: <Droplets size={17} strokeWidth={2.1} />},
+  {title: 'Paramètres environnementaux', icon: <Building2  size={17} strokeWidth={2.1} />},
+  {title: 'Ventilation', icon: <Wind size={17} strokeWidth={2.1} />},
 ]
 
 const WELCOME_MESSAGE =

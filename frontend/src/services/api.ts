@@ -80,6 +80,10 @@ export const uploadDocument = (file: File) => {
   return api.post('/api/documents/', fd)
 }
 export const deleteDocument = (id: number) => api.delete(`/api/documents/${id}`)
+// Rename a document (admin only — backend enforces). The file is moved
+// on disk and the RAG index is re-keyed in the background.
+export const renameDocument = (id: number, nom: string) =>
+  api.patch<Document>(`/api/documents/${id}`, { nom })
 
 // ─── Chat ───────────────────────────────────────────────────────
 export const sendChat = (

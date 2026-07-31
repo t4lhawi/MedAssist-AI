@@ -1,3 +1,4 @@
+import os
 import re
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional
@@ -140,6 +141,25 @@ class MesureOut(BaseModel):
         from_attributes = True
 
 # ─── Document ────────────────────────────────────────────────────
+class DocumentUpdate(BaseModel):
+    # Only `nom` is editable for now. The physical PDF on disk is
+    # renamed alongside the DB row, and the RAG index is re-keyed to
+    # the new name (delete chunks for the old source_document, re-index).
+    nom: str = Field(min_length=1, max_length=255)
+
+    @field_validator("nom")
+    @classmethod
+    def _nom_pdf(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Le nom ne peut pas être vide")
+        # Reject path separators so the file always stays inside UPLOAD_DIR.
+        if os.sep in v or "/" in v or "\\" in v:
+            raise ValueError("Le nom ne peut pas contenir de séparateur de chemin")
+        if not v.lower().endswith(".pdf"):
+            raise ValueError("Le nom doit se terminer par .pdf")
+        return v
+
 class DocumentOut(BaseModel):
     id: int
     nom: str

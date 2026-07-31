@@ -642,6 +642,34 @@ def delete_document(db: Session, doc_id: int):
         db.commit()
     return doc
 
+def get_document_by_nom(db: Session, nom: str):
+    """Return the document with this exact name, or None. Used to detect
+    a rename that would collide with another file on disk."""
+    return db.query(models.Document).filter(
+        models.Document.nom == nom,
+    ).first()
+
+def update_document_nom(
+    db: Session,
+    doc_id: int,
+    nouveau_nom: str,
+    nouveau_chemin: str,
+):
+    """Rename a document: update `nom` + `chemin` and flip `indexe` back
+    to False so the UI shows the "En attente" badge until the background
+    re-index finishes. Returns the updated row, or None if the doc was
+    deleted in the meantime."""
+    doc = db.query(models.Document).filter(
+        models.Document.id == doc_id).first()
+    if doc is None:
+        return None
+    doc.nom = nouveau_nom
+    doc.chemin = nouveau_chemin
+    doc.indexe = False
+    db.commit()
+    db.refresh(doc)
+    return doc
+
 # ─── Conversations ───────────────────────────────────────────────
 def save_conversation(
         db: Session,

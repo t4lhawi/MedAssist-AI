@@ -8,12 +8,6 @@ from ..rag.pipeline import repondre, interpreter_mesure
 
 router = APIRouter(prefix="/api/chat", tags=["Assistant IA"])
 
-# The RAG assistant is open to admin, hospital_staff, AND visitors
-# (visitors are the "ask the AI about my data" use-case). Mutating
-# actions on a user's own history are available to the same set.
-# We use ``require_hospital_staff`` which also admits admin, then add
-# ``require_visitor`` endpoints by composing a custom dependency via
-# ``require_roles``.
 from ..auth import require_roles  # local import to keep the module tidy
 
 CHAT_USER = require_roles("admin", "hospital_staff", "visitor")
@@ -69,8 +63,6 @@ def interpreter(
     capteur_type: str, valeur: float, unite: str = "", emplacement: str = "",
     user=Depends(require_hospital_staff),
 ):
-    # Interpreting a sensor reading is a staff-only action (visitors
-    # don't need to run their own threshold checks).
     try:
         explication = interpreter_mesure(capteur_type, valeur, unite, emplacement)
         return {"explication": explication}

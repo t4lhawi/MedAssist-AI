@@ -76,6 +76,7 @@ export interface Permissions {
   canMarkAlerteTreated: boolean
   canUploadDocuments: boolean
   canDeleteDocuments: boolean
+  canRenameDocuments: boolean
   canManageRooms: boolean
   canManageDevices: boolean
   canManageUsers: boolean
@@ -110,6 +111,7 @@ export function buildPermissions(role: Role | null | undefined): Permissions {
     canMarkAlerteTreated: isStaff,
     canUploadDocuments: isAdmin,
     canDeleteDocuments: isAdmin,
+    canRenameDocuments: isAdmin,
     canManageRooms: isAdmin,
     canManageDevices: isAdmin,
     canManageUsers: isAdmin,

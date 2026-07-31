@@ -1,6 +1,6 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Document } from '../../types'
-import { deleteDocument, uploadDocument } from '../../services/api'
+import { deleteDocument, renameDocument, uploadDocument } from '../../services/api'
 import { usePermissions } from '../../hooks/usePermissions'
 import {
   AlertCircle,
@@ -15,6 +15,7 @@ import {
   LayoutList,
   Loader2,
   MoreHorizontal,
+  Pencil,
   RefreshCw,
   Search,
   Trash2,
@@ -78,6 +79,7 @@ export default function DocumentsManager({ documents, onRefresh }: Props) {
   const { permissions } = usePermissions()
   const canUpload = permissions.canUploadDocuments
   const canDelete = permissions.canDeleteDocuments
+  const canRename = permissions.canRenameDocuments
 
   // Upload state machine
   const [uploading, setUploading] = useState(false)
@@ -97,6 +99,13 @@ export default function DocumentsManager({ documents, onRefresh }: Props) {
   // Delete modal
   const [pendingDelete, setPendingDelete] = useState<Document | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  // Rename modal
+  const [pendingRename, setPendingRename] = useState<Document | null>(null)
+  const [renameValue, setRenameValue] = useState('')
+  const [renameError, setRenameError] = useState('')
+  const [renaming, setRenaming] = useState(false)
+  const renameInputRef = useRef<HTMLInputElement>(null)
 
   const upload = async (file: File) => {
     if (!file.name.toLowerCase().endsWith('.pdf')) {
@@ -186,6 +195,74 @@ export default function DocumentsManager({ documents, onRefresh }: Props) {
     } finally {
       setDeleting(false)
     }
+  }
+
+  // Open the rename modal with the current name pre-filled, minus the
+  // ".pdf" extension so the user edits the readable part. The modal
+  // refocuses the input on the next paint so they can start typing
+  // immediately.
+  const openRename = (doc: Document) => {
+    setPendingRename(doc)
+    setRenameError('')
+    const base = doc.nom.replace(/\.pdf$/i, '')
+    setRenameValue(base)
+    // Defer focus to the next tick — the modal mounts after this state
+    // update so the ref isn't valid yet.
+    setTimeout(() => {
+      renameInputRef.current?.focus()
+      renameInputRef.current?.select()
+    }, 0)
+  }
+
+  // Client-side mirror of the backend validator so we can show the
+  // error inline instead of waiting for a 422. The backend still
+  // re-validates authoritatively.
+  //
+  // We accept the raw user input (which may or may not end in .pdf)
+  // and validate it AS the user typed it — the `.pdf` is appended
+  // later, only when actually submitting to the API.
+  const validateRename = (raw: string): string | null => {
+    const v = raw.trim()
+    if (!v) return 'Le nom ne peut pas être vide.'
+    if (/[\\/]/.test(v)) return 'Le nom ne peut pas contenir de séparateur de chemin.'
+    if (v.length > 251) return 'Le nom est trop long (255 caractères max avec .pdf).'
+    return null
+  }
+
+  const confirmRename = async () => {
+    if (!pendingRename) return
+    // Validate the raw input first — the modal's helper text promises
+    // that ".pdf" is added automatically, so we must NOT require it
+    // here. The append happens after validation succeeds.
+    const localError = validateRename(renameValue)
+    if (localError) {
+      setRenameError(localError)
+      return
+    }
+    // Re-append ".pdf" only if the user didn't already type it.
+    const base = renameValue.trim().replace(/\.pdf$/i, '')
+    const candidat = `${base}.pdf`
+    setRenaming(true)
+    setRenameError('')
+    try {
+      await renameDocument(pendingRename.id, candidat)
+      setPendingRename(null)
+      setRenameValue('')
+      onRefresh()
+    } catch (err: any) {
+      setRenameError(
+        err.response?.data?.detail || 'Erreur lors du renommage.',
+      )
+    } finally {
+      setRenaming(false)
+    }
+  }
+
+  const closeRename = () => {
+    if (renaming) return
+    setPendingRename(null)
+    setRenameValue('')
+    setRenameError('')
   }
 
   /* ─── Filter + sort ───────────────────────────────────────── */
@@ -373,11 +450,13 @@ export default function DocumentsManager({ documents, onRefresh }: Props) {
         <DocumentsList
           docs={sorted}
           onDelete={canDelete ? (d => setPendingDelete(d)) : undefined}
+          onRename={canRename ? openRename : undefined}
         />
       ) : (
         <DocumentsGrid
           docs={sorted}
           onDelete={canDelete ? (d => setPendingDelete(d)) : undefined}
+          onRename={canRename ? openRename : undefined}
         />
       )}
 
@@ -444,6 +523,97 @@ export default function DocumentsManager({ documents, onRefresh }: Props) {
                 leadingIcon={<Trash2 size={13} strokeWidth={2.2} />}
               >
                 Supprimer
+              </ModalButton>
+            </ModalFooter>
+          </>
+        )}
+      </Modal>
+
+      {/* ─── Rename modal (admin only) ───────────────────────── */}
+      <Modal
+        open={pendingRename !== null}
+        onClose={closeRename}
+        size="sm"
+        dismissDisabled={renaming}
+        ariaLabel="Renommer le document"
+      >
+        {pendingRename && (
+          <>
+            <ModalHeader
+              icon={<Pencil size={16} strokeWidth={2.2} />}
+              iconTone="blue"
+              title="Renommer le document"
+              subtitle="Le fichier sera déplacé et la base de connaissances sera ré-indexée."
+              onClose={closeRename}
+              closeDisabled={renaming}
+            />
+            <ModalBody>
+              <form
+                onSubmit={e => {
+                  e.preventDefault()
+                  if (!renaming) confirmRename()
+                }}
+              >
+                <label
+                  htmlFor="document-rename-input"
+                  className="block text-[12px] font-medium text-text-secondary"
+                >
+                  Nouveau nom
+                </label>
+                <input
+                  id="document-rename-input"
+                  ref={renameInputRef}
+                  type="text"
+                  value={renameValue}
+                  onChange={e => {
+                    setRenameValue(e.target.value)
+                    if (renameError) setRenameError('')
+                  }}
+                  disabled={renaming}
+                  spellCheck={false}
+                  autoComplete="off"
+                  // Submit on Enter — the form handler above catches it.
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      if (!renaming) confirmRename()
+                    }
+                  }}
+                  className="mt-1.5 w-full rounded-xl border border-border bg-input px-3 py-2 text-[13px] text-text-primary outline-none transition-all duration-200 focus:border-blue-500 focus:bg-card focus:shadow-[inset_0_0_0_1.5px_rgba(46,99,255,0.55),0_0_0_4px_rgba(46,99,255,0.08)] disabled:opacity-60"
+                  aria-invalid={!!renameError}
+                  aria-describedby={renameError ? 'document-rename-error' : undefined}
+                />
+                <p className="mt-1.5 text-[11.5px] text-text-muted">
+                  Le nom doit se terminer par <code className="rounded bg-elevated px-1 py-0.5 text-[10.5px]">.pdf</code>.
+                  L'extension est ajoutée automatiquement si vous l'omettez.
+                </p>
+                {renameError && (
+                  <p
+                    id="document-rename-error"
+                    role="alert"
+                    className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-red-500/15 px-2.5 py-1.5 text-[12px] font-medium text-red-700 dark:text-red-300"
+                  >
+                    <AlertCircle size={12} strokeWidth={2.4} />
+                    {renameError}
+                  </p>
+                )}
+              </form>
+            </ModalBody>
+            <ModalFooter>
+              <ModalButton
+                variant="secondary"
+                onClick={closeRename}
+                disabled={renaming}
+              >
+                Annuler
+              </ModalButton>
+              <ModalButton
+                variant="primary"
+                onClick={confirmRename}
+                loading={renaming}
+                leadingIcon={<Pencil size={13} strokeWidth={2.2} />}
+              >
+                Renommer
               </ModalButton>
             </ModalFooter>
           </>
@@ -829,15 +999,17 @@ function SortMenu({
 function DocumentsList({
   docs,
   onDelete,
+  onRename,
 }: {
   docs: Document[]
   onDelete?: (d: Document) => void
+  onRename?: (d: Document) => void
 }) {
   return (
     <div className="rounded-2xl border border-border bg-card shadow-[0_1px_2px_rgba(17,17,17,0.04),0_4px_14px_-8px_rgba(17,17,17,0.06)]">
       <ul className="divide-y divide-border">
         {docs.map(d => (
-          <DocumentListRow key={d.id} doc={d} onDelete={onDelete} />
+          <DocumentListRow key={d.id} doc={d} onDelete={onDelete} onRename={onRename} />
         ))}
       </ul>
     </div>
@@ -847,9 +1019,11 @@ function DocumentsList({
 function DocumentListRow({
   doc,
   onDelete,
+  onRename,
 }: {
   doc: Document
   onDelete?: (d: Document) => void
+  onRename?: (d: Document) => void
 }) {
   const meta = statusMeta(doc.indexe)
   return (
@@ -883,17 +1057,19 @@ function DocumentListRow({
       </span>
 
       {/* Actions */}
-      {onDelete && (
+      {(onDelete || onRename) && (
         <div className="flex shrink-0 items-center gap-1">
-          <DocumentActionsMenu doc={doc} onDelete={onDelete} />
-          <ActionIconButton
-            title="Supprimer"
-            aria-label="Supprimer"
-            tone="red"
-            onClick={() => onDelete(doc)}
-          >
-            <Trash2 size={14} strokeWidth={2.2} />
-          </ActionIconButton>
+          <DocumentActionsMenu doc={doc} onDelete={onDelete} onRename={onRename} />
+          {onDelete && (
+            <ActionIconButton
+              title="Supprimer"
+              aria-label="Supprimer"
+              tone="red"
+              onClick={() => onDelete(doc)}
+            >
+              <Trash2 size={14} strokeWidth={2.2} />
+            </ActionIconButton>
+          )}
         </div>
       )}
     </li>
@@ -936,14 +1112,16 @@ function ActionIconButton({
 function DocumentsGrid({
   docs,
   onDelete,
+  onRename,
 }: {
   docs: Document[]
   onDelete?: (d: Document) => void
+  onRename?: (d: Document) => void
 }) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {docs.map(d => (
-        <DocumentCard key={d.id} doc={d} onDelete={onDelete} />
+        <DocumentCard key={d.id} doc={d} onDelete={onDelete} onRename={onRename} />
       ))}
     </div>
   )
@@ -952,9 +1130,11 @@ function DocumentsGrid({
 function DocumentCard({
   doc,
   onDelete,
+  onRename,
 }: {
   doc: Document
   onDelete?: (d: Document) => void
+  onRename?: (d: Document) => void
 }) {
   const meta = statusMeta(doc.indexe)
   return (
@@ -987,17 +1167,19 @@ function DocumentCard({
         </span>
       </div>
 
-      {onDelete && (
+      {(onDelete || onRename) && (
         <div className="mt-3 flex items-center justify-end gap-1 border-t border-border pt-3">
-          <DocumentActionsMenu doc={doc} onDelete={onDelete} />
-          <ActionIconButton
-            title="Supprimer"
-            aria-label="Supprimer"
-            tone="red"
-            onClick={() => onDelete(doc)}
-          >
-            <Trash2 size={14} strokeWidth={2.2} />
-          </ActionIconButton>
+          <DocumentActionsMenu doc={doc} onDelete={onDelete} onRename={onRename} />
+          {onDelete && (
+            <ActionIconButton
+              title="Supprimer"
+              aria-label="Supprimer"
+              tone="red"
+              onClick={() => onDelete(doc)}
+            >
+              <Trash2 size={14} strokeWidth={2.2} />
+            </ActionIconButton>
+          )}
         </div>
       )}
     </article>
@@ -1009,9 +1191,11 @@ function DocumentCard({
 function DocumentActionsMenu({
   doc,
   onDelete,
+  onRename,
 }: {
   doc: Document
   onDelete?: (d: Document) => void
+  onRename?: (d: Document) => void
 }) {
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -1132,6 +1316,22 @@ function DocumentActionsMenu({
             </span>
             <span>Copier le nom</span>
           </button>
+          {onRename && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false)
+                onRename(doc)
+              }}
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-text-secondary transition-colors duration-150 hover:bg-hover"
+            >
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-elevated text-text-secondary">
+                <Pencil size={12} strokeWidth={2.2} />
+              </span>
+              <span>Renommer</span>
+            </button>
+          )}
           {onDelete && (
             <>
               <div className="my-1 h-px bg-elevated" />
