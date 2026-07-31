@@ -1266,7 +1266,7 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(functi
             <div
               role="status"
               aria-live="polite"
-              className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-200/50 bg-amber-50/40 px-4 py-3 backdrop-blur-sm transition-all duration-200 ease-out sm:mb-6 dark:bg-elevated"              
+              className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-200/80 bg-amber-50/40 px-4 py-3 backdrop-blur-sm transition-all duration-200 ease-out sm:mb-6 dark:bg-elevated dark:border-amber-200/10"              
               style={{ animation: 'contentFade 220ms cubic-bezier(0.25, 0.1, 0.25, 1) both' }}
             >
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-warn/20 text-warn">
