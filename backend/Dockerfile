@@ -1,6 +1,6 @@
 # ════════════════════════════════════════════════════════════
-#  MedAssist AI – Backend image (FastAPI + Alembic + RAG + MQTT)
-#  LLM : Groq  ·  Embeddings : OpenRouter
+#  Backend image (FastAPI + Alembic + RAG + MQTT)
+#  LLM : Groq | Embeddings : OpenRouter
 # ════════════════════════════════════════════════════════════
 
 # ── Stage 1 : build dependencies ────────────────────────────
@@ -43,16 +43,9 @@ WORKDIR /app
 
 COPY --chown=app:app . /app
 
-# Normalize line endings on shell scripts so CRLF from Windows checkouts
-# doesn't break the POSIX shell (e.g. "set -e" becoming "set -e\r").
 RUN find /app -maxdepth 3 -type f -name "*.sh" -exec sed -i 's/\r$$//' {} + \
  && chmod +x /app/entrypoint.sh
 
-# Pre-create the persistent data mount points and hand them to the
-# unprivileged `app` user. Docker only mounts a volume on a directory
-# that already exists inside the image, and the mount preserves the
-# image's ownership — so if we created /data as root, the `app` user
-# (UID 1001) would get PermissionError on upload/index writes.
 RUN mkdir -p /data/uploads /data/chroma \
  && chown -R app:app /data
 

@@ -1,5 +1,4 @@
 # ════════════════════════════════════════════════════════════
-#  MedAssist AI – Local stack
 #  Run with:  docker compose up -d --build
 #  Tear down (keep data):  docker compose down
 #  Tear down (wipe data):  docker compose down -v
