@@ -1,43 +1,47 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
-
 #include <ArduinoJson.h>
-
 #include "DHTesp.h"
 
-// ===============================
+// ============================================================================
 // Configuration
-// ===============================
-const char* WIFI_SSID     = "M-LINK";
-const char* WIFI_PASSWORD = "22092005";
+// ============================================================================
 
-// Adresse IP du PC qui fait tourner Mosquitto (sur le même Wi-Fi que l'ESP32)
-const char* MQTT_BROKER     = "192.168.1.100";
-const int   MQTT_PORT       = 1883;
-const char* MQTT_CLIENT_ID  = "esp32-sensor-1";
+// Identifiants Wi-Fi
+const char* WIFI_SSID     = "YOUR_WIFI_SSID";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
-// ── Salle identification ────────────────────────────────────────
+// Broker MQTT (Mosquitto tourne dans un conteneur Docker)
+// Mettre ici l'IP de la machine hôte qui expose le port 1883 du conteneur
+const char* MQTT_BROKER    = "192.168.1.100";
+const int   MQTT_PORT      = 1883;
+const char* MQTT_CLIENT_ID = "esp32-sensor-1";
+
+// Identifiant de la salle, utilisé dans les topics MQTT (medassist/salle/salle-1/...)
 #define SALLE "salle-1"
 
-// Topic shape (compiled):  medassist/salle/<SALLE>/<type>
-// Where <type> ∈ { temperature, humidite, pression, qualite_air }.
 const char* MQTT_TOPIC_PREFIX = "medassist/salle/" SALLE;
 
-const unsigned long INTERVAL_MS = 3000; 
+// Intervalle entre deux mesures (ms)
+const unsigned long INTERVAL_MS = 3000;
 
-// ===============================
+// ============================================================================
+// Matériel
+// ============================================================================
 
+// Broche data du DHT11
 #define DHT_PIN 4
 
 DHTesp dht;
 
-// ===============================
-// Wi-Fi + MQTT
-// ===============================
+// ============================================================================
+// Clients Wi-Fi & MQTT
+// ============================================================================
 
-WiFiClient   espWifi;
+WiFiClient espWifi;
 PubSubClient mqtt(espWifi);
 
+// Connexion au Wi-Fi (bloquant jusqu'à succès)
 void connecterWiFi() {
 
   Serial.print("Connexion à ");
@@ -64,6 +68,7 @@ void connecterWiFi() {
   Serial.println(WiFi.getSleep() ? "non" : "oui");
 }
 
+// Connexion au broker MQTT Docker (bloquant, retry toutes les 2s)
 void connecterMQTT() {
 
   while (!mqtt.connected()) {
@@ -88,10 +93,8 @@ void connecterMQTT() {
 // Envoi MQTT
 // ===============================
 
-// Publishes one mesure on ``<MQTT_TOPIC_PREFIX>/<type>`` with a JSON
-// payload of ``{ip, type, valeur, unite}``. The IP is taken from the
-// ESP32's own WiFi.localIP() so the backend can sanity-check that the
-// salle's registered device matches the source IP.
+// Publie une mesure sur medassist/salle/<salle>/<type>
+// Payload JSON : { ip, type, valeur, unite }
 bool envoyerMesure(const char* type, float valeur, const char* unite) {
 
   if (WiFi.status() != WL_CONNECTED) {
@@ -128,10 +131,11 @@ bool envoyerMesure(const char* type, float valeur, const char* unite) {
   return ok;
 }
 
-// ===============================
-// Diagnostic — diagnostic réseau avant MQTT
-// ===============================
+// ============================================================================
+// Diagnostic réseau
+// ============================================================================
 
+// Affiche les infos réseau et teste la connectivité vers le broker Docker
 void diagnosticReseau() {
   Serial.println();
   Serial.println("=== DIAGNOSTIC RESEAU ===");
@@ -172,9 +176,9 @@ void diagnosticReseau() {
   Serial.println();
 }
 
-// ===============================
-// Setup
-// ===============================
+// ============================================================================
+// Initialisation
+// ============================================================================
 
 void setup() {
 
@@ -194,7 +198,7 @@ void setup() {
 }
 
 // ===============================
-// Loop
+// Boucle principale
 // ===============================
 
 void loop() {
@@ -219,11 +223,9 @@ void loop() {
 
     envoyerMesure("humidite", data.humidity, "%");
 
-    // Optional sensor types — wire them when the hardware is on the
-    // board. The data model and dashboard already support them.
-    //
-    // envoyerMesure("pression",    readBmp(),        "hPa");    // BMP280
-    // envoyerMesure("qualite_air", readSgp(),        "ppm");    // SGP40 / SGP30
+    // Capteurs additionnels possibles (déjà supportés côté backend/dashboard) :
+    // envoyerMesure("pression",    readBmp(), "hPa");    // BMP280
+    // envoyerMesure("qualite_air", readSgp(), "ppm");    // SGP40 / SGP30
 
   } else {
 
