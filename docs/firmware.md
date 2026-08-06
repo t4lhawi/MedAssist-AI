@@ -1,19 +1,19 @@
-# :satellite: ESP32 Firmware
+# Firmware ESP32
 
-> Reference for the Arduino sketch that runs on each ESP32 sensor in the field: `firmware/firmware.ino`.
+> Référence du sketch Arduino qui tourne sur chaque capteur ESP32 sur le terrain : `firmware/firmware.ino`.
 
-The firmware reads a **DHT11** temperature/humidity sensor and publishes measurements to the Mosquitto broker over Wi-Fi every 3 seconds. It targets the ESP32 Arduino core and uses:
+Le firmware lit un capteur **DHT11** température/humidité et publie les mesures sur le broker Mosquitto via Wi-Fi toutes les 3 secondes. Il cible le core Arduino ESP32 et utilise :
 
-- [`WiFi.h`](https://github.com/espressif/arduino-esp32) (built-in)
+- [`WiFi.h`](https://github.com/espressif/arduino-esp32) (intégré)
 - [`PubSubClient.h`](https://github.com/knolleary/pubsubclient) — MQTT
-- [`ArduinoJson.h`](https://arduinojson.org/) — JSON payload
-- [`DHTesp.h`](https://github.com/beegee-tokyo/DHTesp) — DHT11 driver
+- [`ArduinoJson.h`](https://arduinojson.org/) — Payload JSON
+- [`DHTesp.h`](https://github.com/beegee-tokyo/DHTesp) — Driver DHT11
 
 ---
 
-## :gear: Configuration
+## Configuration
 
-All configuration is done by editing constants at the top of the sketch. There is no runtime configuration, no OTA, and no NVS — flashing the chip is the way to update it.
+Toute la configuration se fait en éditant les constantes en haut du sketch. Il n'y a pas de configuration runtime, pas d'OTA, pas de NVS — reflasher la puce est la manière de la mettre à jour.
 
 ```cpp
 // Identifiants Wi-Fi
@@ -35,58 +35,58 @@ const unsigned long INTERVAL_MS = 3000;
 #define DHT_PIN 4
 ```
 
-| Constant            | Purpose                                                                |
-| ------------------- | ---------------------------------------------------------------------- |
-| `WIFI_SSID`         | Wi-Fi network name                                                     |
-| `WIFI_PASSWORD`     | Wi-Fi password                                                         |
-| `MQTT_BROKER`       | IPv4 of the Docker host (Mosquitto is published on the host network)   |
-| `MQTT_PORT`         | MQTT TCP port (default `1883`)                                         |
-| `MQTT_CLIENT_ID`    | Unique per physical ESP32                                              |
-| `SALLE`             | Room name — used in the topic                                          |
-| `INTERVAL_MS`       | Sampling period (3 s by default)                                       |
-| `DHT_PIN`           | GPIO connected to the DHT11 data line (default `4`)                    |
+| Constante          | Rôle                                                                          |
+| ------------------ | ----------------------------------------------------------------------------- |
+| `WIFI_SSID`        | Nom du réseau Wi-Fi                                                           |
+| `WIFI_PASSWORD`    | Mot de passe Wi-Fi                                                            |
+| `MQTT_BROKER`      | IPv4 de l'hôte Docker (Mosquitto est publié sur le réseau de l'hôte)         |
+| `MQTT_PORT`        | Port TCP MQTT (défaut `1883`)                                                 |
+| `MQTT_CLIENT_ID`   | Unique par ESP32 physique                                                     |
+| `SALLE`            | Nom de la salle — utilisé dans le topic                                       |
+| `INTERVAL_MS`      | Période d'échantillonnage (3 s par défaut)                                    |
+| `DHT_PIN`          | GPIO relié à la ligne de données du DHT11 (défaut `4`)                        |
 
-> :warning: `MQTT_BROKER` **must be the LAN IP of the Docker host** (e.g. `192.168.1.100`), not `localhost` and not the Mosquitto container name. The container name is not resolvable from the ESP32.
+> **Avertissement :** `MQTT_BROKER` **doit être l'IP LAN de l'hôte Docker** (par ex. `192.168.1.100`), pas `localhost` ni le nom du conteneur Mosquitto. Le nom du conteneur n'est pas résolvable depuis l'ESP32.
 
 ---
 
-## :satellite_antenna: Wi-Fi
+## Wi-Fi
 
-`connecterWiFi()` runs in `setup()` and is blocking until the connection succeeds:
+`connecterWiFi()` tourne dans `setup()` et est bloquant jusqu'à ce que la connexion réussisse :
 
 ```cpp
-WiFi.setSleep(false);   // power-save can drop the MQTT handshake
+WiFi.setSleep(false);   // le power-save peut faire tomber le handshake MQTT
 WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print("."); }
 ```
 
-`setSleep(false)` is **important**: with Wi-Fi power-save enabled, the ESP32 can sleep the radio in the middle of the MQTT `CONNECT` packet, which causes `rc=-2` (the broker never sees the CONNACK).
+`setSleep(false)` est **important** : avec le power-save Wi-Fi activé, l'ESP32 peut endormir la radio au milieu du paquet `CONNECT` MQTT, ce qui provoque `rc=-2` (le broker ne voit jamais le CONNACK).
 
-Before each publish, the loop also re-checks `WiFi.status()` and re-connects if needed (in `envoyerMesure`).
+Avant chaque publication, la boucle re-vérifie aussi `WiFi.status()` et se reconnecte si besoin (dans `envoyerMesure`).
 
 ---
 
-## :envelope_with_arrow: MQTT — topics & payload
+## MQTT — topics et payload
 
-### Topic shape
+### Forme du topic
 
 ```
 medassist/salle/<salle>/<type>
 ```
 
-Where:
+Où :
 
-- `<salle>` is the value of the `SALLE` macro (e.g. `salle-1`).
-- `<type>` is one of: `temperature`, `humidite`, `pression`, `qualite_air`.
+- `<salle>` est la valeur de la macro `SALLE` (par ex. `salle-1`).
+- `<type>` est l'un des : `temperature`, `humidite`, `pression`, `qualite_air`.
 
-The full topic prefix is built as:
+Le préfixe complet du topic est construit ainsi :
 
 ```cpp
 const char* MQTT_TOPIC_PREFIX = "medassist/salle/" SALLE;
-// e.g. "medassist/salle/salle-1"
+// par ex. "medassist/salle/salle-1"
 ```
 
-### JSON payload
+### Payload JSON
 
 ```json
 {
@@ -97,64 +97,64 @@ const char* MQTT_TOPIC_PREFIX = "medassist/salle/" SALLE;
 }
 ```
 
-| Field     | Description                                              |
+| Champ     | Description                                              |
 | --------- | -------------------------------------------------------- |
-| `ip`      | The ESP32's own IPv4 — read from `WiFi.localIP()`        |
-| `type`    | Sensor type, must match the topic's last segment         |
-| `valeur`  | The numeric value                                        |
-| `unite`   | Unit string, free-form (`°C`, `%`, `hPa`, `ppm`)         |
+| `ip`      | IPv4 de l'ESP32 lui-même — lu depuis `WiFi.localIP()`    |
+| `type`    | Type de capteur, doit correspondre au dernier segment du topic |
+| `valeur`  | Valeur numérique                                          |
+| `unite`   | Chaîne d'unité, libre (`°C`, `%`, `hPa`, `ppm`)          |
 
-QoS is **0** and `retain` is **false** — measurements are real-time streams, not retained state.
+QoS est **0** et `retain` est **false** — les mesures sont des flux temps réel, pas un état rémanent.
 
 ---
 
-## :repeat: Publishing process
+## Processus de publication
 
 ```mermaid
 sequenceDiagram
-  participant DHT as DHT11 sensor
+  participant DHT as Capteur DHT11
   participant ESP as ESP32 (loop)
   participant MQ as Mosquitto
   participant BE as FastAPI
 
-  loop every INTERVAL_MS
+  loop toutes les INTERVAL_MS
     ESP->>DHT: getTempAndHumidity()
-    alt read OK
-      ESP->>ESP: serialize {ip, type:"temperature", valeur, unite:"°C"}
+    alt lecture OK
+      ESP->>ESP: sérialiser {ip, type:"temperature", valeur, unite:"°C"}
       ESP->>MQ: PUBLISH medassist/salle/salle-1/temperature
-      ESP->>ESP: serialize {ip, type:"humidite", valeur, unite:"%"}
+      ESP->>ESP: sérialiser {ip, type:"humidite", valeur, unite:"%"}
       ESP->>MQ: PUBLISH medassist/salle/salle-1/humidite
-    else read error
+    else erreur de lecture
       ESP->>ESP: Serial.println(dht.getStatusString())
     end
-    ESP->>ESP: mqtt.loop() — keep-alive + drain incoming
+    ESP->>ESP: mqtt.loop() — keep-alive + drain entrant
   end
 
-  MQ->>BE: forward to subscriber
-  BE->>BE: validate, persist, threshold check
+  MQ->>BE: transmettre à l'abonné
+  BE->>BE: valider, persister, vérif de seuil
 ```
 
-The `setup()` function:
+La fonction `setup()` :
 
-1. Initialises the DHT11 on `DHT_PIN`.
-2. Connects to Wi-Fi (blocking).
-3. Calls `diagnosticReseau()` to print the network state.
-4. Configures `mqtt.setServer(MQTT_BROKER, MQTT_PORT)`.
-5. Connects to MQTT (blocking, retry every 2 s).
-6. Prints `MedAssist AI prêt.`
+1. Initialise le DHT11 sur `DHT_PIN`.
+2. Se connecte au Wi-Fi (bloquant).
+3. Appelle `diagnosticReseau()` pour afficher l'état réseau.
+4. Configure `mqtt.setServer(MQTT_BROKER, MQTT_PORT)`.
+5. Se connecte au MQTT (bloquant, retry toutes les 2 s).
+6. Affiche `MedAssist AI prêt.`
 
-The `loop()` function:
+La fonction `loop()` :
 
-1. Calls `mqtt.loop()` to service keep-alive PINGREQ and drain any incoming traffic.
-2. Reads the DHT11.
-3. If the read succeeded, calls `envoyerMesure("temperature", …)` then `envoyerMesure("humidite", …)` 200 ms apart.
-4. Sleeps for `INTERVAL_MS`.
+1. Appelle `mqtt.loop()` pour traiter les PINGREQ de keep-alive et drainer le trafic entrant.
+2. Lit le DHT11.
+3. Si la lecture réussit, appelle `envoyerMesure("temperature", …)` puis `envoyerMesure("humidite", …)` à 200 ms d'écart.
+4. Dort pendant `INTERVAL_MS`.
 
 ---
 
-## :recycle: Reconnection logic
+## Logique de reconnexion
 
-`envoyerMesure()` is defensive: before every publish, it checks both the Wi-Fi and MQTT states and reconnects if necessary:
+`envoyerMesure()` est défensif : avant chaque publication, il vérifie l'état du Wi-Fi et du MQTT et se reconnecte si nécessaire :
 
 ```cpp
 if (WiFi.status() != WL_CONNECTED) {
@@ -163,10 +163,10 @@ if (WiFi.status() != WL_CONNECTED) {
 if (!mqtt.connected()) {
   connecterMQTT();
 }
-mqtt.loop();   // keep-alive between publications
+mqtt.loop();   // keep-alive entre les publications
 ```
 
-`connecterMQTT()` itself loops until the connection is back:
+`connecterMQTT()` boucle lui-même jusqu'à ce que la connexion revienne :
 
 ```cpp
 while (!mqtt.connected()) {
@@ -175,15 +175,15 @@ while (!mqtt.connected()) {
 }
 ```
 
-`PubSubClient` automatically reconnects on its own with the network loop, but a publish that lands during a disconnect window would fail. The explicit re-check before each publish closes that race.
+`PubSubClient` se reconnecte automatiquement avec la boucle réseau, mais une publication qui tombe pendant une fenêtre de déconnexion échouerait. La revérification explicite avant chaque publication ferme cette course.
 
-> :information_source: The broker is currently configured **without authentication** (`mosquitto -c /mosquitto-no-auth.conf`). If you enable authentication, set `MQTT_USERNAME` / `MQTT_PASSWORD` in the backend `.env` and add a `username_pw_set(...)` call to the ESP32 sketch.
+> **Note :** le broker est actuellement configuré **sans authentification** (`mosquitto -c /mosquitto-no-auth.conf`). Si vous activez l'authentification, définissez `MQTT_USERNAME` / `MQTT_PASSWORD` dans le `.env` du backend et ajoutez un appel `username_pw_set(...)` au sketch ESP32.
 
 ---
 
-## :microscope: Network diagnostics
+## Diagnostic réseau
 
-`diagnosticReseau()` runs once at boot and prints the full network state to the Serial console:
+`diagnosticReseau()` tourne une fois au boot et affiche l'état réseau complet sur la console Série :
 
 ```
 === DIAGNOSTIC RESEAU ===
@@ -199,42 +199,42 @@ Test TCP brut 1883   : OK (3 ms)
 === FIN DIAGNOSTIC ===
 ```
 
-What it does:
+Ce qu'il fait :
 
-- Prints the connected SSID, RSSI, IP, subnet, gateway, and DNS.
-- If `MQTT_BROKER` is a hostname, resolves it via `WiFi.hostByName` (logs `ECHEC DNS` if it fails).
-- Opens a raw `WiFiClient` TCP connection to the broker on port 1883 and reports the latency in ms.
+- Affiche le SSID connecté, RSSI, IP, masque, passerelle, et DNS.
+- Si `MQTT_BROKER` est un hostname, le résout via `WiFi.hostByName` (log `ECHEC DNS` s'il échoue).
+- Ouvre une connexion TCP brute `WiFiClient` vers le broker sur le port 1883 et rapporte la latence en ms.
 
-This is the single best place to look when the ESP32 can connect to Wi-Fi but not to MQTT — the test distinguishes between *broker unreachable*, *firewall blocking port 1883*, and *MQTT-level issues*.
+C'est l'endroit unique à consulter quand l'ESP32 peut se connecter au Wi-Fi mais pas au MQTT — le test distingue entre *broker injoignable*, *pare-feu bloquant le port 1883*, et *problèmes au niveau MQTT*.
 
 ---
 
-## :electric_plug: Adding more sensors
+## Ajouter d'autres capteurs
 
-The current sketch only drives a DHT11. Additional sensors are easy to add — for each, read the value, call `envoyerMesure("type", value, "unit")`:
+Le sketch actuel ne pilote qu'un DHT11. Des capteurs supplémentaires sont faciles à ajouter — pour chacun, lisez la valeur, appelez `envoyerMesure("type", value, "unit")` :
 
 ```cpp
-// BMP280 — barometric pressure
+// BMP280 — pression atmosphérique
 // envoyerMesure("pression", bmp.readPressure() / 100.0, "hPa");
 
-// SGP40 / SGP30 — air quality
+// SGP40 / SGP30 — qualité de l'air
 // envoyerMesure("qualite_air", sgp.getVocIndex(), "ppm");
 ```
 
-The `type` string must match one of the four supported sensor types (`temperature`, `humidite`, `pression`, `qualite_air`) and must match the topic's last segment — the backend treats the topic as the source of truth and overrides a mismatched payload `type`.
+La chaîne `type` doit correspondre à l'un des quatre types supportés (`temperature`, `humidite`, `pression`, `qualite_air`) et doit correspondre au dernier segment du topic — le backend traite le topic comme source de vérité et écrase un `type` payload qui ne concorde pas.
 
 ---
 
-## :hammer_and_wrench: Building & flashing
+## Build et flash
 
-1. Install the [ESP32 Arduino core](https://docs.espressif.com/projects/arduino-esp32/en/latest/installing.html).
-2. Install the libraries: `PubSubClient`, `ArduinoJson`, `DHTesp` (all available via the Arduino Library Manager).
-3. Open `firmware/firmware.ino` in the Arduino IDE.
-4. Adjust the configuration constants.
-5. Select the right board (e.g. *ESP32 Dev Module*) and the right serial port.
-6. Click **Upload**.
+1. Installez l'[ESP32 Arduino core](https://docs.espressif.com/projects/arduino-esp32/en/latest/installing.html).
+2. Installez les librairies : `PubSubClient`, `ArduinoJson`, `DHTesp` (toutes disponibles via le gestionnaire de librairies Arduino).
+3. Ouvrez `firmware/firmware.ino` dans l'IDE Arduino.
+4. Ajustez les constantes de configuration.
+5. Sélectionnez la bonne carte (par ex. *ESP32 Dev Module*) et le bon port série.
+6. Cliquez sur **Upload**.
 
-For headless / production flashing, you can use [`esptool.py`](https://github.com/espressif/esptool) directly:
+Pour un flashage headless / en production, vous pouvez utiliser [`esptool.py`](https://github.com/espressif/esptool) directement :
 
 ```bash
 esptool.py --chip esp32 --port /dev/ttyUSB0 write_flash 0x1000 firmware.bin
@@ -242,12 +242,12 @@ esptool.py --chip esp32 --port /dev/ttyUSB0 write_flash 0x1000 firmware.bin
 
 ---
 
-## :mag: Troubleshooting
+## Dépannage
 
-| Symptom                                | Likely cause                                                            | Fix                                                          |
-| -------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Serial floods with `..................` | Wi-Fi SSID / password wrong                                             | Re-check `WIFI_SSID` and `WIFI_PASSWORD`                     |
-| `MQTT publish échoué (topic=…)`        | Broker unreachable, or topic prefix not matching an admin-registered room | Confirm `diagnosticReseau` shows `Test TCP brut 1883 : OK` and the topic matches a `salle` in the admin UI |
-| `rc=-2` on MQTT connect                | Radio sleeping through the handshake                                    | Make sure `WiFi.setSleep(false)` is called before `WiFi.begin` |
-| `Erreur DHT11 : TIMEOUT`               | Wiring or pull-up resistor missing                                      | DHT11 needs a 10 kΩ pull-up between `DATA` and `VCC`         |
-| Messages accepted but `esp32_id=null`  | The IP hasn't been claimed by an admin                                  | Use `POST /api/admin/esp32/claim` to bind the IP to a room   |
+| Symptôme                                | Cause probable                                                       | Correctif                                                                                |
+| --------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| La console série inonde de `…………`     | SSID / mot de passe Wi-Fi erronés                                    | Re-vérifiez `WIFI_SSID` et `WIFI_PASSWORD`                                              |
+| `MQTT publish échoué (topic=…)`        | Broker injoignable, ou préfixe de topic ne correspondant pas à une salle admin-enregistrée | Confirmez que `diagnosticReseau` affiche `Test TCP brut 1883 : OK` et que le topic correspond à une `salle` dans l'UI admin |
+| `rc=-2` sur la connexion MQTT           | Radio qui s'endort pendant le handshake                              | Assurez-vous que `WiFi.setSleep(false)` est appelé avant `WiFi.begin`                   |
+| `Erreur DHT11 : TIMEOUT`                | Câblage ou résistance pull-up manquante                              | Le DHT11 nécessite une pull-up de 10 kΩ entre `DATA` et `VCC`                            |
+| Messages acceptés mais `esp32_id=null`  | L'IP n'a pas été revendiquée par un admin                            | Utilisez `POST /api/admin/esp32/claim` pour rattacher l'IP à une salle                  |

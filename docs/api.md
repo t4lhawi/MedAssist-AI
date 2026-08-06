@@ -1,79 +1,79 @@
-# :electric_plug: API Reference
+# Référence de l'API
 
-> Complete reference for every HTTP and WebSocket endpoint exposed by the MedAssist AI FastAPI backend.
+> Référence complète de chaque endpoint HTTP et WebSocket exposé par le backend FastAPI de MedAssist AI.
 
-## :information_source: Conventions
+## Conventions
 
-- **Base URL (dev):** `http://localhost:8000`
-- **Auth:** Bearer JWT in the `Authorization` header (`Authorization: Bearer <token>`), *except* for `/api/auth/login` and the WebSocket endpoint (which takes `?token=<JWT>`).
-- **Content type:** `application/json` for bodies, `multipart/form-data` for PDF uploads.
-- **Roles:** `admin`, `hospital_staff`, `visitor`.
-- **Interactive docs:** `http://localhost:8000/docs` (Swagger UI, generated automatically by FastAPI).
+- **URL de base (dev) :** `http://localhost:8000`
+- **Auth :** JWT Bearer dans l'en-tête `Authorization` (`Authorization: Bearer <token>`), *sauf* pour `/api/auth/login` et l'endpoint WebSocket (qui prend `?token=<JWT>`).
+- **Content type :** `application/json` pour les corps, `multipart/form-data` pour l'upload de PDF.
+- **Rôles :** `admin`, `hospital_staff`, `visitor`.
+- **Documentation interactive :** `http://localhost:8000/docs` (Swagger UI, générée automatiquement par FastAPI).
 
-> :bulb: All `require_*` guards are applied at the FastAPI dependency-injection level. The 403/401 statuses below reflect what the backend actually returns.
+> **Astuce :** toutes les gardes `require_*` sont appliquées au niveau de l'injection de dépendances de FastAPI. Les statuts 403/401 ci-dessous reflètent ce que le backend renvoie réellement.
 
 ---
 
-## :seedling: Quick start
+## Démarrage rapide
 
 ```bash
-# 1. Get a token
+# 1. Obtenir un token
 TOKEN=$(curl -s -X POST http://localhost:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@chuoujda.ma","password":"Admin@2026!"}' \
   | jq -r .access_token)
 
-# 2. Call a protected endpoint
+# 2. Appeler un endpoint protégé
 curl http://localhost:8000/api/auth/me \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 ---
 
-## :closed_lock_with_key: Authentification
+## Authentification
 
 ### `POST /api/auth/login`
 
-Authenticate a user and obtain a JWT.
+Authentifie un utilisateur et renvoie un JWT.
 
-- **Auth:** none
-- **Body:**
+- **Auth :** aucune
+- **Corps :**
   ```json
   { "email": "admin@chuoujda.ma", "password": "Admin@2026!" }
   ```
-- **Example request:**
+- **Exemple de requête :**
   ```bash
   curl -X POST http://localhost:8000/api/auth/login \
     -H "Content-Type: application/json" \
     -d '{"email":"admin@chuoujda.ma","password":"Admin@2026!"}'
   ```
-- **Example response (`200 OK`):**
+- **Exemple de réponse (`200 OK`) :**
   ```json
   { "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", "token_type": "bearer" }
   ```
-- **Status codes:** `200` · `401` (bad credentials)
+- **Codes de statut :** `200` · `401` (identifiants invalides)
 
 ---
 
 ### `POST /api/auth/register`
 
-Create a new user (visitor role by default).
+Crée un nouvel utilisateur (rôle `visitor` par défaut).
 
-- **Auth:** none
-- **Body:**
+- **Auth :** aucune
+- **Corps :**
   ```json
   { "nom": "Jean Dupont", "email": "j.dupont@chuoujda.ma", "password": "Motdepasse1!" }
   ```
-- **Status codes:** `200` · `400` (email already used)
+- **Codes de statut :** `200` · `400` (email déjà utilisé)
 
 ---
 
 ### `GET /api/auth/me`
 
-Return the current authenticated user.
+Renvoie l'utilisateur courant authentifié.
 
-- **Auth:** Bearer JWT (any role)
-- **Example response (`200 OK`):**
+- **Auth :** JWT Bearer (tout rôle)
+- **Exemple de réponse (`200 OK`) :**
   ```json
   {
     "id": 1,
@@ -84,167 +84,167 @@ Return the current authenticated user.
     "cree_le": "2026-01-12T08:33:21.123456+00:00"
   }
   ```
-- **Status codes:** `200` · `401`
+- **Codes de statut :** `200` · `401`
 
 ---
 
-## :satellite: Capteurs (legacy)
+## Capteurs (legacy)
 
 ### `GET /api/capteurs/`
 
-List all registered ESP32 devices (alias of `GET /api/admin/esp32/` for backward compatibility).
+Liste tous les devices ESP32 enregistrés (alias de `GET /api/admin/esp32/` pour rétro-compatibilité).
 
-- **Auth:** `hospital_staff` or `admin`
-- **Response:** array of `Esp32DeviceOut`
-- **Status codes:** `200` · `403`
+- **Auth :** `hospital_staff` ou `admin`
+- **Réponse :** tableau de `Esp32DeviceOut`
+- **Codes de statut :** `200` · `403`
 
 ---
 
-## :bar_chart: Mesures
+## Mesures
 
 ### `GET /api/mesures/`
 
-List measurements with optional filters.
+Liste les mesures avec filtres optionnels.
 
-- **Auth:** `hospital_staff` or `admin`
-- **Query parameters:**
+- **Auth :** `hospital_staff` ou `admin`
+- **Paramètres de query :**
 
-  | Name      | Type   | Default | Description                              |
-  | --------- | ------ | ------- | ---------------------------------------- |
-  | `limite`  | int    | 100     | Max items (≤ 500)                        |
-  | `esp32_id`| int    | —       | Filter by device                         |
-  | `type`    | string | —       | `temperature` \| `humidite` \| `pression` \| `qualite_air` |
-  | `salle`   | string | —       | Filter by room (joins `esp32_devices`)   |
+  | Nom       | Type   | Défaut | Description                                |
+  | --------- | ------ | ------ | ------------------------------------------ |
+  | `limite`  | int    | 100    | Nombre max d'éléments (≤ 500)              |
+  | `esp32_id`| int    | —      | Filtrer par device                         |
+  | `type`    | string | —      | `temperature` \| `humidite` \| `pression` \| `qualite_air` |
+  | `salle`   | string | —      | Filtrer par salle (joint `esp32_devices`)  |
 
-- **Example:**
+- **Exemple :**
   ```bash
   curl "http://localhost:8000/api/mesures/?limite=50&salle=salle-1" \
     -H "Authorization: Bearer $TOKEN"
   ```
-- **Status codes:** `200` · `403`
+- **Codes de statut :** `200` · `403`
 
 ---
 
-## :rotating_light: Alertes
+## Alertes
 
 ### `GET /api/alertes/`
 
-List alerts (auto-filtered to the last 24h unless `traitee=true` is passed).
+Liste les alertes (filtrées automatiquement sur les 24 dernières heures sauf si `traitee=true` est passé).
 
-- **Auth:** `hospital_staff` or `admin`
-- **Query parameters:**
+- **Auth :** `hospital_staff` ou `admin`
+- **Paramètres de query :**
 
-  | Name      | Type | Default | Description                            |
-  | --------- | ---- | ------- | -------------------------------------- |
-  | `traitee` | bool | —       | Filter on handled/unhandled            |
-  | `limit`   | int  | 50      | Max items (≤ 200)                      |
+  | Nom       | Type | Défaut | Description                            |
+  | --------- | ---- | ------ | -------------------------------------- |
+  | `traitee` | bool | —      | Filtrer sur traitées / non traitées    |
+  | `limit`   | int  | 50     | Nombre max d'éléments (≤ 200)          |
 
-- **Status codes:** `200` · `403`
+- **Codes de statut :** `200` · `403`
 
 ---
 
 ### `PATCH /api/alertes/{alerte_id}/traiter`
 
-Mark an alert as handled.
+Marque une alerte comme traitée.
 
-- **Auth:** `hospital_staff` or `admin`
-- **Status codes:** `200` · `404` · `403`
+- **Auth :** `hospital_staff` ou `admin`
+- **Codes de statut :** `200` · `404` · `403`
 
 ---
 
 ### `DELETE /api/alertes/{alerte_id}`
 
-Delete a single alert.
+Supprime une alerte unique.
 
-- **Auth:** `admin` only
-- **Status codes:** `204` · `404` · `403`
+- **Auth :** `admin` uniquement
+- **Codes de statut :** `204` · `404` · `403`
 
 ---
 
 ### `POST /api/alertes/bulk-delete`
 
-Delete several alerts at once.
+Supprime plusieurs alertes en une fois.
 
-- **Auth:** `admin` only
-- **Body:**
+- **Auth :** `admin` uniquement
+- **Corps :**
   ```json
   { "ids": [12, 13, 17] }
   ```
-- **Example response:**
+- **Exemple de réponse :**
   ```json
   { "deleted": 3 }
   ```
-- **Status codes:** `200` · `403`
+- **Codes de statut :** `200` · `403`
 
 ---
 
-## :page_facing_up: Documents (RAG)
+## Documents (RAG)
 
 ### `POST /api/documents/`
 
-Upload a PDF and asynchronously index it into ChromaDB.
+Upload un PDF et l'indexe en arrière-plan dans ChromaDB.
 
-- **Auth:** `admin` only
-- **Body:** `multipart/form-data` with field `file` (PDF only)
-- **Example:**
+- **Auth :** `admin` uniquement
+- **Corps :** `multipart/form-data` avec le champ `file` (PDF uniquement)
+- **Exemple :**
   ```bash
   curl -X POST http://localhost:8000/api/documents/ \
     -H "Authorization: Bearer $TOKEN" \
     -F "file=@protocole_temperature.pdf"
   ```
-- **Status codes:** `200` · `400` (not a PDF) · `403`
+- **Codes de statut :** `200` · `400` (pas un PDF) · `403`
 
 ---
 
 ### `GET /api/documents/`
 
-List uploaded documents.
+Liste les documents uploadés.
 
-- **Auth:** `hospital_staff` or `admin`
-- **Status codes:** `200` · `403`
+- **Auth :** `hospital_staff` ou `admin`
+- **Codes de statut :** `200` · `403`
 
 ---
 
 ### `GET /api/documents/{doc_id}/file`
 
-Download the original PDF (force-attachment).
+Télécharge le PDF original (attachment forcé).
 
-- **Auth:** `hospital_staff` or `admin`
-- **Status codes:** `200` · `404` · `403`
+- **Auth :** `hospital_staff` ou `admin`
+- **Codes de statut :** `200` · `404` · `403`
 
 ---
 
 ### `PATCH /api/documents/{doc_id}`
 
-Rename a document and re-index it under the new name.
+Renomme un document et le ré-indexe sous le nouveau nom.
 
-- **Auth:** `admin` only
-- **Body:**
+- **Auth :** `admin` uniquement
+- **Corps :**
   ```json
   { "nom": "Protocole_Temperature_v2.pdf" }
   ```
-- **Status codes:** `200` · `404` · `409` (name collision) · `403`
+- **Codes de statut :** `200` · `404` · `409` (collision de nom) · `403`
 
 ---
 
 ### `DELETE /api/documents/{doc_id}`
 
-Delete the document row, the file on disk, and its ChromaDB index.
+Supprime la ligne du document, le fichier sur disque et son index ChromaDB.
 
-- **Auth:** `admin` only
-- **Example response:** `{"message":"Document supprimé"}`
-- **Status codes:** `200` · `404` · `403`
+- **Auth :** `admin` uniquement
+- **Exemple de réponse :** `{"message":"Document supprimé"}`
+- **Codes de statut :** `200` · `404` · `403`
 
 ---
 
-## :robot: Assistant IA (Chat)
+## Assistant IA (Chat)
 
 ### `POST /api/chat/`
 
-Ask the RAG assistant a question grounded in the indexed PDFs.
+Pose une question à l'assistant RAG, ancrée dans les PDF indexés.
 
-- **Auth:** any authenticated user (`admin`, `hospital_staff`, `visitor`)
-- **Body:**
+- **Auth :** tout utilisateur authentifié (`admin`, `hospital_staff`, `visitor`)
+- **Corps :**
   ```json
   {
     "question": "Quelle est la plage normale de température ?",
@@ -254,7 +254,7 @@ Ask the RAG assistant a question grounded in the indexed PDFs.
     ]
   }
   ```
-- **Example response:**
+- **Exemple de réponse :**
   ```json
   {
     "reponse": "La plage normale de température en salle d'hospitalisation est de 18 à 26 °C. (Source: Document_Diabete_MedAssist_AI.pdf, page 3)",
@@ -263,194 +263,194 @@ Ask the RAG assistant a question grounded in the indexed PDFs.
     ]
   }
   ```
-- **Status codes:** `200` · `403` · `500` (LLM/embedding error)
+- **Codes de statut :** `200` · `403` · `500` (erreur LLM / embeddings)
 
 ---
 
 ### `GET /api/chat/historique`
 
-Return the last 20 conversations for the current user.
+Renvoie les 20 dernières conversations de l'utilisateur courant.
 
-- **Auth:** any authenticated user
-- **Status codes:** `200` · `403`
+- **Auth :** tout utilisateur authentifié
+- **Codes de statut :** `200` · `403`
 
 ---
 
 ### `DELETE /api/chat/historique/{conversation_id}`
 
-Delete a single conversation belonging to the current user.
+Supprime une conversation appartenant à l'utilisateur courant.
 
-- **Auth:** any authenticated user
-- **Status codes:** `200` · `404` · `403`
+- **Auth :** tout utilisateur authentifié
+- **Codes de statut :** `200` · `404` · `403`
 
 ---
 
 ### `DELETE /api/chat/historique`
 
-Delete **all** conversations for the current user.
+Supprime **toutes** les conversations de l'utilisateur courant.
 
-- **Auth:** any authenticated user
-- **Status codes:** `200` · `403`
+- **Auth :** tout utilisateur authentifié
+- **Codes de statut :** `200` · `403`
 
 ---
 
 ### `POST /api/chat/interpreter`
 
-Ask the LLM to interpret a single sensor measurement against the indexed protocols.
+Demande au LLM d'interpréter une mesure de capteur unique au regard des protocoles indexés.
 
-- **Auth:** `hospital_staff` or `admin`
-- **Query parameters:**
+- **Auth :** `hospital_staff` ou `admin`
+- **Paramètres de query :**
 
-  | Name          | Type   | Required | Description          |
-  | ------------- | ------ | -------- | -------------------- |
-  | `capteur_type`| string | yes      | e.g. `temperature`   |
-  | `valeur`      | float  | yes      | The measured value   |
-  | `unite`       | string | no       | e.g. `°C`            |
-  | `emplacement` | string | no       | Room identifier      |
+  | Nom           | Type   | Obligatoire | Description          |
+  | ------------- | ------ | ----------- | -------------------- |
+  | `capteur_type`| string | oui         | ex. `temperature`    |
+  | `valeur`      | float  | oui         | La valeur mesurée    |
+  | `unite`       | string | non         | ex. `°C`             |
+  | `emplacement` | string | non         | Identifiant de salle |
 
-- **Example:**
+- **Exemple :**
   ```bash
   curl -X POST "http://localhost:8000/api/chat/interpreter?capteur_type=temperature&valeur=29.2&unite=%C2%B0C&emplacement=salle-1" \
     -H "Authorization: Bearer $TOKEN"
   ```
-- **Example response:**
+- **Exemple de réponse :**
   ```json
   { "explication": "La valeur relevée (29.2 °C) est au-dessus du seuil de 26 °C. Il est recommandé de vérifier la ventilation de la salle." }
   ```
-- **Status codes:** `200` · `403` · `500`
+- **Codes de statut :** `200` · `403` · `500`
 
 ---
 
-## :shield: Admin · ESP32
+## Admin · ESP32
 
-> All routes below are mounted under `/api/admin/esp32` and require at least `hospital_staff` for `GET`, `admin` for mutations.
+> Toutes les routes ci-dessous sont montées sous `/api/admin/esp32` et requièrent au minimum `hospital_staff` pour les `GET`, `admin` pour les mutations.
 
 ### `GET /api/admin/esp32/`
 
-List all ESP32 devices, ordered by `salle`, then `ip`.
+Liste tous les devices ESP32, triés par `salle`, puis `ip`.
 
-- **Auth:** `hospital_staff` or `admin`
+- **Auth :** `hospital_staff` ou `admin`
 
 ---
 
 ### `POST /api/admin/esp32/`
 
-Register a new ESP32 device.
+Enregistre un nouveau device ESP32.
 
-- **Auth:** `admin` only
-- **Body:**
+- **Auth :** `admin` uniquement
+- **Corps :**
   ```json
   { "ip": "192.168.1.50", "salle": "salle-1", "note": "Étage 2", "actif": true }
   ```
-- **Status codes:** `201` · `409` (IP already registered) · `403`
+- **Codes de statut :** `201` · `409` (IP déjà enregistrée) · `403`
 
 ---
 
 ### `PATCH /api/admin/esp32/{esp32_id}`
 
-Update device metadata. `clear_note=true` explicitly resets the note.
+Met à jour les métadonnées du device. `clear_note=true` réinitialise explicitement la note.
 
-- **Auth:** `admin` only
-- **Body (all fields optional):**
+- **Auth :** `admin` uniquement
+- **Corps (tous les champs optionnels) :**
   ```json
   { "salle": "salle-2", "note": "Étage 3", "clear_note": false, "actif": true }
   ```
-- **Status codes:** `200` · `404` · `403`
+- **Codes de statut :** `200` · `404` · `403`
 
 ---
 
 ### `DELETE /api/admin/esp32/{esp32_id}`
 
-Delete a device. Cascades to its `mesures` and related `alertes`.
+Supprime un device. Provoque un cascade sur ses `mesures` et les `alertes` associées.
 
-- **Auth:** `admin` only
-- **Status codes:** `204` · `404` · `403`
+- **Auth :** `admin` uniquement
+- **Codes de statut :** `204` · `404` · `403`
 
 ---
 
 ### `GET /api/admin/esp32/unregistered`
 
-List source IPs that have published measurements but are not yet linked to any device.
+Liste les IP sources ayant publié des mesures mais non encore rattachées à un device.
 
-- **Auth:** `admin` only
-- **Response:** array of `UnregisteredSource` (ip, last_seen, measurement_count, last_type, last_valeur, last_unite)
+- **Auth :** `admin` uniquement
+- **Réponse :** tableau de `UnregisteredSource` (ip, last_seen, measurement_count, last_type, last_valeur, last_unite)
 
 ---
 
 ### `POST /api/admin/esp32/claim`
 
-Bind an unregistered IP to a room, and back-fill the existing measurements.
+Rattache une IP non enregistrée à une salle, et rétro-remplit les mesures existantes.
 
-- **Auth:** `admin` only
-- **Body:**
+- **Auth :** `admin` uniquement
+- **Corps :**
   ```json
   { "ip": "192.168.1.77", "salle": "salle-3", "note": "Récupéré du seau 'non enregistrés'" }
   ```
-- **Status codes:** `201` · `409` (IP already registered) · `403`
+- **Codes de statut :** `201` · `409` (IP déjà enregistrée) · `403`
 
 ---
 
 ### `GET /api/admin/esp32/salles-status`
 
-Aggregated view per room (last values per sensor, online state, etc.) — consumed by the dashboard.
+Vue agrégée par salle (dernières valeurs par capteur, état en ligne, etc.) — consommée par le tableau de bord.
 
-- **Auth:** `hospital_staff` or `admin`
-- **Status codes:** `200` · `403`
+- **Auth :** `hospital_staff` ou `admin`
+- **Codes de statut :** `200` · `403`
 
 ---
 
-## :satellite_antenna: Realtime (WebSocket)
+## Temps réel (WebSocket)
 
 ### `GET /api/realtime/ws?token=<JWT>`
 
-Open a WebSocket to receive `mesure` and `alerte` events in real time.
+Ouvre un WebSocket pour recevoir les événements `mesure` et `alerte` en temps réel.
 
-- **Auth:** JWT passed as the `token` query parameter
-- **Handshake:** server sends `{"kind":"hello","user":"<email>"}` once the socket is open
-- **Frame types:**
+- **Auth :** JWT passé comme paramètre de query `token`
+- **Handshake :** le serveur envoie `{"kind":"hello","user":"<email>"}` une fois le socket ouvert
+- **Types de trame :**
 
-  | `kind`    | `data` shape                                                |
-  | --------- | ----------------------------------------------------------- |
-  | `hello`   | `{ "kind":"hello", "user":"<email>" }`                      |
+  | `kind`    | Forme de `data`                                                |
+  | --------- | -------------------------------------------------------------- |
+  | `hello`   | `{ "kind":"hello", "user":"<email>" }`                         |
   | `mesure`  | `{ "kind":"mesure", "data": { id, type, valeur, unite, timestamp, esp32_id, salle, source_ip, topic_salle } }` |
   | `alerte`  | `{ "kind":"alerte", "data": { id, type, niveau, message, traitee, cree_le, esp32_id, salle, explication, explication_cree_le } }` |
 
-- **Close codes:**
-  - `1008` — invalid / missing token
-  - `1005` — normal closure
-- **Example (browser):**
+- **Codes de fermeture :**
+  - `1008` — token invalide / manquant
+  - `1005` — fermeture normale
+- **Exemple (navigateur) :**
   ```js
   const ws = new WebSocket(`ws://localhost:8000/api/realtime/ws?token=${token}`);
   ws.onmessage = (ev) => {
     const { kind, data } = JSON.parse(ev.data);
-    if (kind === "mesure") console.log("new mesure", data);
+    if (kind === "mesure") console.log("nouvelle mesure", data);
     if (kind === "alerte") console.warn("ALERTE", data);
   };
   ```
 
 ---
 
-## :heart: Health
+## Santé
 
 ### `GET /health`
 
-Liveness probe. Always `{"status":"ok"}` once the process is up.
+Sonde de vivacité. Renvoie toujours `{"status":"ok"}` une fois le processus lancé.
 
 ### `GET /`
 
-Service banner. Returns `{"message": "MedAssist AI est opérationnel", "docs": "/docs"}`.
+Bannière du service. Renvoie `{"message": "MedAssist AI est opérationnel", "docs": "/docs"}`.
 
 ---
 
-## :warning: Error model
+## Modèle d'erreur
 
-Errors are returned as `{"detail": "<human-readable message>"}` with the appropriate HTTP status:
+Les erreurs sont renvoyées sous la forme `{"detail": "<message lisible>"}` avec le code HTTP approprié :
 
-| Status | When                                                            |
-| ------ | --------------------------------------------------------------- |
-| 400    | Validation error (bad payload, non-PDF upload, …)               |
-| 401    | Missing / invalid / expired JWT                                 |
-| 403    | Authenticated but role does not satisfy the route guard         |
-| 404    | Target resource not found                                       |
-| 409    | Conflict (duplicate IP, duplicate document name, …)             |
-| 500    | Unhandled exception (LLM timeout, DB error, …)                  |
+| Statut | Quand                                                            |
+| ------ | ---------------------------------------------------------------- |
+| 400    | Erreur de validation (payload invalide, upload non-PDF, etc.)    |
+| 401    | JWT manquant / invalide / expiré                                  |
+| 403    | Authentifié mais le rôle ne satisfait pas la garde de la route    |
+| 404    | Ressource cible introuvable                                      |
+| 409    | Conflit (IP dupliquée, nom de document dupliqué, etc.)           |
+| 500    | Exception non gérée (timeout LLM, erreur DB, etc.)               |

@@ -1,6 +1,6 @@
 # MedAssist AI
 
-> Intelligent hospital surveillance platform combining IoT ingestion (ESP32/MQTT), a relational database, a documentation-grounded AI assistant (RAG + ChromaDB), and a real-time dashboard — developed as part of an internship at **CHU Mohammed VI d'Oujda**.
+> Plateforme de surveillance hospitalière intelligente combinant l'ingestion IoT (ESP32/MQTT), une base de données relationnelle, un assistant IA documentaire (RAG + ChromaDB) et un tableau de bord temps réel — développée dans le cadre d'un stage au **CHU Mohammed VI d'Oujda**.
 
 <p align="center">
   <img src="docs/images/banner.svg" alt="MedAssist AI" width="100%" />
@@ -16,26 +16,26 @@
 
 ---
 
-## :wave: Overview
+## Aperçu
 
-**MedAssist AI** centralises environmental and physiological data from hospital rooms, automatically detects anomalies (temperature, humidity, pressure, air quality), and assists the staff via an AI chatbot grounded in internal protocols.
+**MedAssist AI** centralise les données environnementales et physiologiques des salles hospitalières, détecte automatiquement les anomalies (température, humidité, pression, qualité de l'air) et assiste le personnel via un assistant conversationnel IA fondé sur les protocoles internes.
 
-It is a self-contained, dockerised stack — frontend SPA, FastAPI backend, PostgreSQL, Mosquitto MQTT broker, ChromaDB vector store, and an ESP32 firmware that ships sensor data over Wi-Fi.
-
----
-
-## :sparkles: Features
-
-- :hospital: **Real-time room dashboard** — live measurements, 24h / 7d / 30d trends, status per sensor
-- :rotating_light: **Anomaly detection & alerts** — automatic threshold checks with two severity levels (`attention`, `critique`)
-- :robot: **RAG-powered AI assistant** — answers grounded in your hospital's own PDF protocols, in French
-- :brain: **Explainable alerts** — every alert is annotated with a 3-part explanation (*Why / Risks / Action*), cached for 24h
-- :satellite: **ESP32 ingestion** — sensors publish over MQTT; unknown IPs are kept aside for an admin to claim
-- :closed_lock_with_key: **Role-based access** — `admin`, `hospital_staff`, `visitor` with JWT auth
+Il s'agit d'une stack dockerisée, autonome — frontend SPA, backend FastAPI, PostgreSQL, broker MQTT Mosquitto, vector store ChromaDB, et un firmware ESP32 qui pousse les données des capteurs par Wi-Fi.
 
 ---
 
-## :building_construction: Architecture
+## Fonctionnalités
+
+- **Tableau de bord temps réel par salle** — mesures en direct, tendances 24 h / 7 j / 30 j, état par capteur
+- **Détection d'anomalies et alertes** — vérification automatique des seuils avec deux niveaux de sévérité (`attention`, `critique`)
+- **Assistant IA RAG** — réponses fondées sur les protocoles PDF internes de l'hôpital, en français
+- **Alertes explicables** — chaque alerte est annotée d'une explication en trois volets (*Pourquoi / Risques / Action*), mise en cache 24 h
+- **Ingestion ESP32** — les capteurs publient via MQTT ; les IP inconnues sont conservées à part pour revendication par un administrateur
+- **Contrôle d'accès par rôles** — `admin`, `hospital_staff`, `visitor` avec authentification JWT
+
+---
+
+## Architecture
 
 ```mermaid
 flowchart LR
@@ -48,87 +48,87 @@ flowchart LR
   Backend -- REST --> OpenRouter[OpenRouter Embeddings]
 ```
 
-A complete walkthrough lives in [`docs/architecture.md`](docs/architecture.md).
+Une description complète est disponible dans [`docs/architecture.md`](docs/architecture.md).
 
 ---
 
-## :rocket: Quick Start
+## Démarrage rapide
 
 ```bash
-# 1. Clone
+# 1. Cloner le dépôt
 git clone https://github.com/t4lhawi/MedAssist-AI.git
 cd MedAssist-AI
 
-# 2. Configure
+# 2. Configurer
 cp .env.example .env
-# Edit .env: POSTGRES_PASSWORD, SECRET_KEY, GROQ_API_KEY, OPENROUTER_API_KEY
+# Éditer .env : POSTGRES_PASSWORD, SECRET_KEY, GROQ_API_KEY, OPENROUTER_API_KEY
 
-# 3. Run
+# 3. Lancer
 docker compose up -d --build
 ```
 
 | Service        | URL                            |
 | -------------- | ------------------------------ |
-| Web app        | http://localhost:8080          |
+| Application    | http://localhost:8080          |
 | API / Swagger  | http://localhost:8000/docs     |
 | Health check   | http://localhost:8000/health   |
-| MQTT broker    | `mqtt://localhost:1883`        |
+| Broker MQTT    | `mqtt://localhost:1883`        |
 
-### Default accounts (development)
+### Comptes par défaut (développement)
 
-| Role            | Email                 | Password         |
-| --------------- | --------------------- | ---------------- |
-| `admin`         | admin@chuoujda.ma     | `Admin@2026!`    |
-| `hospital_staff`| staff@chuoujda.ma     | `Staff@2026!`    |
-| `visitor`       | visitor@chuoujda.ma   | `Visitor@2026!`  |
+| Rôle             | Email                 | Mot de passe      |
+| ---------------- | --------------------- | ----------------- |
+| `admin`          | admin@chuoujda.ma     | `Admin@2026!`     |
+| `hospital_staff` | staff@chuoujda.ma     | `Staff@2026!`     |
+| `visitor`        | visitor@chuoujda.ma   | `Visitor@2026!`   |
 
-> :warning: Change all default credentials before any non-development deployment.
+> **Avertissement :** changez impérativement tous les mots de passe par défaut avant tout déploiement hors développement.
 
-Full instructions in [`docs/deployment.md`](docs/deployment.md).
-
----
-
-## :books: Documentation
-
-| Document                                            | What's inside                                     |
-| --------------------------------------------------- | ------------------------------------------------- |
-| [docs/README.md](docs/README.md)                    | Documentation home and navigation                 |
-| [docs/architecture.md](docs/architecture.md)        | Components, communication, AI pipeline            |
-| [docs/api.md](docs/api.md)                          | Every REST + WebSocket endpoint                   |
-| [docs/database.md](docs/database.md)                | ER diagram, tables, columns, relationships        |
-| [docs/rag.md](docs/rag.md)                          | Document ingestion, retrieval, prompts           |
-| [docs/firmware.md](docs/firmware.md)                | ESP32 sketch, Wi-Fi, MQTT, reconnection logic     |
-| [docs/deployment.md](docs/deployment.md)            | Docker, environment, production checklist         |
-| [docs/security.md](docs/security.md)                | JWT, hashing, RBAC, CORS                          |
-| [docs/troubleshooting.md](docs/troubleshooting.md)  | Common issues and fixes                           |
+Les instructions complètes sont dans [`docs/deployment.md`](docs/deployment.md).
 
 ---
 
-## :hammer_and_wrench: Tech Stack
+## Documentation
 
-| Layer            | Technology                                          |
-| ---------------- | --------------------------------------------------- |
-| Frontend         | React 18 · Vite · TypeScript · Tailwind · Recharts  |
-| Backend          | Python 3.11 · FastAPI 0.111 · SQLAlchemy 2 · Alembic |
-| Database         | PostgreSQL 16                                       |
-| IoT broker       | Eclipse Mosquitto 2                                 |
-| Vector store     | ChromaDB                                            |
-| LLM              | Groq (`llama-3.3-70b-versatile`)                    |
-| Embeddings       | OpenRouter (`nvidia/llama-nemotron-embed-vl-1b-v2`) |
-| Firmware         | Arduino / ESP32 (DHT11)                             |
-| Orchestration    | Docker Compose                                      |
-
----
-
-## :handshake: Contributing
-
-Pull requests are welcome. For substantial changes, please open an issue first to discuss what you would like to change.
+| Document                                            | Contenu                                       |
+| --------------------------------------------------- | --------------------------------------------- |
+| [docs/README.md](docs/README.md)                    | Accueil et navigation de la documentation     |
+| [docs/architecture.md](docs/architecture.md)        | Composants, communication, pipeline IA        |
+| [docs/api.md](docs/api.md)                          | Tous les endpoints REST + WebSocket           |
+| [docs/database.md](docs/database.md)                | Diagramme ER, tables, colonnes, relations     |
+| [docs/rag.md](docs/rag.md)                          | Ingestion, retrieval, prompts                 |
+| [docs/firmware.md](docs/firmware.md)                | Sketch ESP32, Wi-Fi, MQTT, reconnexion        |
+| [docs/deployment.md](docs/deployment.md)            | Docker, environnement, checklist production   |
+| [docs/security.md](docs/security.md)                | JWT, hachage, RBAC, CORS                      |
+| [docs/troubleshooting.md](docs/troubleshooting.md)  | Problèmes courants et solutions               |
 
 ---
 
-## :scroll: License
+## Stack technique
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file.
+| Couche            | Technologie                                          |
+| ----------------- | ---------------------------------------------------- |
+| Frontend          | React 18 · Vite · TypeScript · Tailwind · Recharts   |
+| Backend           | Python 3.11 · FastAPI 0.111 · SQLAlchemy 2 · Alembic |
+| Base de données   | PostgreSQL 16                                        |
+| Broker IoT        | Eclipse Mosquitto 2                                  |
+| Vector store      | ChromaDB                                             |
+| LLM               | Groq (`llama-3.3-70b-versatile`)                     |
+| Embeddings        | OpenRouter (`nvidia/llama-nemotron-embed-vl-1b-v2`)  |
+| Firmware          | Arduino / ESP32 (DHT11)                              |
+| Orchestration     | Docker Compose                                       |
+
+---
+
+## Contribution
+
+Les pull requests sont les bienvenus. Pour des modifications substantielles, ouvrez d'abord une issue pour en discuter.
+
+---
+
+## Licence
+
+Ce projet est sous licence **MIT** — voir le fichier [LICENSE](LICENSE).
 
 ```
 MIT License
@@ -137,8 +137,8 @@ Copyright (c) 2026 Mohamed Talhaoui
 
 ---
 
-## :bust_in_silhouette: Author
+## Auteur
 
 **Mohamed Talhaoui** — [github.com/t4lhawi](https://github.com/t4lhawi) · t4lhawi@gmail.com
 
-<p align="center">Internship project delivered for the <strong>CHU Mohammed VI d'Oujda</strong> · 2026</p>
+<p align="center">Projet de stage réalisé pour le <strong>CHU Mohammed VI d'Oujda</strong> · 2026</p>

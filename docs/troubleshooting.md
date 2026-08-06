@@ -1,81 +1,81 @@
-# :wrench: Troubleshooting
+# Dépannage
 
-> Common failure modes and how to fix them. Use the table of contents on the right (or the headings below) to jump straight to the symptom you're seeing.
+> Modes de défaillance courants et comment les résoudre. Utilisez la table des matières (ou les titres ci-dessous) pour aller directement au symptôme que vous constatez.
 
 ---
 
-## :satellite: MQTT broker unreachable
+## Broker MQTT injoignable
 
-**Symptoms**
+**Symptômes**
 
-- ESP32 Serial console: `MQTT publish échoué (topic=…)` or repeated `rc=…` codes.
-- Backend logs: `MQTT connexion refusée (reason_code=…)`.
+- Console série ESP32 : `MQTT publish échoué (topic=…)` ou codes `rc=…` répétés.
+- Logs backend : `MQTT connexion refusée (reason_code=…)`.
 
-**Check the broker is up**
+**Vérifier que le broker tourne**
 
 ```bash
 docker compose ps mosquitto
 docker compose logs mosquitto
-# from the host:
+# depuis l'hôte :
 mosquitto_sub -h localhost -p 1883 -t 'medassist/salle/#' -v
 ```
 
-**Check backend connection state**
+**Vérifier l'état de connexion du backend**
 
 ```bash
 docker compose logs backend | grep -i mqtt
-# Look for: "MQTT connecté, abonnement à medassist/salle/+/+"
+# Chercher : "MQTT connecté, abonnement à medassist/salle/+/+"
 ```
 
-**Common causes**
+**Causes courantes**
 
-| Cause                                    | Fix                                                                              |
-| ---------------------------------------- | -------------------------------------------------------------------------------- |
-| Broker container not started             | `docker compose up -d mosquitto`                                                 |
-| Wrong port published                     | `docker-compose.yml` must map `1883:1883` on the host                           |
-| ESP32 points at `localhost` / `127.0.0.1` | Change `MQTT_BROKER` to the Docker host's LAN IPv4 (e.g. `192.168.1.100`)       |
-| Firewall blocks port 1883               | Open the port on the Docker host and on the ESP32's Wi-Fi network                |
-| `MQTT_TOPIC_PREFIX` mismatch             | The firmware's `SALLE` macro must produce a topic under the backend's prefix     |
+| Cause                                       | Correctif                                                                              |
+| ------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Conteneur broker non démarré                | `docker compose up -d mosquitto`                                                       |
+| Mauvais port publié                         | `docker-compose.yml` doit mapper `1883:1883` sur l'hôte                               |
+| ESP32 pointe sur `localhost` / `127.0.0.1`  | Changer `MQTT_BROKER` vers l'IPv4 LAN de l'hôte Docker (par ex. `192.168.1.100`)      |
+| Pare-feu bloque le port 1883                | Ouvrir le port sur l'hôte Docker et sur le réseau Wi-Fi de l'ESP32                    |
+| Incohérence `MQTT_TOPIC_PREFIX`             | La macro `SALLE` du firmware doit produire un topic sous le préfixe backend            |
 
-**Inspect a live message manually**
+**Inspecter un message en direct**
 
 ```bash
-# from the host, subscribe to all MedAssist topics
+# depuis l'hôte, s'abonner à tous les topics MedAssist
 mosquitto_sub -h localhost -p 1883 -t 'medassist/salle/#' -v
 ```
 
-You should see one JSON message per (salle, type) every 3 seconds.
+Vous devriez voir un message JSON par (salle, type) toutes les 3 secondes.
 
 ---
 
-## :elephant: PostgreSQL connection issues
+## Problèmes de connexion PostgreSQL
 
-**Symptoms**
+**Symptômes**
 
-- Backend logs: `psycopg2.OperationalError: could not connect to server`
-- `entrypoint.sh` prints `Postgres indisponible après 60s`
+- Logs backend : `psycopg2.OperationalError: could not connect to server`
+- `entrypoint.sh` affiche `Postgres indisponible après 60s`
 
-**Checks**
+**Vérifications**
 
 ```bash
-# Container running?
+# Le conteneur tourne ?
 docker compose ps postgres
 # Healthcheck
 docker compose exec postgres pg_isready -U $POSTGRES_USER -d $POSTGRES_DB
-# Open a psql shell
+# Ouvrir un shell psql
 docker compose exec postgres psql -U $POSTGRES_USER -d $POSTGRES_DB
 ```
 
-**Common causes**
+**Causes courantes**
 
-| Cause                                | Fix                                                                         |
+| Cause                                | Correctif                                                                   |
 | ------------------------------------ | --------------------------------------------------------------------------- |
-| `.env` `POSTGRES_PASSWORD` mismatch  | Make sure the value in `.env` matches what you used on first boot          |
-| `DATABASE_URL` wrong host            | Inside Compose, the host is `postgres` (the service name), not `localhost`  |
-| Volume permissions on Linux          | The `pgdata` volume must be owned by UID 999 (the postgres image user)      |
-| Migrations out of sync               | `docker compose exec backend alembic upgrade head`                          |
+| Incohérence `POSTGRES_PASSWORD`      | Assurez-vous que la valeur dans `.env` correspond au premier boot           |
+| Mauvais host dans `DATABASE_URL`     | Dans Compose, le host est `postgres` (nom du service), pas `localhost`      |
+| Permissions de volume sur Linux      | Le volume `pgdata` doit appartenir à l'UID 999 (utilisateur de l'image postgres) |
+| Migrations désynchronisées           | `docker compose exec backend alembic upgrade head`                          |
 
-**Reset the database (DESTROYS ALL DATA)**
+**Réinitialiser la base de données (DÉTRUIT TOUTES LES DONNÉES)**
 
 ```bash
 docker compose down -v
@@ -84,37 +84,37 @@ docker compose up -d --build
 
 ---
 
-## :whale: Docker problems
+## Problèmes Docker
 
-| Symptom                                            | Fix                                                                            |
-| -------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `bind: address already in use` on `1883` / `8000` / `8080` | Stop the conflicting process or change the host port in `docker-compose.yml`   |
-| Backend container exits immediately                | `docker compose logs backend` — look for Alembic / Python errors               |
-| `permission denied` on `/data/uploads`             | The image creates `/data/{uploads,chroma}` as UID 1001 — don't override on bind-mount without matching the UID |
-| Frontend shows blank page                          | Open browser devtools — check that `/api/...` calls are proxied to backend:8000 |
-| Out of disk space                                  | Postgres + ChromaDB can grow fast — prune old `mesures` and re-index only the PDFs you need |
+| Symptôme                                            | Correctif                                                                          |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `bind: address already in use` sur `1883` / `8000` / `8080` | Arrêtez le processus en conflit ou changez le port hôte dans `docker-compose.yml`   |
+| Le conteneur backend sort immédiatement             | `docker compose logs backend` — cherchez les erreurs Alembic / Python               |
+| `permission denied` sur `/data/uploads`             | L'image crée `/data/{uploads,chroma}` en tant qu'UID 1001 — ne pas surcharger sur bind-mount sans matcher l'UID |
+| Le frontend affiche une page blanche                | Ouvrez les devtools du navigateur — vérifiez que les appels `/api/...` sont bien proxifiés vers backend:8000 |
+| Plus d'espace disque                                | Postgres + ChromaDB peuvent grossir vite — élaguez les vieilles `mesures` et ne ré-indexez que les PDF nécessaires |
 
-**Nuclear option**
+**Option nucléaire**
 
 ```bash
-docker compose down -v          # destroys volumes
+docker compose down -v          # détruit les volumes
 docker system prune -a --volumes
 docker compose up -d --build
 ```
 
 ---
 
-## :satellite_antenna: WebSocket disconnected
+## WebSocket déconnecté
 
-**Symptoms**
+**Symptômes**
 
-- Frontend stops receiving live updates; dashboard freezes on the last value.
-- Browser console: `WebSocket connection to 'ws://localhost:8000/api/realtime/ws?token=…' failed`.
+- Le frontend arrête de recevoir les mises à jour temps réel ; le tableau de bord gèle sur la dernière valeur.
+- Console navigateur : `WebSocket connection to 'ws://localhost:8000/api/realtime/ws?token=…' failed`.
 
-**Checks**
+**Vérifications**
 
 ```bash
-# 1. Test with a quick Python client
+# 1. Tester avec un client Python rapide
 python - <<'PY'
 import asyncio, json, websockets
 async def go():
@@ -124,185 +124,183 @@ asyncio.run(go())
 PY
 ```
 
-**Common causes**
+**Causes courantes**
 
-| Cause                                                  | Fix                                                                                  |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| `?token=` missing or expired                           | Re-login to refresh the JWT (1 h TTL by default)                                     |
-| Reverse proxy strips the `Upgrade` / `Connection` headers | Add `proxy_set_header Upgrade $http_upgrade;` and `proxy_set_header Connection "upgrade";` (already done in the bundled `nginx.conf`) |
-| Backend not running                                    | `docker compose ps backend` — check it's `running`                                    |
-| CORS rejects the upgrade                               | Browser-side only — open the URL directly in `wscat` to confirm                      |
-
----
-
-## :electric_plug: ESP32 offline
-
-**Symptoms**
-
-- Room shows `offline` in the dashboard for more than a few minutes.
-- No new `mesures` rows in PostgreSQL.
-
-**Quick triage**
-
-1. **Power:** is the ESP32 still powered? Blue LED on?
-2. **Wi-Fi:** read the Serial console — does `connecterWiFi` succeed?
-3. **MQTT:** does `MQTT publish` succeed, or `MQTT publish échoué`?
-4. **Network:** what does `diagnosticReseau` say at boot?
-
-**Common causes**
-
-| Cause                                            | Fix                                                                                 |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| Wi-Fi password changed                           | Re-flash the sketch with the new credentials                                        |
-| Docker host IP changed                           | ESP32's `MQTT_BROKER` constant must be updated                                      |
-| DHT11 wiring (no pull-up, wrong pin)             | DHT11 needs a 10 kΩ pull-up between DATA and VCC                                    |
-| ESP32 in modem-sleep                             | Verify `WiFi.setSleep(false)` is called *before* `WiFi.begin`                       |
-| Power-saving mode on the AP                      | Some APs aggressively idle clients — try a different Wi-Fi network for testing      |
-| The IP isn't claimed in the admin UI             | The measure is still stored (`esp32_id=null`) — claim it via `POST /api/admin/esp32/claim` |
-
-**If nothing helps**, reflash the sketch with `MQTT_BROKER` set to the broker's container name (e.g. `mosquitto`) **and** a server on the same network — this isolates whether the issue is the LAN reachability or the broker.
+| Cause                                                  | Correctif                                                                                  |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `?token=` manquant ou expiré                           | Re-login pour rafraîchir le JWT (TTL 1 h par défaut)                                       |
+| Le reverse proxy strip les en-têtes `Upgrade` / `Connection` | Ajoutez `proxy_set_header Upgrade $http_upgrade;` et `proxy_set_header Connection "upgrade";` (déjà fait dans le `nginx.conf` fourni) |
+| Backend non démarré                                    | `docker compose ps backend` — vérifiez qu'il est `running`                                |
+| CORS rejette l'upgrade                                 | Côté navigateur uniquement — ouvrez l'URL directement dans `wscat` pour confirmer        |
 
 ---
 
-## :card_file_box: ChromaDB errors
+## ESP32 hors ligne
 
-**Symptoms**
+**Symptômes**
 
-- `POST /api/chat/` returns `Aucun document n'a encore été indexé.` despite uploaded PDFs.
-- Backend logs: `L'indexation a échoué silencieusement`.
+- La salle affiche `offline` dans le tableau de bord pendant plus de quelques minutes.
+- Aucune nouvelle ligne `mesures` dans PostgreSQL.
 
-**Checks**
+**Triage rapide**
+
+1. **Alimentation :** l'ESP32 est-il toujours alimenté ? LED bleue allumée ?
+2. **Wi-Fi :** lire la console Série — `connecterWiFi` réussit-il ?
+3. **MQTT :** `MQTT publish` réussit-il, ou `MQTT publish échoué` ?
+4. **Réseau :** que dit `diagnosticReseau` au boot ?
+
+**Causes courantes**
+
+| Cause                                            | Correctif                                                                                 |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| Mot de passe Wi-Fi changé                        | Reflashez le sketch avec les nouveaux identifiants                                        |
+| IP de l'hôte Docker changée                      | La constante `MQTT_BROKER` de l'ESP32 doit être mise à jour                               |
+| Câblage DHT11 (pas de pull-up, mauvaise broche)  | Le DHT11 nécessite une pull-up de 10 kΩ entre DATA et VCC                                |
+| ESP32 en modem-sleep                             | Vérifiez que `WiFi.setSleep(false)` est appelé *avant* `WiFi.begin`                      |
+| Mode économie d'énergie sur l'AP                | Certains AP déconnectent agressivement les clients — essayez un autre réseau Wi-Fi       |
+| L'IP n'est pas revendiquée dans l'UI admin       | La mesure est quand même stockée (`esp32_id=null`) — revendiquez via `POST /api/admin/esp32/claim` |
+
+**Si rien n'y fait**, reflashez le sketch avec `MQTT_BROKER` défini sur le nom du conteneur broker (par ex. `mosquitto`) **et** un serveur sur le même réseau — cela permet d'isoler si le problème est la joignabilité LAN ou le broker.
+
+---
+
+## Erreurs ChromaDB
+
+**Symptômes**
+
+- `POST /api/chat/` renvoie `Aucun document n'a encore été indexé.` malgré des PDF uploadés.
+- Logs backend : `L'indexation a échoué silencieusement`.
+
+**Vérifications**
 
 ```bash
-# Is the volume mounted?
+# Le volume est-il monté ?
 docker compose exec backend ls -la /data/chroma
-# Force a reindex
+# Forcer une réindexation
 docker compose exec backend python - <<'PY'
 from app.database import SessionLocal
 from app.rag.pipeline import indexer_pdf
-import os
 db = SessionLocal()
-for d in db.execute(db.query().__class__): ...
 PY
 ```
 
-**Common causes**
+**Causes courantes**
 
-| Cause                                                 | Fix                                                                                  |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `CHROMA_PATH` not writable                            | The image pre-creates `/data/chroma` as UID 1001 — keep the named volume              |
-| PDF is a scan (no selectable text)                    | Run it through OCR (e.g. `ocrmypdf`) before uploading                                |
-| `OPENROUTER_API_KEY` missing / invalid                | Backend logs will show a 401 from OpenRouter                                          |
-| Mixed chunks from previous runs                       | `indexer_pdf` deletes by `source_document` first, so re-upload the same filename to re-index cleanly |
+| Cause                                                 | Correctif                                                                                  |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `CHROMA_PATH` non inscriptible                        | L'image pré-crée `/data/chroma` en UID 1001 — garder le volume nommé                       |
+| PDF scanné (pas de texte sélectionnable)              | Passez-le par un OCR (par ex. `ocrmypdf`) avant de l'uploader                             |
+| `OPENROUTER_API_KEY` manquant / invalide              | Les logs backend montreront un 401 d'OpenRouter                                            |
+| Chunks mélangés de runs précédents                    | `indexer_pdf` supprime par `source_document` d'abord, donc ré-uploadez avec le même nom de fichier pour ré-indexer proprement |
 
-> :information_source: After a successful upload, `GET /api/documents/` should show `indexe: true` within a few seconds.
+> **Note :** après un upload réussi, `GET /api/documents/` doit afficher `indexe: true` en quelques secondes.
 
 ---
 
-## :electric_plug: API errors
+## Erreurs API
 
 ### `401 Unauthorized`
 
-- The JWT is missing, malformed, or expired.
-- The user has been soft-disabled (`actif = false`).
+- Le JWT est manquant, mal formé, ou expiré.
+- L'utilisateur a été désactivé doucement (`actif = false`).
 
-**Fix:** re-login with `POST /api/auth/login`.
+**Correctif :** reconnectez-vous avec `POST /api/auth/login`.
 
 ### `403 Forbidden`
 
-- Your role doesn't satisfy the route guard.
-- Example: a `visitor` trying to call `/api/admin/esp32/`.
+- Votre rôle ne satisfait pas la garde de la route.
+- Exemple : un `visitor` qui essaie d'appeler `/api/admin/esp32/`.
 
-**Fix:** log in as the appropriate role, or ask an admin to grant you a higher-privileged role.
+**Correctif :** connectez-vous avec le rôle approprié, ou demandez à un admin de vous accorder un rôle plus privilégié.
 
 ### `409 Conflict`
 
-- Trying to register an ESP32 with an IP that is already known.
-- Trying to rename a document to a name that's already in use.
+- Tentative d'enregistrer un ESP32 avec une IP déjà connue.
+- Tentative de renommer un document vers un nom déjà utilisé.
 
-**Fix:** choose a different IP / name, or `DELETE` the existing row first.
+**Correctif :** choisissez une autre IP / un autre nom, ou supprimez d'abord la ligne existante.
 
-### `500` on chat
+### `500` sur le chat
 
-Backend logs will show a traceback. The most common causes:
+Les logs backend afficheront une trace. Les causes les plus courantes :
 
-| Cause                                          | Fix                                                                                |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `GROQ_API_KEY` missing or rate-limited         | Re-check the key on the Groq dashboard                                             |
-| ChromaDB query fails                           | `indexer_pdf` should have run — `GET /api/documents/` and look for `indexe: true`  |
-| Network timeout to the LLM provider            | Increase `LLM_TIMEOUT_SECONDS`                                                     |
+| Cause                                          | Correctif                                                                                |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `GROQ_API_KEY` manquant ou rate-limited        | Re-vérifiez la clé sur le dashboard Groq                                                 |
+| Échec de la requête ChromaDB                   | `indexer_pdf` aurait dû tourner — `GET /api/documents/` et cherchez `indexe: true`      |
+| Timeout réseau vers le provider LLM            | Augmentez `LLM_TIMEOUT_SECONDS`                                                         |
 
-### `500` on alert explanation
+### `500` sur l'explication d'alerte
 
-The background `_run_explication` thread silently logs failures. The alert still exists, it just doesn't have an `explication` field yet. Check `docker compose logs backend | grep -i explication`.
+Le thread d'arrière-plan `_run_explication` log silencieusement les échecs. L'alerte existe toujours, elle n'a juste pas de champ `explication` pour l'instant. Vérifiez `docker compose logs backend | grep -i explication`.
 
 ---
 
-## :card_file_box: Database migrations won't run
+## Les migrations de base de données ne tournent pas
 
-**Symptoms**
+**Symptômes**
 
-- `alembic upgrade head` fails with `Can't locate revision identified by '…'`
-- Stale migration files after a `git pull`
+- `alembic upgrade head` échoue avec `Can't locate revision identified by '…'`
+- Fichiers de migration obsolètes après un `git pull`
 
-**Fix**
+**Correctif**
 
 ```bash
-# See current state
+# Voir l'état courant
 docker compose exec backend alembic current
 docker compose exec backend alembic history
 
-# Stamp the DB to the head revision (skips running migrations — last resort)
+# Stample la base à la révision head (saute l'exécution des migrations — dernier recours)
 docker compose exec backend alembic stamp head
 ```
 
-> :warning: `alembic stamp head` should only be used when you know the schema is already at the target revision. Always take a Postgres backup first.
+> **Avertissement :** `alembic stamp head` ne doit être utilisé que si vous savez que le schéma est déjà à la révision cible. Faites toujours un backup Postgres d'abord.
 
 ---
 
-## :mag: General debug recipes
+## Recettes générales de debug
 
-**Watch the backend log in real time**
+**Suivre le log backend en temps réel**
 
 ```bash
 docker compose logs -f backend
 ```
 
-**Filter backend logs by keyword**
+**Filtrer les logs backend par mot-clé**
 
 ```bash
 docker compose logs backend | grep -iE 'mqtt|alerte|explication|chat'
 ```
 
-**Tail the MQTT bus from the host**
+**Suivre le bus MQTT depuis l'hôte**
 
 ```bash
 mosquitto_sub -h localhost -t 'medassist/salle/#' -v
 ```
 
-**Open a psql shell**
+**Ouvrir un shell psql**
 
 ```bash
 docker compose exec postgres psql -U $POSTGRES_USER -d $POSTGRES_DB
 ```
 
-**Open a shell in the backend container**
+**Ouvrir un shell dans le conteneur backend**
 
 ```bash
 docker compose exec backend bash
 ```
 
-**Inspect ChromaDB on disk**
+**Inspecter ChromaDB sur disque**
 
 ```bash
 docker compose exec backend ls -la /data/chroma
 ```
 
-If everything else fails, capture the full backend stack trace:
+Si tout le reste échoue, capturez la stack trace complète du backend :
 
 ```bash
 docker compose logs backend > /tmp/backend.log
 docker compose exec backend python -c "from app.main import app; import json; print(json.dumps(app.openapi(), indent=2))" > /tmp/openapi.json
 ```
 
-…and open an issue on GitHub with both files attached.
+…et ouvrez une issue sur GitHub avec les deux fichiers attachés.

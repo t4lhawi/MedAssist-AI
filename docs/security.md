@@ -1,20 +1,20 @@
-# :closed_lock_with_key: Security
+# Sécurité
 
-> How MedAssist AI authenticates, authorises, and protects the API — and the gaps you should close before deploying to production.
+> Comment MedAssist AI authentifie, autorise et protège l'API — et les failles à combler avant tout déploiement en production.
 
 ---
 
-## :lock: JWT authentication
+## Authentification JWT
 
-MedAssist AI uses **stateless JWT bearer tokens** for the REST API. The WebSocket endpoint takes the same token via the `?token=` query parameter (browsers cannot set headers on the WS handshake).
+MedAssist AI utilise des **jetons JWT stateless bearer** pour l'API REST. L'endpoint WebSocket récupère le même jeton via le paramètre de query `?token=` (les navigateurs ne peuvent pas définir d'en-têtes sur le handshake WS).
 
-**Algorithm:** HS256 (HMAC-SHA-256)
+**Algorithme :** HS256 (HMAC-SHA-256)
 
-**Signing key:** `SECRET_KEY` from `.env` — must be at least 32 random characters in production.
+**Clé de signature :** `SECRET_KEY` depuis `.env` — au moins 32 caractères aléatoires en production.
 
-**Lifetime:** `ACCESS_TOKEN_EXPIRE_MINUTES` (default `60`).
+**Durée de vie :** `ACCESS_TOKEN_EXPIRE_MINUTES` (défaut `60`).
 
-**Token contents (payload):**
+**Contenu du jeton (payload) :**
 
 ```json
 {
@@ -24,17 +24,17 @@ MedAssist AI uses **stateless JWT bearer tokens** for the REST API. The WebSocke
 }
 ```
 
-**Issuer flow:**
+**Flux émetteur :**
 
 ```mermaid
 sequenceDiagram
-  participant U as User
+  participant U as Utilisateur
   participant API as FastAPI
   participant DB as PostgreSQL
 
   U->>API: POST /api/auth/login {email, password}
   API->>DB: SELECT * FROM utilisateurs WHERE email = ?
-  DB-->>API: user row
+  DB-->>API: ligne user
   API->>API: bcrypt.verify(sha256(password), mdp_hash)
   alt OK
     API->>API: jwt.encode({sub, role, exp}, SECRET_KEY, "HS256")
@@ -44,7 +44,7 @@ sequenceDiagram
   end
 ```
 
-**Verifier flow (dependency `get_current_user`):**
+**Flux vérificateur (dépendance `get_current_user`) :**
 
 ```mermaid
 sequenceDiagram
@@ -54,11 +54,11 @@ sequenceDiagram
 
   Client->>API: GET /api/auth/me  Authorization: Bearer <jwt>
   API->>API: jwt.decode(token, SECRET_KEY, ["HS256"])
-  alt signature / exp invalid
+  alt signature / exp invalide
     API-->>Client: 401 {detail:"Token invalide"}
   else
     API->>DB: SELECT * FROM utilisateurs WHERE email = sub
-    alt user not found or actif = false
+    alt user introuvable ou actif = false
       API-->>Client: 401
     else
       API->>API: normalize_role(user.role)
@@ -67,23 +67,23 @@ sequenceDiagram
   end
 ```
 
-The same `get_current_user` dependency is used by every protected route. Tokens are **never** persisted server-side — invalidation requires waiting for the JWT to expire.
+La même dépendance `get_current_user` est utilisée par chaque route protégée. Les jetons ne sont **jamais** persistés côté serveur — l'invalidation nécessite d'attendre l'expiration du JWT.
 
-> :bulb: For multi-tenant / multi-instance deployments, consider switching to **RS256** with a key pair and rotating keys regularly.
+> **Astuce :** pour les déploiements multi-tenant / multi-instance, envisagez de passer à **RS256** avec une paire de clés et de les faire tourner régulièrement.
 
 ---
 
-## :key: Password hashing
+## Hachage des mots de passe
 
-Defined in `backend/app/auth.py`.
+Défini dans `backend/app/auth.py`.
 
-**Algorithm:** `bcrypt` over a **SHA-256 pre-hash** of the password.
+**Algorithme :** `bcrypt` sur un **pré-hash SHA-256** du mot de passe.
 
 ```
-stored = "sha256$" + bcrypt(sha256_utf8(password))
+stocké = "sha256$" + bcrypt(sha256_utf8(password))
 ```
 
-**Why the SHA-256 pre-hash?** Bcrypt silently truncates inputs longer than 72 bytes. Hashing once with SHA-256 first gives a fixed-length 32-byte input that bcrypt can hash deterministically, while still benefiting from bcrypt's adaptive cost.
+**Pourquoi le pré-hash SHA-256 ?** Bcrypt tronque silencieusement les entrées de plus de 72 octets. Hacher une première fois avec SHA-256 donne une entrée fixe de 32 octets que bcrypt peut hacher de manière déterministe, tout en bénéficiant du coût adaptatif de bcrypt.
 
 ```python
 def hacher_mdp(mdp: str) -> str:
@@ -95,56 +95,56 @@ def verifier_mdp(mdp_brut: str, mdp_hash: str) -> bool:
     if mdp_hash.startswith("sha256$"):
         hash_bcrypt = mdp_hash.removeprefix("sha256$").encode("utf-8")
         return bcrypt.checkpw(_normaliser_mdp(mdp_brut), hash_bcrypt)
-    # Legacy: plain bcrypt (kept for back-compat with old rows)
+    # Legacy : bcrypt brut (gardé pour la rétro-compat des anciennes lignes)
     return bcrypt.checkpw(mdp_brut.encode("utf-8"), mdp_hash.encode("utf-8"))
 ```
 
-**Verification** is constant-time (handled by `bcrypt.checkpw`).
+**La vérification** est en temps constant (gérée par `bcrypt.checkpw`).
 
-> :warning: The project does **not** enforce a password complexity policy at registration (`POST /api/auth/register`). Add one before any non-development deployment.
+> **Avertissement :** le projet **n'applique pas** de politique de complexité de mot de passe à l'enregistrement (`POST /api/auth/register`). Ajoutez-en une avant tout déploiement hors développement.
 
 ---
 
-## :bust_in_silhouette: Role-based authorisation
+## Autorisation par rôles
 
-Three roles, normalised to a single canonical form at the boundary:
+Trois rôles, normalisés vers une forme canonique unique à la frontière :
 
-| Canonical role     | Legacy aliases (auto-mapped)              | Privileges                                                |
-| ------------------ | ----------------------------------------- | --------------------------------------------------------- |
-| `admin`            | `Admin`                                   | Full access — including device registry, user & doc mgmt  |
-| `hospital_staff`   | `Soignant`, `Technicien`                  | Dashboard, mesures, alertes (treat), chat, documents (read) |
-| `visitor`          | `Patient`, `Visiteur`                     | Dashboard, chat only                                      |
+| Rôle canonique     | Aliases legacy (auto-mappés)          | Privilèges                                                              |
+| ------------------ | ------------------------------------- | ----------------------------------------------------------------------- |
+| `admin`            | `Admin`                               | Accès complet — y compris registre devices, gestion users & docs        |
+| `hospital_staff`   | `Soignant`, `Technicien`              | Tableau de bord, mesures, alertes (traiter), chat, documents (lecture)  |
+| `visitor`          | `Patient`, `Visiteur`                 | Tableau de bord, chat uniquement                                        |
 
-**FastAPI dependencies** (in `backend/app/auth.py`):
+**Dépendances FastAPI** (dans `backend/app/auth.py`) :
 
 ```python
-require_admin              # admin only
-require_hospital_staff     # admin OR hospital_staff
-require_visitor            # any known role
-require_authenticated      # any authenticated user
-require_roles(*roles)      # custom set
+require_admin              # admin uniquement
+require_hospital_staff     # admin OU hospital_staff
+require_visitor            # tout rôle connu
+require_authenticated      # tout utilisateur authentifié
+require_roles(*roles)      # ensemble personnalisé
 ```
 
-| Endpoint group                          | Guard                                  |
-| --------------------------------------- | -------------------------------------- |
-| `/api/auth/*`                           | none (login/register are public)       |
-| `/api/capteurs/`, `/api/mesures/`       | `require_hospital_staff`               |
-| `/api/alertes/` (read, treat)           | `require_hospital_staff`               |
-| `/api/alertes/{id}` (DELETE)            | `require_admin`                        |
-| `/api/alertes/bulk-delete`              | `require_admin`                        |
-| `/api/documents/` (read, download)      | `require_hospital_staff`               |
-| `/api/documents/` (upload, delete, patch) | `require_admin`                      |
-| `/api/chat/`                            | `require_authenticated` (all roles)    |
-| `/api/chat/interpreter`                 | `require_hospital_staff`               |
-| `/api/admin/esp32/` (read)              | `require_hospital_staff`               |
-| `/api/admin/esp32/` (mutate)            | `require_admin`                        |
-| `/api/realtime/ws`                      | JWT in `?token=`                       |
+| Groupe d'endpoints                       | Garde                                    |
+| ---------------------------------------- | ---------------------------------------- |
+| `/api/auth/*`                            | aucune (login/register sont publics)     |
+| `/api/capteurs/`, `/api/mesures/`        | `require_hospital_staff`                 |
+| `/api/alertes/` (lecture, traiter)       | `require_hospital_staff`                 |
+| `/api/alertes/{id}` (DELETE)             | `require_admin`                          |
+| `/api/alertes/bulk-delete`               | `require_admin`                          |
+| `/api/documents/` (lecture, download)    | `require_hospital_staff`                 |
+| `/api/documents/` (upload, delete, patch) | `require_admin`                         |
+| `/api/chat/`                             | `require_authenticated` (tous les rôles) |
+| `/api/chat/interpreter`                  | `require_hospital_staff`                 |
+| `/api/admin/esp32/` (lecture)            | `require_hospital_staff`                 |
+| `/api/admin/esp32/` (mutations)          | `require_admin`                          |
+| `/api/realtime/ws`                       | JWT dans `?token=`                       |
 
-> :bulb: A user with `actif = false` is rejected by `get_current_user` (HTTP 401) — soft-disable without deleting the row.
+> **Astuce :** un utilisateur avec `actif = false` est rejeté par `get_current_user` (HTTP 401) — désactivation douce sans supprimer la ligne.
 
 ---
 
-## :globe_with_meridians: CORS
+## CORS
 
 ```python
 app.add_middleware(
@@ -156,49 +156,49 @@ app.add_middleware(
 )
 ```
 
-| Setting               | Value                                       | Note                                |
-| --------------------- | ------------------------------------------- | ----------------------------------- |
-| `allow_origins`       | localhost dev ports + `*`                   | Restrict in production              |
-| `allow_credentials`   | `True`                                      | Cookies / `Authorization` accepted  |
-| `allow_methods`       | `*`                                         | All methods                         |
-| `allow_headers`       | `*`                                         | All headers                         |
+| Réglage               | Valeur                                       | Note                                |
+| --------------------- | -------------------------------------------- | ----------------------------------- |
+| `allow_origins`       | ports dev localhost + `*`                    | Restreindre en production           |
+| `allow_credentials`   | `True`                                       | Cookies / `Authorization` acceptés  |
+| `allow_methods`       | `*`                                          | Toutes méthodes                     |
+| `allow_headers`       | `*`                                          | Tous les en-têtes                   |
 
-> :warning: The wildcard `*` makes the backend callable from any origin. **Lock it down** to your real frontend origin (e.g. `https://medassist.example.org`) before exposing the API.
-
----
-
-## :shield: API protection summary
-
-| Vector                            | Status          | Notes                                                                  |
-| --------------------------------- | --------------- | ---------------------------------------------------------------------- |
-| Auth on REST                      | :white_check_mark: Bearer JWT                                                |
-| Auth on WebSocket                 | :white_check_mark: `?token=` query param                                    |
-| Role-based authorisation          | :white_check_mark: dependency-guarded routes                                |
-| Password hashing                  | :white_check_mark: SHA-256 + bcrypt                                        |
-| CORS                              | :warning: Open in dev (`*`) — restrict in prod                              |
-| HTTPS                             | :x: Not terminated by the stack — set up a reverse proxy                 |
-| Rate limiting                     | :x: Not implemented                                                       |
-| Account lockout / brute-force     | :x: Not implemented                                                       |
-| Audit log                         | :x: Not implemented                                                       |
-| MQTT broker authentication        | :x: Currently open (no-auth)                                              |
-| Secret management                 | :warning: `.env` in repo for dev only — externalise for prod             |
+> **Avertissement :** le wildcard `*` rend le backend appelable depuis n'importe quelle origine. **Verrouillez-le** sur l'origine réelle de votre frontend (par ex. `https://medassist.example.org`) avant d'exposer l'API.
 
 ---
 
-## :construction: TODO — security work to do
+## Résumé de la protection de l'API
 
-The following items are **not** implemented yet. They are listed in priority order.
+| Vecteur                            | État         | Notes                                                                  |
+| ---------------------------------- | ------------ | ---------------------------------------------------------------------- |
+| Auth sur REST                      | OK           | Bearer JWT                                                             |
+| Auth sur WebSocket                 | OK           | paramètre de query `?token=`                                           |
+| Autorisation par rôle              | OK           | routes gardées par dépendances                                         |
+| Hachage des mots de passe          | OK           | SHA-256 + bcrypt                                                       |
+| CORS                               | À durcir     | ouvert en dev (`*`) — restreindre en prod                              |
+| HTTPS                              | Non          | non terminé par la stack — mettre en place un reverse proxy            |
+| Rate limiting                      | Non          | non implémenté                                                         |
+| Verrouillage de compte / brute-force| Non          | non implémenté                                                         |
+| Journal d'audit                    | Non          | non implémenté                                                         |
+| Authentification broker MQTT       | Non          | actuellement ouvert (no-auth)                                          |
+| Gestion des secrets                | À durcir     | `.env` dans le repo pour le dev — externaliser pour la prod            |
 
-- [ ] **CORS allowlist** — drop `*`, set the real frontend origin
-- [ ] **HTTPS termination** — Caddy / Traefik / nginx + Let's Encrypt
-- [ ] **MQTT authentication** — username/password on Mosquitto, mirror in `MQTT_USERNAME` / `MQTT_PASSWORD`
-- [ ] **Password policy** — minimum length, complexity, optional rotation
-- [ ] **Rate limiting** — `slowapi` or nginx `limit_req` on `/api/auth/login`
-- [ ] **Audit log** — append-only table of `who did what when`
-- [ ] **Externalised secrets** — Vault / AWS Secrets Manager / Doppler instead of `.env`
-- [ ] **JWT hardening** — switch to RS256, key rotation, shorter TTL + refresh tokens
-- [ ] **WebSocket origin check** — verify the `Origin` header on the WS handshake
-- [ ] **Database backups encrypted at rest**
-- [ ] **Linting of user input** — already done for Pydantic models and `ip` validators, but extend to MQTT payloads if exposed further
+---
 
-> :information_source: This is a roadmap, not a promise. Track progress via the [GitHub issues](https://github.com/t4lhawi/MedAssist-AI/issues).
+## TODO — travaux de sécurité à mener
+
+Les éléments suivants **ne sont pas encore** implémentés. Ils sont listés par ordre de priorité.
+
+- [ ] **Allowlist CORS** — retirer `*`, définir l'origine frontend réelle
+- [ ] **Terminaison HTTPS** — Caddy / Traefik / nginx + Let's Encrypt
+- [ ] **Authentification MQTT** — username/password sur Mosquitto, miroir dans `MQTT_USERNAME` / `MQTT_PASSWORD`
+- [ ] **Politique de mot de passe** — longueur minimale, complexité, rotation optionnelle
+- [ ] **Rate limiting** — `slowapi` ou nginx `limit_req` sur `/api/auth/login`
+- [ ] **Journal d'audit** — table append-only de *qui a fait quoi quand*
+- [ ] **Secrets externalisés** — Vault / AWS Secrets Manager / Doppler au lieu de `.env`
+- [ ] **Durcissement JWT** — passer en RS256, rotation de clés, TTL plus court + refresh tokens
+- [ ] **Vérification d'origine WebSocket** — valider l'en-tête `Origin` sur le handshake WS
+- [ ] **Sauvegardes de la base de données chiffrées au repos**
+- [ ] **Validation plus stricte des entrées utilisateur** — déjà fait pour les modèles Pydantic et les validateurs `ip`, mais à étendre aux payloads MQTT s'ils sont davantage exposés
+
+> **Note :** ceci est une feuille de route, pas une promesse. Suivez la progression via les [issues GitHub](https://github.com/t4lhawi/MedAssist-AI/issues).

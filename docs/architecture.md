@@ -1,61 +1,61 @@
-# :building_construction: Architecture
+# Architecture
 
-> How MedAssist AI is wired together — from the ESP32 sensor on a hospital wall to the React dashboard in a staff browser.
+> Comment MedAssist AI est assemblé — du capteur ESP32 sur un mur d'hôpital jusqu'au tableau de bord React dans le navigateur du personnel.
 
 ---
 
-## :mag: High-level overview
+## Vue d'ensemble
 
-MedAssist AI is a **multi-service, containerised platform**. The runtime topology is:
+MedAssist AI est une **plateforme multi-services conteneurisée**. La topologie d'exécution est :
 
 ```mermaid
 flowchart LR
-  subgraph LAN[Hospital LAN]
-    ESP[ESP32 + DHT11<br/>sensors]
+  subgraph LAN[Réseau LAN de l'hôpital]
+    ESP[ESP32 + DHT11<br/>capteurs]
   end
 
-  subgraph DockerHost["Docker host · network: medassist"]
+  subgraph DockerHost["Hôte Docker · réseau : medassist"]
     Mosq[(Eclipse Mosquitto<br/>:1883)]
-    Be[FastAPI Backend<br/>:8000]
+    Be[Backend FastAPI<br/>:8000]
     Pg[(PostgreSQL 16<br/>:5432)]
-    Ch[(ChromaDB<br/>persisted on disk)]
+    Ch[(ChromaDB<br/>persisté sur disque)]
     Fe[Frontend · nginx<br/>:8080]
   end
 
-  Cloud[Groq + OpenRouter APIs]
+  Cloud[APIs Groq + OpenRouter]
 
-  ESP -- "MQTT publish" --> Mosq
-  Mosq -- "paho-mqtt subscription" --> Be
+  ESP -- "Publication MQTT" --> Mosq
+  Mosq -- "Abonnement paho-mqtt" --> Be
   Be -- "SQLAlchemy" --> Pg
   Be -- "chromadb SDK" --> Ch
   Be -- "HTTPS" --> Cloud
   Fe -- "REST + WebSocket" --> Be
 ```
 
-**One-line mental model:** *ESP32 → MQTT → FastAPI → PostgreSQL + ChromaDB → REST/WS → React.*
+**Modèle mental en une phrase :** *ESP32 → MQTT → FastAPI → PostgreSQL + ChromaDB → REST/WS → React.*
 
 ---
 
-## :bricks: Components & Responsibilities
+## Composants et responsabilités
 
-| Component                | Tech                              | Responsibility                                                                                   |
-| ------------------------ | --------------------------------- | ------------------------------------------------------------------------------------------------ |
-| **ESP32 firmware**       | Arduino, `PubSubClient`, `DHTesp` | Read DHT11 sensor, publish JSON on MQTT every 3 s                                                |
-| **Mosquitto broker**     | Eclipse Mosquitto 2               | IoT pub/sub bus, no-auth listener on `1883`                                                      |
-| **FastAPI backend**      | Python 3.11, Uvicorn              | MQTT ingestion, REST + WebSocket API, AI pipeline, scheduler, sweeper                            |
-| **PostgreSQL**           | PostgreSQL 16                     | Source of truth: users, devices, mesures, alertes, documents, conversations                      |
-| **ChromaDB**             | ChromaDB (persistent)             | Vector store for RAG (`medassist_docs` collection)                                               |
-| **Frontend**             | React 18, Vite, Tailwind, Recharts | Dashboard UI, real-time charts, alert management, chat, admin panel                            |
-| **Groq**                 | SaaS LLM API                      | Chat completions (used by RAG and alert explanations)                                            |
-| **OpenRouter**           | SaaS embeddings API               | Text embeddings for ChromaDB                                                                    |
+| Composant               | Technologie                          | Responsabilité                                                                                |
+| ----------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------- |
+| **Firmware ESP32**      | Arduino, `PubSubClient`, `DHTesp`    | Lit le capteur DHT11, publie un JSON sur MQTT toutes les 3 s                                  |
+| **Broker Mosquitto**    | Eclipse Mosquitto 2                  | Bus pub/sub IoT, listener sans authentification sur `1883`                                    |
+| **Backend FastAPI**     | Python 3.11, Uvicorn                 | Ingestion MQTT, API REST + WebSocket, pipeline IA, planificateur, sweeper                     |
+| **PostgreSQL**          | PostgreSQL 16                        | Source de vérité : utilisateurs, devices, mesures, alertes, documents, conversations          |
+| **ChromaDB**            | ChromaDB (persistent)                | Vector store pour le RAG (collection `medassist_docs`)                                         |
+| **Frontend**            | React 18, Vite, Tailwind, Recharts   | UI tableau de bord, graphiques temps réel, gestion des alertes, chat, panneau admin           |
+| **Groq**                | API LLM SaaS                         | Chat completions (utilisé par le RAG et l'explication des alertes)                            |
+| **OpenRouter**          | API d'embeddings SaaS                | Embeddings de texte pour ChromaDB                                                             |
 
 ---
 
-## :satellite: MQTT Communication
+## Communication MQTT
 
-**Broker:** Eclipse Mosquitto 2, anonymous listener, exposed on the Docker host (`0.0.0.0:1883`) so LAN devices can reach it.
+**Broker :** Eclipse Mosquitto 2, listener anonyme, exposé sur l'hôte Docker (`0.0.0.0:1883`) pour que les devices du LAN puissent l'atteindre.
 
-**Topic shape:**
+**Forme du topic :**
 
 ```
 <MQTT_TOPIC_PREFIX>/<salle>/<type>
@@ -63,11 +63,11 @@ flowchart LR
   medassist/salle / salle-1 / temperature
 ```
 
-The default prefix is `medassist/salle`. The **topic is the source of truth** for `salle` (room). The firmware embeds its room name in the topic, and the payload's `type` is validated against the topic segment.
+Le préfixe par défaut est `medassist/salle`. **Le topic fait foi** pour la `salle` (room). Le firmware embarque le nom de la salle dans le topic, et le `type` du payload est validé contre le segment de topic.
 
-**Subscription:** the backend subscribes once at startup to `<prefix>/+/+` (all rooms, all sensor types).
+**Abonnement :** au démarrage, le backend souscrit une fois à `<prefix>/+/+` (toutes les salles, tous les types).
 
-**Payload (JSON):**
+**Payload (JSON) :**
 
 ```json
 {
@@ -78,38 +78,38 @@ The default prefix is `medassist/salle`. The **topic is the source of truth** fo
 }
 ```
 
-**Ingestion flow:**
+**Flux d'ingestion :**
 
 ```mermaid
 sequenceDiagram
   participant ESP as ESP32
   participant MQ as Mosquitto
-  participant BE as FastAPI MQTT client
+  participant BE as Client MQTT FastAPI
   participant DB as PostgreSQL
   participant RT as Realtime (WS)
-  participant FE as React UI
+  participant FE as UI React
 
   ESP->>MQ: PUBLISH medassist/salle/salle-1/temperature
   MQ->>BE: on_message(topic, payload)
-  BE->>BE: validate (type, valeur, ip, IPv4)
-  BE->>BE: match device by salle + ip
+  BE->>BE: validation (type, valeur, ip, IPv4)
+  BE->>BE: appariement device par salle + ip
   BE->>DB: INSERT mesure
-  alt threshold exceeded
+  alt seuil dépassé
     BE->>DB: INSERT alerte
     BE->>RT: publish(alerte_event)
-    RT-->>FE: WS message {kind:"alerte", ...}
+    RT-->>FE: Message WS {kind:"alerte", ...}
   end
   BE->>RT: publish(mesure_event)
-  RT-->>FE: WS message {kind:"mesure", ...}
+  RT-->>FE: Message WS {kind:"mesure", ...}
 ```
 
-**Unregistered source IPs:** if no `Esp32Device` matches the `salle` segment, the measure is still stored (with `esp32_id=NULL`). An admin can later claim it via `POST /api/admin/esp32/claim` — the system then back-fills the link.
+**IP sources non enregistrées :** si aucun `Esp32Device` ne correspond au segment `salle`, la mesure est quand même stockée (avec `esp32_id=NULL`). Un administrateur peut ensuite la revendiquer via `POST /api/admin/esp32/claim` — le système rebascule alors les liens.
 
 ---
 
-## :globe_with_meridians: REST API
+## API REST
 
-The backend exposes a versioned REST API under `/api/...`. All authenticated endpoints expect a Bearer JWT (`Authorization: Bearer <token>`).
+Le backend expose une API REST versionnée sous `/api/...`. Tous les endpoints authentifiés attendent un JWT Bearer (`Authorization: Bearer <token>`).
 
 ```mermaid
 flowchart LR
@@ -118,94 +118,94 @@ flowchart LR
   FastAPI -- "chromadb" --> CH[(ChromaDB)]
 ```
 
-Mounted routers (from `backend/app/main.py`):
+Routers montés (extrait de `backend/app/main.py`) :
 
-| Router              | Prefix                | Purpose                                              |
-| ------------------- | --------------------- | ---------------------------------------------------- |
-| `auth`              | `/api/auth`           | Login, register, current user                        |
-| `capteurs` (legacy) | `/api/capteurs`       | Backward-compatible list of ESP32 devices            |
-| `mesures`           | `/api/mesures`        | Paginated measurement history                        |
-| `alertes`           | `/api/alertes`        | List, mark handled, delete alerts                    |
-| `documents`         | `/api/documents`      | Upload / list / download / rename / delete PDFs      |
-| `chat`              | `/api/chat`           | RAG chat, history, interpretation of measurements    |
-| `admin_esp32`       | `/api/admin/esp32`    | Admin device registry + claim unregistered sources   |
-| `realtime`          | `/api/realtime/ws`    | WebSocket live stream                                |
+| Router              | Préfixe               | Rôle                                              |
+| ------------------- | --------------------- | ------------------------------------------------- |
+| `auth`              | `/api/auth`           | Login, register, utilisateur courant              |
+| `capteurs` (legacy) | `/api/capteurs`       | Liste rétro-compatible des devices ESP32          |
+| `mesures`           | `/api/mesures`        | Historique paginé des mesures                     |
+| `alertes`           | `/api/alertes`        | Liste, marquer traitée, supprimer                |
+| `documents`         | `/api/documents`      | Upload / list / download / renommer / supprimer   |
+| `chat`              | `/api/chat`           | Chat RAG, historique, interprétation de mesures   |
+| `admin_esp32`       | `/api/admin/esp32`    | Registre devices admin + revendication IP         |
+| `realtime`          | `/api/realtime/ws`    | Flux temps réel WebSocket                         |
 
-Every endpoint is fully documented in [`api.md`](api.md).
+Chaque endpoint est entièrement documenté dans [`api.md`](api.md).
 
 ---
 
-## :satellite_antenna: WebSocket — Realtime stream
+## WebSocket — Flux temps réel
 
-A single WebSocket endpoint, `GET /api/realtime/ws?token=<JWT>`, pushes a stream of `mesure` and `alerte` events to authenticated clients.
+Un unique endpoint WebSocket, `GET /api/realtime/ws?token=<JWT>`, pousse un flux d'événements `mesure` et `alerte` aux clients authentifiés.
 
-**How it works:**
+**Fonctionnement :**
 
 ```mermaid
 flowchart LR
-  BE[FastAPI process] -- "loop_start" --> MQTT
-  BE -- "publish(event)" --> RT[realtime.py<br/>asyncio.Queue registry]
-  FE1[Browser 1] -- "WS /api/realtime/ws" --> RT
-  FE2[Browser 2] -- "WS /api/realtime/ws" --> RT
+  BE[Processus FastAPI] -- "loop_start" --> MQTT
+  BE -- "publish(event)" --> RT[realtime.py<br/>registre asyncio.Queue]
+  FE1[Navigateur 1] -- "WS /api/realtime/ws" --> RT
+  FE2[Navigateur 2] -- "WS /api/realtime/ws" --> RT
   RT -- "queue.get → send_json" --> FE1
   RT -- "queue.get → send_json" --> FE2
 ```
 
-- The MQTT callback runs on a paho-mqtt thread and pushes into the registry via `loop.call_soon_threadsafe`.
-- Each connected client owns one bounded `asyncio.Queue` (size 256). Slow consumers have their events dropped (no back-pressure).
-- The handshake sends a `{"kind":"hello", "user":...}` frame so the client can flip its UI to *live*.
-- JWT is passed as a query parameter (browsers can't set headers on the WS handshake).
+- Le callback MQTT s'exécute sur un thread paho-mqtt et pousse dans le registre via `loop.call_soon_threadsafe`.
+- Chaque client connecté possède une `asyncio.Queue` bornée (taille 256). Les événements des clients lents sont supprimés (pas de back-pressure).
+- Le handshake envoie une trame `{"kind":"hello", "user":...}` pour que le client puisse basculer son UI sur *live*.
+- Le JWT est passé en query parameter (les navigateurs ne peuvent pas définir d'en-têtes sur le handshake WS).
 
 ---
 
-## :elephant: PostgreSQL
+## PostgreSQL
 
-The relational store. Six tables (`utilisateurs`, `esp32_devices`, `mesures`, `alertes`, `documents`, `conversations`) are defined as SQLAlchemy 2 models and migrated through **Alembic**. See [`database.md`](database.md) for the full schema, ER diagram, and relationships.
-
----
-
-## :card_file_box: ChromaDB
-
-A local, persistent ChromaDB instance (`CHROMA_PATH=/data/chroma`, collection `medassist_docs`) stores one document per uploaded PDF, split into chunks. The retrieval pipeline is documented in detail in [`rag.md`](rag.md).
+Le store relationnel. Six tables (`utilisateurs`, `esp32_devices`, `mesures`, `alertes`, `documents`, `conversations`) sont définies comme modèles SQLAlchemy 2 et migrées via **Alembic**. Voir [`database.md`](database.md) pour le schéma complet, le diagramme ER et les relations.
 
 ---
 
-## :robot: AI pipeline (RAG)
+## ChromaDB
+
+Une instance ChromaDB locale et persistante (`CHROMA_PATH=/data/chroma`, collection `medassist_docs`) stocke un document par PDF uploadé, découpé en chunks. Le pipeline de retrieval est documenté en détail dans [`rag.md`](rag.md).
+
+---
+
+## Pipeline IA (RAG)
 
 ```mermaid
 flowchart LR
-  PDF[PDF upload] --> PyPDF[PyPDFLoader]
-  PyPDF --> Split[RecursiveCharacterTextSplitter<br/>800 chars / 100 overlap]
-  Split --> Embed[OpenRouter Embeddings]
+  PDF[Upload PDF] --> PyPDF[PyPDFLoader]
+  PyPDF --> Split[RecursiveCharacterTextSplitter<br/>800 caractères / 100 de recouvrement]
+  Split --> Embed[Embeddings OpenRouter]
   Embed --> Chroma[(ChromaDB)]
 
-  Q[User question] --> Search[similarity_search_with_score, k=4]
+  Q[Question utilisateur] --> Search[similarity_search_with_score, k=4]
   Chroma --> Search
-  Search --> Prompt[System prompt + context + history]
-  Prompt --> Groq[Groq LLM]
-  Groq --> Reply[Grounded answer + sources]
+  Search --> Prompt[Prompt système + contexte + historique]
+  Prompt --> Groq[LLM Groq]
+  Groq --> Reply[Réponse ancrée + sources]
 ```
 
-Two LLM-driven features are wired up on top:
+Deux fonctionnalités pilotées par LLM sont branchées par-dessus :
 
-- **Chat** (`POST /api/chat`) — answers grounded in PDF chunks, in French, with citations.
-- **Alert explanation** (`expliquer_alerte`) — every new alert is annotated with a 3-part markdown explanation (*Why / Risks / Action*), cached for 24h to limit LLM cost.
+- **Chat** (`POST /api/chat`) — réponses ancrées dans les chunks de PDF, en français, avec citations.
+- **Explication d'alerte** (`expliquer_alerte`) — chaque nouvelle alerte est annotée d'une explication markdown en 3 volets (*Pourquoi / Risques / Action*), mise en cache 24 h pour limiter le coût LLM.
 
-> :information_source: The chat endpoint will refuse to invent medical information: if the question isn't covered by the indexed documents, the assistant replies that the information is not in the available documents.
+> **Note :** l'endpoint de chat refusera d'inventer une information médicale : si la question n'est pas couverte par les documents indexés, l'assistant indique que l'information ne figure pas dans les documents disponibles.
 
 ---
 
-## :whale: Docker architecture
+## Architecture Docker
 
-`docker-compose.yml` orchestrates four services on a private bridge network `medassist`:
+`docker-compose.yml` orchestre quatre services sur un réseau bridge privé `medassist` :
 
 ```mermaid
 flowchart TB
-  subgraph Compose[docker-compose stack]
-    PG[postgres:16-alpine<br/>volume: pgdata]
-    MQ[eclipse-mosquitto:2<br/>volume: mqttdata<br/>port 1883→host]
-    BK[backend (python:3.11-slim)<br/>port 8000→host<br/>volume: medassist-data → /data]
-    FE[frontend (nginx)<br/>port 8080→host]
+  subgraph Compose[Stack docker-compose]
+    PG[postgres:16-alpine<br/>volume : pgdata]
+    MQ[eclipse-mosquitto:2<br/>volume : mqttdata<br/>port 1883→hôte]
+    BK[backend (python:3.11-slim)<br/>port 8000→hôte<br/>volume : medassist-data → /data]
+    FE[frontend (nginx)<br/>port 8080→hôte]
   end
 
   BK -- depends_on: healthy --> PG
@@ -213,37 +213,37 @@ flowchart TB
   FE -- depends_on: started --> BK
 ```
 
-**Startup order:**
+**Ordre de démarrage :**
 
-1. `postgres` starts and becomes *healthy* (`pg_isready`).
-2. `mosquitto` starts.
-3. `backend` starts. Its `entrypoint.sh` waits for Postgres, runs `alembic upgrade head`, runs `seed_roles.py`, then launches Uvicorn.
-4. `frontend` starts once the backend is *started* (not health-checked, so use `/health` if you need stricter orchestration).
+1. `postgres` démarre et devient *healthy* (`pg_isready`).
+2. `mosquitto` démarre.
+3. `backend` démarre. Son `entrypoint.sh` attend Postgres, exécute `alembic upgrade head`, lance `seed_roles.py`, puis démarre Uvicorn.
+4. `frontend` démarre une fois que le backend est *started* (non health-checked — utilisez `/health` pour une orchestration plus stricte).
 
-> :bulb: Three volumes persist data across restarts: `pgdata` (Postgres), `mqttdata` (Mosquitto persistence), `medassist-data` (ChromaDB + uploaded PDFs).
-
----
-
-## :arrows_counterclockwise: Background tasks (lifespan)
-
-The FastAPI `lifespan` context manager starts two background loops:
-
-- **MQTT ingestion** — `MqttIngestClient.start()` (`paho-mqtt` network loop on a thread).
-- **Alert sweeper** — every hour, deletes untreated alerts older than 24 h (`purge_old_alertes`).
-
-Both are cleanly cancelled on shutdown (`mqtt_client.stop()` + `task.cancel()`).
+> **Astuce :** trois volumes persistent les données au-delà des redémarrages : `pgdata` (Postgres), `mqttdata` (persistance Mosquitto), `medassist-data` (ChromaDB + PDFs uploadés).
 
 ---
 
-## :shield: Cross-cutting concerns
+## Tâches d'arrière-plan (lifespan)
 
-| Concern         | Where                                                                                |
-| --------------- | ------------------------------------------------------------------------------------ |
-| Authentication  | JWT HS256, 60-min TTL, dependency `get_current_user`                                 |
-| Authorization   | Role guards: `require_admin`, `require_hospital_staff`, `require_roles(...)`         |
-| CORS            | `CORSMiddleware`, origins include `localhost:5173` and `localhost:3000`, wildcard   |
-| Config          | Pydantic `Settings` from `.env`                                                      |
-| Logging         | `logging.getLogger(__name__)` per module                                             |
-| Concurrency     | MQTT thread → asyncio thread-safe handoff via `call_soon_threadsafe`                 |
+Le context manager `lifespan` de FastAPI démarre deux boucles d'arrière-plan :
 
-See [`security.md`](security.md) for hardening notes.
+- **Ingestion MQTT** — `MqttIngestClient.start()` (boucle réseau paho-mqtt sur un thread).
+- **Sweeper d'alertes** — toutes les heures, supprime les alertes non traitées de plus de 24 h (`purge_old_alertes`).
+
+Les deux sont annulées proprement à l'arrêt (`mqtt_client.stop()` + `task.cancel()`).
+
+---
+
+## Préoccupations transverses
+
+| Préoccupation      | Emplacement                                                                            |
+| ------------------ | -------------------------------------------------------------------------------------- |
+| Authentification   | JWT HS256, TTL 60 min, dépendance `get_current_user`                                   |
+| Autorisation       | Gardes par rôle : `require_admin`, `require_hospital_staff`, `require_roles(...)`      |
+| CORS               | `CORSMiddleware`, origines incluant `localhost:5173` et `localhost:3000`, wildcard     |
+| Configuration      | `Settings` Pydantic depuis `.env`                                                      |
+| Logging            | `logging.getLogger(__name__)` par module                                               |
+| Concurrence        | Thread MQTT → handoff thread-safe asyncio via `call_soon_threadsafe`                  |
+
+Voir [`security.md`](security.md) pour les notes de durcissement.

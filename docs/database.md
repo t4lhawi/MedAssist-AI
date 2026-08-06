@@ -1,20 +1,20 @@
-# :card_file_box: Database
+# Base de données
 
-> Reference for the PostgreSQL 16 schema used by MedAssist AI.
+> Référence du schéma PostgreSQL 16 utilisé par MedAssist AI.
 
-The schema is managed with **SQLAlchemy 2** as the ORM and **Alembic** as the migration tool. Migrations live in [`backend/alembic/versions/`](https://github.com/t4lhawi/MedAssist-AI/tree/main/backend/alembic/versions).
+Le schéma est géré avec **SQLAlchemy 2** comme ORM et **Alembic** comme outil de migration. Les migrations se trouvent dans [`backend/alembic/versions/`](https://github.com/t4lhawi/MedAssist-AI/tree/main/backend/alembic/versions).
 
 ---
 
-## :diamond_shape_with_a_dot_inside: Entity-Relationship Diagram
+## Diagramme Entité-Association
 
 ```mermaid
 erDiagram
-  UTILISATEURS ||--o{ CONVERSATIONS : "writes"
-  UTILISATEURS ||--o{ DOCUMENTS     : "uploads"
-  ESP32_DEVICES ||--o{ MESURES      : "produces"
-  ESP32_DEVICES ||--o{ ALERTES      : "triggers"
-  MESURES      ||--o{ ALERTES      : "causes"
+  UTILISATEURS ||--o{ CONVERSATIONS : "écrit"
+  UTILISATEURS ||--o{ DOCUMENTS     : "uploade"
+  ESP32_DEVICES ||--o{ MESURES      : "produit"
+  ESP32_DEVICES ||--o{ ALERTES      : "déclenche"
+  MESURES      ||--o{ ALERTES      : "provoque"
 
   UTILISATEURS {
     int    id PK
@@ -82,143 +82,143 @@ erDiagram
 
 ---
 
-## :open_file_folder: Tables
+## Tables
 
 ### `utilisateurs`
 
-Application users. Roles are normalised to one of: `admin`, `hospital_staff`, `visitor`. Legacy role strings (`Admin`, `Soignant`, `Technicien`, `Patient`, `Visiteur`) are mapped at the boundary in `auth.normalize_role`.
+Utilisateurs de l'application. Les rôles sont normalisés vers l'une des valeurs : `admin`, `hospital_staff`, `visitor`. Les chaînes de rôle legacy (`Admin`, `Soignant`, `Technicien`, `Patient`, `Visiteur`) sont remappées à la frontière dans `auth.normalize_role`.
 
-| Column     | Type                     | Constraints                | Description                                |
-| ---------- | ------------------------ | -------------------------- | ------------------------------------------ |
-| `id`       | `Integer`                | **PK**, indexed            | Surrogate primary key                      |
-| `nom`      | `String(100)`            | NOT NULL                   | Display name                               |
-| `email`    | `String(150)`            | NOT NULL, **UNIQUE**, idx  | Login identifier                           |
-| `mdp_hash` | `String(255)`            | NOT NULL                   | `sha256$<bcrypt>`                          |
-| `role`     | `String(30)`             | default `visitor`          | `admin` \| `hospital_staff` \| `visitor`   |
-| `actif`    | `Boolean`                | default `true`             | Soft-disable flag                          |
-| `cree_le`  | `DateTime(timezone=True)`| server default `now()`     | Creation timestamp                         |
+| Colonne    | Type                     | Contraintes                | Description                                    |
+| ---------- | ------------------------ | -------------------------- | ---------------------------------------------- |
+| `id`       | `Integer`                | **PK**, indexé             | Clé primaire surrogate                         |
+| `nom`      | `String(100)`            | NOT NULL                   | Nom affiché                                    |
+| `email`    | `String(150)`            | NOT NULL, **UNIQUE**, idx  | Identifiant de login                           |
+| `mdp_hash` | `String(255)`            | NOT NULL                   | `sha256$<bcrypt>`                              |
+| `role`     | `String(30)`             | défaut `visitor`           | `admin` \| `hospital_staff` \| `visitor`       |
+| `actif`    | `Boolean`                | défaut `true`              | Drapeau de désactivation douce                 |
+| `cree_le`  | `DateTime(timezone=True)`| server default `now()`     | Timestamp de création                          |
 
 ---
 
 ### `esp32_devices`
 
-The source-of-truth device registry. One row per physical ESP32.
+Registre source-de-vérité des devices. Une ligne par ESP32 physique.
 
-| Column               | Type                     | Constraints                  | Description                                  |
-| -------------------- | ------------------------ | ---------------------------- | -------------------------------------------- |
-| `id`                 | `Integer`                | **PK**, indexed              | Surrogate primary key                        |
-| `ip`                 | `String(45)`             | NOT NULL, **UNIQUE**, idx    | IPv4 (or future IPv6) of the device          |
-| `salle`              | `String(100)`            | NOT NULL, indexed            | Room name — drives topic parsing             |
-| `note`               | `String(200)`            | nullable                     | Free-form operator note                      |
-| `actif`              | `Boolean`                | default `true`               | Soft-disable flag                            |
-| `cree_le`            | `DateTime(timezone=True)`| server default `now()`       | Creation timestamp                           |
-| `derniere_mesure_le` | `DateTime(timezone=True)`| nullable                     | Updated whenever a matching mesure is stored |
+| Colonne              | Type                     | Contraintes                  | Description                                                |
+| -------------------- | ------------------------ | ---------------------------- | ---------------------------------------------------------- |
+| `id`                 | `Integer`                | **PK**, indexé               | Clé primaire surrogate                                     |
+| `ip`                 | `String(45)`             | NOT NULL, **UNIQUE**, idx    | IPv4 (ou futur IPv6) du device                             |
+| `salle`              | `String(100)`            | NOT NULL, indexé             | Nom de la salle — pilote le parsing des topics             |
+| `note`               | `String(200)`            | nullable                     | Note libre pour l'opérateur                                |
+| `actif`              | `Boolean`                | défaut `true`                | Drapeau de désactivation douce                              |
+| `cree_le`            | `DateTime(timezone=True)`| server default `now()`       | Timestamp de création                                      |
+| `derniere_mesure_le` | `DateTime(timezone=True)`| nullable                     | Mis à jour à chaque mesure correspondante stockée         |
 
 ---
 
 ### `mesures`
 
-Time-series of sensor readings. `esp32_id` is nullable to support the **unregistered** bucket — a measure can be stored before the admin claims the IP.
+Time-series de relevés capteurs. `esp32_id` est nullable pour supporter le **seau non enregistré** — une mesure peut être stockée avant que l'administrateur ne revendique l'IP.
 
-| Column        | Type                     | Constraints                                | Description                                                            |
-| ------------- | ------------------------ | ------------------------------------------ | ---------------------------------------------------------------------- |
-| `id`          | `Integer`                | **PK**, indexed                            | Surrogate primary key                                                  |
-| `esp32_id`    | `Integer`                | **FK → esp32_devices.id** (nullable), idx  | Device the measure was attributed to (null until admin claims the IP)  |
-| `type`        | `String(30)`             | NOT NULL, indexed                          | `temperature` \| `humidite` \| `pression` \| `qualite_air`             |
-| `source_ip`   | `String(45)`             | nullable, indexed                          | IP that sent the MQTT message                                          |
-| `topic_salle` | `String(100)`            | nullable, indexed                          | Room segment parsed from the MQTT topic (source of truth for `salle`)  |
-| `valeur`      | `Float`                  | NOT NULL                                   | The measured value                                                     |
-| `unite`       | `String(20)`             | nullable                                   | Unit string (e.g. `°C`, `%`, `hPa`, `ppm`)                             |
-| `timestamp`   | `DateTime(timezone=True)`| server default `now()`, indexed            | Server-side receipt time                                               |
+| Colonne        | Type                     | Contraintes                                   | Description                                                                 |
+| -------------- | ------------------------ | --------------------------------------------- | --------------------------------------------------------------------------- |
+| `id`           | `Integer`                | **PK**, indexé                                | Clé primaire surrogate                                                      |
+| `esp32_id`     | `Integer`                | **FK → esp32_devices.id** (nullable), idx     | Device auquel la mesure est attribuée (null tant que l'admin n'a pas revendiqué l'IP) |
+| `type`         | `String(30)`             | NOT NULL, indexé                              | `temperature` \| `humidite` \| `pression` \| `qualite_air`                  |
+| `source_ip`    | `String(45)`             | nullable, indexé                              | IP ayant envoyé le message MQTT                                             |
+| `topic_salle`  | `String(100)`            | nullable, indexé                              | Segment de salle parsé depuis le topic MQTT (source de vérité pour `salle`) |
+| `valeur`       | `Float`                  | NOT NULL                                      | Valeur mesurée                                                              |
+| `unite`        | `String(20)`             | nullable                                      | Chaîne d'unité (ex. `°C`, `%`, `hPa`, `ppm`)                                |
+| `timestamp`    | `DateTime(timezone=True)`| server default `now()`, indexé                | Timestamp de réception côté serveur                                         |
 
-**Composite index:** `ix_mesures_esp32_type_ts (esp32_id, type, timestamp)` — used by the per-room last-value query and by 24h / 7d / 30d trend queries.
+**Index composite :** `ix_mesures_esp32_type_ts (esp32_id, type, timestamp)` — utilisé par la requête « dernière valeur par salle » et par les requêtes de tendance 24 h / 7 j / 30 j.
 
 ---
 
 ### `alertes`
 
-Threshold-violation events, optionally enriched with a cached LLM explanation.
+Événements de dépassement de seuil, éventuellement enrichis d'une explication LLM mise en cache.
 
-| Column                 | Type                     | Constraints                                 | Description                                                |
-| ---------------------- | ------------------------ | ------------------------------------------- | ---------------------------------------------------------- |
-| `id`                   | `Integer`                | **PK**, indexed                             | Surrogate primary key                                      |
-| `esp32_id`             | `Integer`                | **FK → esp32_devices.id** (nullable), idx   | Device the alert pertains to                               |
-| `mesure_id`            | `Integer`                | **FK → mesures.id** (nullable)              | Measurement that caused the alert                          |
-| `niveau`               | `String(20)`             | NOT NULL                                    | `info` \| `attention` \| `critique`                        |
-| `type`                 | `String(30)`             | nullable                                    | Sensor type (`temperature`, …)                             |
-| `message`              | `Text`                   | NOT NULL                                    | Human-readable alert message                              |
-| `traitee`              | `Boolean`                | default `false`                             | Marked as handled by a staff member                        |
-| `cree_le`              | `DateTime(timezone=True)`| server default `now()`                      | Alert creation time                                        |
-| `explication`          | `Text`                   | nullable                                    | Cached LLM explanation (markdown)                          |
-| `explication_cree_le`  | `DateTime(timezone=True)`| nullable                                    | When `explication` was generated (used by the 24 h cache)  |
+| Colonne                 | Type                     | Contraintes                                 | Description                                                  |
+| ---------------------- | ------------------------ | ------------------------------------------- | ------------------------------------------------------------ |
+| `id`                   | `Integer`                | **PK**, indexé                              | Clé primaire surrogate                                       |
+| `esp32_id`             | `Integer`                | **FK → esp32_devices.id** (nullable), idx   | Device concerné par l'alerte                                 |
+| `mesure_id`            | `Integer`                | **FK → mesures.id** (nullable)              | Mesure qui a causé l'alerte                                  |
+| `niveau`               | `String(20)`             | NOT NULL                                    | `info` \| `attention` \| `critique`                          |
+| `type`                 | `String(30)`             | nullable                                    | Type de capteur (`temperature`, etc.)                        |
+| `message`              | `Text`                   | NOT NULL                                    | Message d'alerte lisible                                     |
+| `traitee`              | `Boolean`                | défaut `false`                              | Marquée comme traitée par un membre du personnel              |
+| `cree_le`              | `DateTime(timezone=True)`| server default `now()`                      | Date de création de l'alerte                                 |
+| `explication`          | `Text`                   | nullable                                    | Explication LLM mise en cache (markdown)                     |
+| `explication_cree_le`  | `DateTime(timezone=True)`| nullable                                    | Quand `explication` a été générée (utilisé par le cache 24 h) |
 
-> :information_source: Untreated alerts older than 24 h are purged by the background sweeper (`purge_old_alertes`).
+> **Note :** les alertes non traitées de plus de 24 h sont purgées par le sweeper d'arrière-plan (`purge_old_alertes`).
 
 ---
 
 ### `documents`
 
-PDFs uploaded by admins to be indexed in ChromaDB. The file itself lives on disk (`UPLOAD_DIR`); the row holds metadata.
+PDFs uploadés par les administrateurs pour être indexés dans ChromaDB. Le fichier lui-même vit sur disque (`UPLOAD_DIR`) ; la ligne porte les métadonnées.
 
-| Column        | Type                     | Constraints                            | Description                                 |
-| ------------- | ------------------------ | -------------------------------------- | ------------------------------------------- |
-| `id`          | `Integer`                | **PK**, indexed                        | Surrogate primary key                       |
-| `nom`         | `String(255)`            | NOT NULL                               | Filename                                    |
-| `chemin`      | `String(500)`            | NOT NULL                               | Absolute path on disk                       |
-| `taille`      | `Integer`                | nullable                               | File size in bytes                          |
-| `indexe`      | `Boolean`                | default `false`                        | `true` once the Chroma indexing finished   |
-| `uploade_par` | `Integer`                | **FK → utilisateurs.id**               | Uploader user                               |
-| `uploade_le`  | `DateTime(timezone=True)`| server default `now()`                 | Upload time                                 |
+| Colonne        | Type                     | Contraintes                            | Description                                |
+| -------------- | ------------------------ | -------------------------------------- | ------------------------------------------ |
+| `id`           | `Integer`                | **PK**, indexé                         | Clé primaire surrogate                     |
+| `nom`          | `String(255)`            | NOT NULL                               | Nom de fichier                             |
+| `chemin`       | `String(500)`            | NOT NULL                               | Chemin absolu sur disque                   |
+| `taille`       | `Integer`                | nullable                               | Taille du fichier en octets                |
+| `indexe`       | `Boolean`                | défaut `false`                         | `true` une fois l'indexation Chroma terminée |
+| `uploade_par`  | `Integer`                | **FK → utilisateurs.id**               | Utilisateur qui a uploadé                  |
+| `uploade_le`   | `DateTime(timezone=True)`| server default `now()`                 | Date d'upload                              |
 
 ---
 
 ### `conversations`
 
-Chat history with the RAG assistant, scoped per user.
+Historique du chat avec l'assistant RAG, scopé par utilisateur.
 
-| Column            | Type                     | Constraints                                | Description                                       |
-| ----------------- | ------------------------ | ------------------------------------------ | ------------------------------------------------- |
-| `id`              | `Integer`                | **PK**, indexed                            | Surrogate primary key                             |
-| `utilisateur_id`  | `Integer`                | **FK → utilisateurs.id**                   | Owner of the conversation                         |
-| `question`        | `Text`                   | NOT NULL                                   | The user's question                               |
-| `reponse`         | `Text`                   | NOT NULL                                   | The assistant's reply                             |
-| `sources`         | `JSON`                   | default `[]`                               | Cited document chunks (per-question)             |
-| `cree_le`         | `DateTime(timezone=True)`| server default `now()`                     | When the exchange happened                        |
-
----
-
-## :key: Keys & Relationships — at a glance
-
-| Relationship                       | Cardinality | Notes                                                                  |
-| ---------------------------------- | ----------- | ---------------------------------------------------------------------- |
-| `utilisateurs` → `conversations`   | 1 → N       | One user has many conversations                                        |
-| `utilisateurs` → `documents`       | 1 → N       | One user can upload many PDFs                                          |
-| `esp32_devices` → `mesures`        | 1 → N       | Mesures can be unattributed (`esp32_id IS NULL`) until an admin claims |
-| `esp32_devices` → `alertes`        | 1 → N       | `esp32_id` may also be null on a mesure-driven alert                   |
-| `mesures` → `alertes`              | 1 → N       | One mesure can trigger at most one alert per pass                      |
+| Colonne            | Type                     | Contraintes                                 | Description                                       |
+| ------------------ | ------------------------ | ------------------------------------------- | ------------------------------------------------- |
+| `id`               | `Integer`                | **PK**, indexé                              | Clé primaire surrogate                            |
+| `utilisateur_id`   | `Integer`                | **FK → utilisateurs.id**                    | Propriétaire de la conversation                   |
+| `question`         | `Text`                   | NOT NULL                                    | Question de l'utilisateur                         |
+| `reponse`          | `Text`                   | NOT NULL                                    | Réponse de l'assistant                            |
+| `sources`          | `JSON`                   | défaut `[]`                                 | Chunks de documents cités                         |
+| `cree_le`          | `DateTime(timezone=True)`| server default `now()`                      | Date de l'échange                                 |
 
 ---
 
-## :wrench: Migrations (Alembic)
+## Clés et relations — en un coup d'œil
 
-| Revision                           | Description                                                                   |
-| ---------------------------------- | ----------------------------------------------------------------------------- |
-| `0001_initial_post_refactor`       | Refactor: introduce `esp32_devices`, add `topic_salle`, backfill legacy data  |
-| `0002_add_alerte_explication`      | Add `explication` + `explication_cree_le` columns to `alertes`                |
-| `0003_rename_roles`                | Normalise role strings to the canonical `{admin, hospital_staff, visitor}`    |
+| Relation                          | Cardinalité | Notes                                                                |
+| --------------------------------- | ----------- | -------------------------------------------------------------------- |
+| `utilisateurs` → `conversations`  | 1 → N       | Un utilisateur a plusieurs conversations                             |
+| `utilisateurs` → `documents`      | 1 → N       | Un utilisateur peut uploader plusieurs PDFs                          |
+| `esp32_devices` → `mesures`       | 1 → N       | Les mesures peuvent être non attribuées (`esp32_id IS NULL`) jusqu'à revendication par un admin |
+| `esp32_devices` → `alertes`       | 1 → N       | `esp32_id` peut aussi être null sur une alerte issue d'une mesure   |
+| `mesures` → `alertes`             | 1 → N       | Une mesure peut déclencher au plus une alerte par passage            |
+
+---
+
+## Migrations (Alembic)
+
+| Révision                          | Description                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------ |
+| `0001_initial_post_refactor`      | Refactor : introduction de `esp32_devices`, ajout de `topic_salle`, rétro-remplissage legacy |
+| `0002_add_alerte_explication`     | Ajout des colonnes `explication` et `explication_cree_le` à `alertes`               |
+| `0003_rename_roles`               | Normalisation des chaînes de rôle vers la forme canonique `{admin, hospital_staff, visitor}` |
 
 ```bash
-# Apply all pending migrations
+# Appliquer toutes les migrations en attente
 docker compose exec backend alembic upgrade head
 
-# Generate a new migration after a model change
-docker compose exec backend alembic revision --autogenerate -m "describe the change"
+# Générer une nouvelle migration après un changement de modèle
+docker compose exec backend alembic revision --autogenerate -m "décrire le changement"
 ```
 
 ---
 
-## :warning: Operational notes
+## Notes opérationnelles
 
-- **Backups:** `pgdata` is a Docker named volume. Snapshot it from the host with `docker run --rm -v medassist_pgdata:/from -v $(pwd):/to alpine tar czf /to/pgdata.tgz -C /from .`
-- **Alert retention:** untreated alerts > 24 h are auto-purged by `_alertes_sweeper` (see `backend/app/main.py`).
-- **Cascade on device delete:** deleting an `esp32_device` removes its `mesures` and the related `alertes` (`crud.delete_esp32`).
+- **Sauvegardes :** `pgdata` est un volume nommé Docker. Snapshottez-le depuis l'hôte avec `docker run --rm -v medassist_pgdata:/from -v $(pwd):/to alpine tar czf /to/pgdata.tgz -C /from .`
+- **Rétention des alertes :** les alertes non traitées de plus de 24 h sont auto-purgées par `_alertes_sweeper` (voir `backend/app/main.py`).
+- **Cascade à la suppression d'un device :** supprimer un `esp32_device` supprime ses `mesures` et les `alertes` associées (`crud.delete_esp32`).

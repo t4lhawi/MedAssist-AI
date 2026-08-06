@@ -1,44 +1,44 @@
 # MedAssist AI — Documentation
 
-Welcome to the **MedAssist AI** documentation. This folder is the canonical reference for developers, integrators, and operators working on the platform.
+Bienvenue dans la documentation de **MedAssist AI**. Ce dossier est la référence canonique pour les développeurs, les intégrateurs et les opérateurs travaillant sur la plateforme.
 
-> MedAssist AI is an intelligent hospital surveillance platform: ESP32 sensors stream environmental data over MQTT, FastAPI persists and analyses it, ChromaDB powers a documentation-grounded chatbot, and a React dashboard displays the live state of every monitored room.
-
----
-
-## :world_map: Documentation Index
-
-| Document | What you'll find |
-| -------- | ---------------- |
-| :book: [README.md](README.md)                       | This page — overview and navigation          |
-| :building_construction: [architecture.md](architecture.md) | Components, communication, AI pipeline  |
-| :electric_plug: [api.md](api.md)                   | Every REST + WebSocket endpoint               |
-| :card_file_box: [database.md](database.md)         | ER diagram, tables, columns, relationships    |
-| :brain: [rag.md](rag.md)                           | Document ingestion, retrieval, prompts, LLM   |
-| :satellite: [firmware.md](firmware.md)             | ESP32 sketch, Wi-Fi, MQTT, reconnection       |
-| :rocket: [deployment.md](deployment.md)            | Docker, environment, production checklist    |
-| :closed_lock_with_key: [security.md](security.md)  | JWT, hashing, RBAC, CORS                      |
-| :wrench: [troubleshooting.md](troubleshooting.md) | Common issues and fixes                       |
+> MedAssist AI est une plateforme de surveillance hospitalière intelligente : des capteurs ESP32 diffusent les données environnementales via MQTT, FastAPI les persiste et les analyse, ChromaDB alimente un assistant conversationnel ancré sur les documents, et un tableau de bord React affiche l'état en direct de chaque salle surveillée.
 
 ---
 
-## :rocket: Where to start
+## Index de la documentation
 
-- **New here?** Read the project [README](../README.md) for a 60-second tour, then jump to [architecture.md](architecture.md) for the big picture.
-- **Want to integrate the API?** Open [api.md](api.md) — every endpoint is documented with method, parameters, payloads, and example responses.
-- **Setting up the stack?** Follow [deployment.md](deployment.md).
-- **Debugging an issue?** Check [troubleshooting.md](troubleshooting.md) first.
+| Document | Contenu |
+| -------- | ------- |
+| [README.md](README.md)                       | Cette page — vue d'ensemble et navigation   |
+| [architecture.md](architecture.md)           | Composants, communication, pipeline IA      |
+| [api.md](api.md)                             | Chaque endpoint REST + WebSocket            |
+| [database.md](database.md)                   | Diagramme ER, tables, colonnes, relations   |
+| [rag.md](rag.md)                             | Ingestion, retrieval, prompts, LLM         |
+| [firmware.md](firmware.md)                   | Sketch ESP32, Wi-Fi, MQTT, reconnexion      |
+| [deployment.md](deployment.md)               | Docker, environnement, production          |
+| [security.md](security.md)                   | JWT, hachage, RBAC, CORS                   |
+| [troubleshooting.md](troubleshooting.md)     | Problèmes courants et solutions            |
 
 ---
 
-## :package: Project Layout (top-level)
+## Par où commencer
+
+- **Nouveau sur le projet ?** Lisez le [README](../README.md) du projet pour une visite en 60 secondes, puis [architecture.md](architecture.md) pour la vue d'ensemble.
+- **Vous voulez intégrer l'API ?** Ouvrez [api.md](api.md) — chaque endpoint est documenté avec sa méthode, ses paramètres, ses payloads et des exemples de réponse.
+- **Vous installez la stack ?** Suivez [deployment.md](deployment.md).
+- **Vous dépannez ?** Consultez d'abord [troubleshooting.md](troubleshooting.md).
+
+---
+
+## Organisation du projet (racine)
 
 ```
 MedAssist-AI/
-├── backend/         FastAPI + SQLAlchemy + Alembic + RAG pipeline
+├── backend/         FastAPI + SQLAlchemy + Alembic + pipeline RAG
 ├── frontend/        React 18 + Vite + Tailwind + Recharts
-├── firmware/        ESP32 Arduino sketch
-├── docs/            This documentation
+├── firmware/        Sketch Arduino ESP32
+├── docs/            Cette documentation
 ├── docker-compose.yml
 ├── .env.example
 ├── LICENSE
@@ -47,11 +47,11 @@ MedAssist-AI/
 
 ---
 
-## :handshake: Conventions used in this documentation
+## Conventions utilisées dans cette documentation
 
-- All examples assume a local dev environment (Docker Compose on `localhost`).
-- All ports are the defaults: API `8000`, UI `8080`, MQTT `1883`, Postgres `5432`.
-- Roles referenced in API examples follow the RBAC model: `admin`, `hospital_staff`, `visitor`.
-- Code blocks are copy-pasteable. Mermaid diagrams render natively on GitHub and most Markdown viewers.
+- Tous les exemples supposent un environnement de développement local (Docker Compose sur `localhost`).
+- Tous les ports sont ceux par défaut : API `8000`, UI `8080`, MQTT `1883`, Postgres `5432`.
+- Les rôles cités dans les exemples d'API suivent le modèle RBAC : `admin`, `hospital_staff`, `visitor`.
+- Les blocs de code sont copier-coller. Les diagrammes Mermaid se rendent nativement sur GitHub et dans la plupart des visualiseurs Markdown.
 
-> :bulb: Found something missing or unclear? Open an issue on GitHub — the docs are part of the codebase.
+> **Note :** vous constatez un manque ou une ambiguïté ? Ouvrez une issue sur GitHub — la documentation fait partie du code.
