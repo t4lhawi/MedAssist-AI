@@ -201,16 +201,16 @@ Deux fonctionnalités pilotées par LLM sont branchées par-dessus :
 
 ```mermaid
 flowchart TB
-  subgraph Compose[Stack docker-compose]
-    PG[postgres:16-alpine<br/>volume : pgdata]
-    MQ[eclipse-mosquitto:2<br/>volume : mqttdata<br/>port 1883→hôte]
-    BK[backend (python:3.11-slim)<br/>port 8000→hôte<br/>volume : medassist-data → /data]
-    FE[frontend (nginx)<br/>port 8080→hôte]
+  subgraph Compose["Docker Compose Stack"]
+    PG["postgres:16-alpine\nVolume: pgdata"]
+    MQ["eclipse-mosquitto:2\nVolume: mqttdata\nPort: 1883 → Host"]
+    BK["backend (python:3.11-slim)\nPort: 8000 → Host\nVolume: medassist-data → /data"]
+    FE["frontend (nginx)\nPort: 8080 → Host"]
   end
 
-  BK -- depends_on: healthy --> PG
-  BK -- depends_on: started --> MQ
-  FE -- depends_on: started --> BK
+  BK -->|depends_on: service_healthy| PG
+  BK -->|depends_on: service_started| MQ
+  FE -->|depends_on: service_started| BK
 ```
 
 **Ordre de démarrage :**
