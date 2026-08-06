@@ -57,7 +57,6 @@ SENSOR_TYPES: tuple[SensorType, ...] = (
 )
 
 # Conservative IPv4 validator — we store the string verbatim but reject
-# obvious garbage from the admin form.
 _IPV4_RE = re.compile(r"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$")
 
 def _validate_ipv4(value: str) -> str:
@@ -111,13 +110,10 @@ class Esp32ClaimRequest(BaseModel):
 
 # ─── Mesure ──────────────────────────────────────────────────────
 class MesureCreate(BaseModel):
-    # New (preferred)
     esp32_id: Optional[int] = None
     type: Optional[SensorType] = None
     source_ip: Optional[str] = None
-    # Salle segment read from the MQTT topic (medassist/salle/<topic_salle>/<type>).
     topic_salle: Optional[str] = None
-    # Legacy — ignored on insert
     capteur_id: Optional[int] = None
     valeur: float
     unite: Optional[str] = None
@@ -142,9 +138,6 @@ class MesureOut(BaseModel):
 
 # ─── Document ────────────────────────────────────────────────────
 class DocumentUpdate(BaseModel):
-    # Only `nom` is editable for now. The physical PDF on disk is
-    # renamed alongside the DB row, and the RAG index is re-keyed to
-    # the new name (delete chunks for the old source_document, re-index).
     nom: str = Field(min_length=1, max_length=255)
 
     @field_validator("nom")
@@ -153,7 +146,6 @@ class DocumentUpdate(BaseModel):
         v = v.strip()
         if not v:
             raise ValueError("Le nom ne peut pas être vide")
-        # Reject path separators so the file always stays inside UPLOAD_DIR.
         if os.sep in v or "/" in v or "\\" in v:
             raise ValueError("Le nom ne peut pas contenir de séparateur de chemin")
         if not v.lower().endswith(".pdf"):
@@ -190,16 +182,12 @@ class AlerteOut(BaseModel):
     message: str
     traitee: bool
     cree_le: datetime
-    # computed from the alerte's direct esp32 link or the mesure chain
     esp32_id: Optional[int] = None
     salle: Optional[str] = None
-    # IA-generated explanation (markdown). NULL while being generated or
-    # if the LLM call failed.
     explication: Optional[str] = None
     explication_cree_le: Optional[datetime] = None
 
 def _alerte_to_out(a) -> AlerteOut:
-    # Try direct link first (newer alertes), then go through mesure (legacy).
     direct_esp32 = getattr(a, "esp32", None)
     mesure = getattr(a, "mesure", None)
     indirect_esp32 = getattr(mesure, "esp32", None) if mesure else None
@@ -227,7 +215,6 @@ class SensorStatus(BaseModel):
     last_value: Optional[float] = None
     last_unite: Optional[str] = None
     last_timestamp: Optional[datetime] = None
-    # Convenient pre-formatted "il y a 12 min" string for the dashboard.
     last_seen_label: Optional[str] = None
 
 class SalleStatus(BaseModel):
@@ -237,18 +224,13 @@ class SalleStatus(BaseModel):
     actif: bool
     online: bool
     sensors: List[SensorStatus] = []
-    # The most recent timestamp of any sensor in this salle — used to
-    # determine the "online dot" on the card header.
     derniere_mesure_le: Optional[datetime] = None
-    # Free-form internal note attached to the device (étage, service…).
     note: Optional[str] = None
 
 class UnregisteredSource(BaseModel):
     ip: str
     last_seen: Optional[datetime] = None
     measurement_count: int
-    # Most recent type seen — a hint for the admin ("this device is
-    # reporting temperature + humidity").
     last_type: Optional[SensorType] = None
     last_valeur: Optional[float] = None
     last_unite: Optional[str] = None

@@ -109,20 +109,6 @@ async def renommer(
     db: Session = Depends(get_db),
     user=Depends(require_admin),
 ):
-    """Rename a document.
-
-    The PATCH keeps the four places that depend on the name in sync:
-      1. ``Document.nom``  — what the UI and the RAG store key on
-      2. ``Document.chemin`` — the absolute path of the on-disk PDF
-      3. The physical file under ``settings.UPLOAD_DIR`` (moved atomically
-         via os.replace so a half-written file never replaces the old one)
-      4. The Chroma vector store — chunks are dropped under the OLD
-         ``source_document`` key and re-indexed under the new one, so the
-         assistant cites the new name.
-
-    ``indexe`` is reset to ``False`` while the background re-index runs,
-    so the UI shows the familiar "En attente" pill until it's done.
-    """
     doc = crud.get_document(db, doc_id)
     if not doc:
         raise HTTPException(404, "Document introuvable")
@@ -132,30 +118,20 @@ async def renommer(
     nouveau_nom = payload.nom
 
     if nouveau_nom == ancien_nom:
-        # No-op rename — return the row unchanged, skip disk + index work.
         return doc
 
-    # Reject collisions with any other document (same name, different id).
     collision = crud.get_document_by_nom(db, nouveau_nom)
     if collision is not None and collision.id != doc.id:
         raise HTTPException(
             409,
             f"Un document nommé « {nouveau_nom} » existe déjà",
         )
-
-    # Also reject the case where the file path we want to write to
-    # already exists on disk (could be a stray file from a manual
-    # upload, or a partial state from a failed earlier rename).
     nouveau_chemin = os.path.join(settings.UPLOAD_DIR, nouveau_nom)
     if os.path.exists(nouveau_chemin):
         raise HTTPException(
             409,
             f"Un fichier nommé « {nouveau_nom} » existe déjà sur le disque",
         )
-
-    # Move the on-disk file BEFORE touching the DB / index. If the
-    # disk move fails we leave the DB row alone so the document stays
-    # usable at its old name.
     try:
         os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
         os.replace(ancien_chemin, nouveau_chemin)
@@ -164,8 +140,6 @@ async def renommer(
             500,
             f"Impossible de renommer le fichier sur le disque : {e}",
         )
-
-    # Update the DB row + reset the indexation flag.
     doc = crud.update_document_nom(
         db,
         doc_id,
@@ -173,17 +147,12 @@ async def renommer(
         nouveau_chemin=nouveau_chemin,
     )
     if doc is None:
-        # Row was deleted between our two reads — try to put the file back
-        # so the orphan doesn't accumulate in UPLOAD_DIR.
         try:
             os.replace(nouveau_chemin, ancien_chemin)
         except OSError:
             pass
         raise HTTPException(404, "Document introuvable")
 
-    # Re-index in the background: drop the OLD source_document chunks
-    # (so the assistant never cites the old name), then re-insert them
-    # tagged with the NEW one.
     def _reindexer(doc_id: int, path: str, ancien: str, nouveau: str):
         from .. import models as _models
         db_index = SessionLocal()

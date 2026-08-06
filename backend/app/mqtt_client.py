@@ -10,14 +10,11 @@ from .database import SessionLocal
 
 logger = logging.getLogger(__name__)
 
-# Rate-limit the "unknown source IP" log: at most 1 warning per IP per minute.
 _WARN_COOLDOWN_SECONDS = 60
 _last_unreg_warn_at: Dict[str, float] = {}
 
 class MqttIngestClient:
     def __init__(self) -> None:
-        # paho-mqtt 1.x: pas de paramètre callback_api_version (API v1 par défaut)
-        # paho-mqtt 2.x: il faut explicitement passer CallbackAPIVersion.VERSION2
         if hasattr(mqtt, "CallbackAPIVersion"):
             self._client = mqtt.Client(
                 client_id=settings.MQTT_CLIENT_ID,
@@ -60,13 +57,11 @@ class MqttIngestClient:
         try:
             self._client.loop_stop()
             self._client.disconnect()
-        except Exception as exc:  # pragma: no cover - shutdown best-effort
+        except Exception as exc:
             logger.warning("MQTT stop: %s", exc)
 
     # ── paho callbacks ───────────────────────────────────────────
     def _on_connect(self, client, userdata, flags, reason_code=None, properties=None):
-        # paho-mqtt 1.x: _on_connect(client, userdata, flags, rc)
-        # paho-mqtt 2.x: _on_connect(client, userdata, flags, reason_code, properties)
         rc = 0 if reason_code is None else reason_code
         if rc != 0:
             logger.warning("MQTT connexion refusée (reason_code=%s)", rc)
@@ -76,7 +71,6 @@ class MqttIngestClient:
         logger.info("MQTT connecté, abonnement à %s", topic)
 
     def _on_disconnect(self, client, userdata, *args):
-        # Compatible paho-mqtt 1.x (rc) et 2.x (flags, reason_code, properties)
         rc = args[-1] if args else 0
         try:
             rc = int(rc)
@@ -155,17 +149,13 @@ class MqttIngestClient:
             return
         source_ip = ip_raw.strip()
 
-        # ── Per-message session — never use the request-scoped get_db ──
         db = SessionLocal()
         try:
-            # Salle-first lookup. If the salle isn't registered, or the
-            # salle is registered but the IP doesn't match any device in
-            # it, the mesure lands in the unregistered bucket.
             esp32 = self._match_device(db, topic_salle, source_ip, topic)
 
             data = schemas.MesureCreate(
                 esp32_id=esp32.id if esp32 is not None else None,
-                type=type_,            # type: ignore[arg-type]
+                type=type_,
                 source_ip=source_ip,
                 topic_salle=topic_salle,
                 valeur=valeur_f,
@@ -178,9 +168,6 @@ class MqttIngestClient:
                 esp32 is not None,
             )
 
-            # Broadcast to WebSocket subscribers. We re-query the row
-            # so the payload carries the server-stamped id + timestamp;
-            # the ingester's own context has neither.
             from . import realtime as _rt
             try:
                 fresh = (

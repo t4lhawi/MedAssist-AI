@@ -29,8 +29,7 @@ services:
     restart: unless-stopped
     command: ["mosquitto", "-c", "/mosquitto-no-auth.conf"]
     # Expose MQTT on the host so ESP32 devices on the LAN can reach the
-    # broker. The ESP32 firmware points at the host's LAN IP (e.g.
-    # 192.168.1.100), so binding to 0.0.0.0 is required.
+    # broker. The ESP32 firmware points at the host's LAN IP (e.g. 192.168.1.100), so binding to 0.0.0.0 is required.
     ports:
       - "1883:1883"
     volumes:
@@ -39,8 +38,7 @@ services:
       - medassist
 
   # ── Backend (FastAPI) ─────────────────────────────────────
-  # LLM  : Groq      (GROQ_API_KEY, LLM_MODEL=llama-3.3-70b-versatile)
-  # Embed: OpenRouter (OPENROUTER_API_KEY, EMBEDDING_MODEL=...)
+  # LLM: Groq | Embedding: OpenRouter
   backend:
     build:
       context: ./backend
@@ -53,12 +51,9 @@ services:
     env_file:
       - .env
     environment:
-      # Force the Alembic env and SQLAlchemy to point at the in-network DB.
       DATABASE_URL: ${DATABASE_URL}
-      # Resolve chroma_db / uploads to the mounted /data volume.
       CHROMA_PATH: /data/chroma
       UPLOAD_DIR:  /data/uploads
-      # Force MQTT to talk to the in-network broker.
       MQTT_HOST:   mosquitto
     volumes:
       - medassist-data:/data

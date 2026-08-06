@@ -277,7 +277,6 @@ def interpreter_mesure(type_capteur: str, valeur: float, unite: str, emplacement
 
 # ─── Explication IA d'une alerte (explainable alerts) ────────────
 def expliquer_alerte(alerte_id: int) -> str:
-    # Importer ici pour éviter une boucle d'imports (crud → rag → crud).
     from .. import crud
     from ..database import SessionLocal
     from ..models import Alerte
@@ -329,8 +328,6 @@ def expliquer_alerte(alerte_id: int) -> str:
 
         from langchain_core.messages import HumanMessage
 
-        # Construit le prompt hors f-string pour éviter les soucis de backslash
-        # dans les expressions f-string en Python 3.11.
         seuil_min_part = (
             f" / {smin} {unite} (min)" if smin is not None else ""
         )

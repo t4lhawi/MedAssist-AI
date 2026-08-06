@@ -9,11 +9,6 @@ from ..database import get_db
 
 logger = logging.getLogger(__name__)
 
-# Two-tier protection:
-#   * The router-level dependency ensures *every* endpoint in this
-#     module is at least authenticated and belongs to an admin OR a
-#     hospital_staff member. The per-endpoint dependencies below
-#     further restrict mutating actions to admin only.
 router = APIRouter(
     prefix="/api/admin/esp32",
     tags=["Admin · ESP32"],

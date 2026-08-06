@@ -24,20 +24,10 @@ LIBELLES_TYPES: Dict[str, str] = {
     "qualite_air": "Qualité de l'air",
 }
 
-# A sensor flips to "offline" when no mesure for that (esp32, type) pair
-# has arrived in the last N seconds. Default 60s — adjust in tests via
-# get_salles_status(offline_threshold_seconds=...).
 OFFLINE_THRESHOLD_SECONDS: int = 60
 
-# Alertes older than this are filtered out of every read AND physically
-# purged from the database by a background sweeper (see ``purge_old_alertes``
-# in ``app.main``). The 24h window keeps the alertes list bounded while
-# still giving the dashboard enough history to be useful.
 ALERTE_RETENTION_HOURS: int = 24
 
-# AI explanations are cached per (sensor type, severity) for this long.
-# Any new alert of the same (type, niveau) within the window reuses the
-# last generated explanation instead of paying for another LLM call.
 EXPLICATION_CACHE_HOURS: int = 24
 
 # ─── Utilisateurs ────────────────────────────────────────────────
@@ -643,8 +633,6 @@ def delete_document(db: Session, doc_id: int):
     return doc
 
 def get_document_by_nom(db: Session, nom: str):
-    """Return the document with this exact name, or None. Used to detect
-    a rename that would collide with another file on disk."""
     return db.query(models.Document).filter(
         models.Document.nom == nom,
     ).first()
@@ -655,10 +643,6 @@ def update_document_nom(
     nouveau_nom: str,
     nouveau_chemin: str,
 ):
-    """Rename a document: update `nom` + `chemin` and flip `indexe` back
-    to False so the UI shows the "En attente" badge until the background
-    re-index finishes. Returns the updated row, or None if the doc was
-    deleted in the meantime."""
     doc = db.query(models.Document).filter(
         models.Document.id == doc_id).first()
     if doc is None:

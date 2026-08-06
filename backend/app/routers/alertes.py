@@ -9,8 +9,8 @@ from .. import crud
 router = APIRouter(prefix="/api/alertes", tags=["Alertes"])
 
 # Alerte visibility is shared between admin and hospital staff
-#   * "traiter"  → admin OR hospital staff
-#   * delete     → admin only
+#   traiter   →   admin OR hospital staff
+#   delete    →   admin only
 @router.get("/", response_model=List[AlerteOut])
 def lister(
     traitee: Optional[bool] = Query(None),

@@ -4,7 +4,6 @@ from app.database import engine, Base, SessionLocal
 from app import models
 from app.auth import hacher_mdp
 
-# Make sure all tables exist (no-op if they already do).
 Base.metadata.create_all(bind=engine)
 
 db = SessionLocal()
