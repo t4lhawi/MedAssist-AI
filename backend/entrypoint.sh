@@ -1,7 +1,7 @@
 #!/bin/sh
 # ════════════════════════════════════════════════════════════
 #  MedAssist AI – Entrypoint backend
-#  Attend Postgres, applique les migrations Alembic, seed l'admin,
+#  Attend Postgres, initialise/migre le schéma, seed l'admin,
 #  puis démarre Uvicorn.
 # ════════════════════════════════════════════════════════════
 set -e
@@ -27,12 +27,22 @@ print("[entrypoint] Postgres indisponible après 60s.", file=sys.stderr)
 sys.exit(1)
 PY
 
-# 2) Migrations Alembic (idempotent — Alembic stamp si déjà à jour).
-log "Application des migrations Alembic..."
-alembic upgrade head || {
-  log "Échec Alembic upgrade — fallback sur create_all."
+# 2) Schéma : base vide -> create_all + stamp ; base existante -> migrations.
+log "Vérification du schéma..."
+if python - <<'PY'
+import sys
+from sqlalchemy import inspect
+from app.database import engine
+sys.exit(0 if inspect(engine).has_table("alertes") else 1)
+PY
+then
+  log "Base existante : application des migrations Alembic..."
+  alembic upgrade head
+else
+  log "Base vide : création du schéma (create_all) puis alembic stamp head."
   python -c "from app.database import engine, Base; from app import models; Base.metadata.create_all(bind=engine)"
-}
+  alembic stamp head
+fi
 
 # 3) Seed users (idempotent : sort tôt si les comptes existent déjà).
 log "Création des utilisateurs de départ (si absents)..."
