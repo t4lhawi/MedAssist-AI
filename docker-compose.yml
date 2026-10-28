@@ -23,7 +23,7 @@ services:
     restart: unless-stopped
     command: ["mosquitto", "-c", "/mosquitto-no-auth.conf"]
     ports:
-      - "1883:1883"
+      - "127.0.0.1:1883:1883"
     volumes:
       - mqttdata:/mosquitto/data
     networks:
@@ -50,7 +50,7 @@ services:
     volumes:
       - medassist-data:/data
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     networks:
       - medassist
 
@@ -62,7 +62,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "8080:80"
+      - "127.0.0.1:8080:80"
     networks:
       - medassist
 
