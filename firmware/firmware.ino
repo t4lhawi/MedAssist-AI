@@ -3,17 +3,13 @@
 #include <ArduinoJson.h>
 #include "DHTesp.h"
 
-// ============================================================================
-// Configuration
-// ============================================================================
-
 // Identifiants Wi-Fi
 const char* WIFI_SSID     = "YOUR_WIFI_SSID";
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
 // Broker MQTT (Mosquitto tourne dans un conteneur Docker)
 // Mettre ici l'IP de la machine hôte qui expose le port 1883 du conteneur
-const char* MQTT_BROKER    = "192.168.1.100";
+const char* MQTT_BROKER    = "51.170.138.112";
 const int   MQTT_PORT      = 1883;
 const char* MQTT_CLIENT_ID = "esp32-sensor-1";
 
@@ -225,7 +221,8 @@ void loop() {
 
     // Capteurs additionnels possibles (déjà supportés côté backend/dashboard) :
     // envoyerMesure("pression",    readBmp(), "hPa");    // BMP280
-    // envoyerMesure("qualite_air", readSgp(), "ppm");    // SGP40 / SGP30
+    envoyerMesure("qualite_air", readSgp(), "ppm");    // SGP40 / SGP30
+    delay(200);
 
   } else {
 

@@ -1,13 +1,3 @@
-/**
- * LiveSocket — singleton WebSocket client for the realtime stream.
- *
- * Reconnects with exponential backoff (capped at 5 s), pings every 25 s
- * to keep the connection alive through reverse proxies, and exposes a
- * tiny event-emitter API the React tree can subscribe to.
- *
- * One instance per browser tab is shared via LiveSocketContext — pages
- * never call ``new WebSocket(...)`` themselves.
- */
 type EventKind = 'mesure' | 'alerte' | 'hello' | 'open' | 'close' | 'error'
 
 type EventMap = {
@@ -63,7 +53,7 @@ class LiveSocket {
   /** Build the WS URL from VITE_API_URL (same base as axios) and connect. */
   connect(token: string) {
     if (this.ws) return // already connecting/connected
-    const base = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'
+    const base = (import.meta as any).env?.VITE_API_URL || 'http://51.170.138.112:8000'
     const wsBase = base.replace(/^http/, 'ws')
     this.url = `${wsBase}/api/realtime/ws?token=${encodeURIComponent(token)}`
     this.closedByUser = false
