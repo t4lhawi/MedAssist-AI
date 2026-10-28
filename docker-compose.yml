@@ -22,7 +22,6 @@ services:
     image: eclipse-mosquitto:2
     restart: unless-stopped
     command: ["mosquitto", "-c", "/mosquitto-no-auth.conf"]
-    # WARNING: no authentication = open to the whole internet.
     ports:
       - "1883:1883"
     volumes:
@@ -31,6 +30,7 @@ services:
       - medassist
 
   # ── Backend (FastAPI) ─────────────────────────────────────
+  # LLM: Groq | Embedding: OpenRouter
   backend:
     build:
       context: ./backend
@@ -50,7 +50,7 @@ services:
     volumes:
       - medassist-data:/data
     ports:
-      - "127.0.0.1:8000:8000"
+      - "8000:8000"
     networks:
       - medassist
 
@@ -61,18 +61,18 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
-    expose:
-      - "80"
+    ports:
+      - "8080:80"
     networks:
-      medassist:
-        aliases:
-          - medassist-frontend
+      - medassist
 
+# ── Persistent data ────────────────────────────────────────
 volumes:
   pgdata:
   mqttdata:
   medassist-data:
 
+# ── Shared network ─────────────────────────────────────────
 networks:
   medassist:
     driver: bridge
