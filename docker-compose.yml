@@ -1,9 +1,3 @@
-# ════════════════════════════════════════════════════════════
-#  Run with:  docker compose up -d --build
-#  Tear down (keep data):  docker compose down
-#  Tear down (wipe data):  docker compose down -v
-# ════════════════════════════════════════════════════════════
-
 services:
   # ── Postgres ──────────────────────────────────────────────
   postgres:
@@ -28,8 +22,7 @@ services:
     image: eclipse-mosquitto:2
     restart: unless-stopped
     command: ["mosquitto", "-c", "/mosquitto-no-auth.conf"]
-    # Expose MQTT on the host so ESP32 devices on the LAN can reach the
-    # broker. The ESP32 firmware points at the host's LAN IP (e.g. 192.168.1.100), so binding to 0.0.0.0 is required.
+    # WARNING: no authentication = open to the whole internet.
     ports:
       - "1883:1883"
     volumes:
@@ -38,7 +31,6 @@ services:
       - medassist
 
   # ── Backend (FastAPI) ─────────────────────────────────────
-  # LLM: Groq | Embedding: OpenRouter
   backend:
     build:
       context: ./backend
@@ -58,7 +50,7 @@ services:
     volumes:
       - medassist-data:/data
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     networks:
       - medassist
 
@@ -69,18 +61,18 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
-    ports:
-      - "8080:80"
+    expose:
+      - "80"
     networks:
-      - medassist
+      medassist:
+        aliases:
+          - medassist-frontend
 
-# ── Persistent data ────────────────────────────────────────
 volumes:
   pgdata:
   mqttdata:
   medassist-data:
 
-# ── Shared network ─────────────────────────────────────────
 networks:
   medassist:
     driver: bridge
