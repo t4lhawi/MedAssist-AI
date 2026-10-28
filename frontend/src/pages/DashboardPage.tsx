@@ -348,24 +348,18 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const load = useCallback(async () => {
+  const loadLive = useCallback(async () => {
     setError('')
     try {
-      // The dashboard is only rendered for roles that can read every
-      // surface it shows, so we can call all four endpoints in
-      // parallel. allSettled is still used so a single transient
-      // failure doesn't blank the whole page.
       const results = await Promise.allSettled([
         getSallesStatus(),
         getMesures({ limit: 80 }),
         getAlertes(false),
-        getDocuments(),
       ])
-      const [s, m, a, d] = results
+      const [s, m, a] = results
       if (s.status === 'fulfilled') setSalles(s.value.data)
       if (m.status === 'fulfilled') setMesures(m.value.data)
       if (a.status === 'fulfilled') setAlertes(a.value.data)
-      if (d.status === 'fulfilled') setDocuments(d.value.data)
       if (results.some(r => r.status === 'rejected')) {
         setError('Impossible de charger certaines données.')
       }
@@ -374,17 +368,32 @@ export default function DashboardPage() {
     }
   }, [])
 
-  useEffect(() => {
-    load()
-    // Keep an automatic safety refresh for reconnects and changes made
-    // outside the socket.
-    const id = setInterval(load, 30000)
-    return () => clearInterval(id)
-  }, [load])
+  const loadDocuments = useCallback(async () => {
+    try {
+      const response = await getDocuments()
+      setDocuments(response.data)
+    } catch {
+      setError('Impossible de charger les documents.')
+    }
+  }, [])
+
+  const load = useCallback(async () => {
+    await Promise.all([loadLive(), loadDocuments()])
+  }, [loadLive, loadDocuments])
 
   useEffect(() => {
-    if (status === 'live') load()
-  }, [status, load])
+    // Load live data first so the dashboard becomes useful immediately.
+    loadLive()
+    loadDocuments()
+    // Keep an automatic safety refresh for reconnects and changes made
+    // outside the socket.
+    const id = setInterval(loadLive, 15000)
+    return () => clearInterval(id)
+  }, [loadLive, loadDocuments])
+
+  useEffect(() => {
+    if (status === 'live') loadLive()
+  }, [status, loadLive])
 
   useEffect(() => {
     const offMesure = onMesure((data: LiveMesureEventData) => {
