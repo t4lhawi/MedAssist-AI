@@ -340,7 +340,7 @@ export default function DashboardPage() {
     return <VisitorWelcome nom={user?.nom?.split(' ')[0] || 'visiteur'} />
   }
 
-  const { onMesure, onAlerte } = useLiveSocket()
+  const { status, onMesure, onAlerte } = useLiveSocket()
   const [salles, setSalles] = useState<SalleStatus[]>([])
   const [mesures, setMesures] = useState<Mesure[]>([])
   const [alertes, setAlertes] = useState<Alerte[]>([])
@@ -376,11 +376,15 @@ export default function DashboardPage() {
 
   useEffect(() => {
     load()
-    // Measurements and alerts arrive through the live socket. Keep a slow
-    // safety sync for reconnects and changes made outside the socket.
-    const id = setInterval(load, 300000)
+    // Keep an automatic safety refresh for reconnects and changes made
+    // outside the socket.
+    const id = setInterval(load, 30000)
     return () => clearInterval(id)
   }, [load])
+
+  useEffect(() => {
+    if (status === 'live') load()
+  }, [status, load])
 
   useEffect(() => {
     const offMesure = onMesure((data: LiveMesureEventData) => {

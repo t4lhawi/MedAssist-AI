@@ -33,7 +33,7 @@ const FILTER_LABELS: Record<Filter, string> = {
 }
 
 export default function AdminSallesPage() {
-  const { onMesure } = useLiveSocket()
+  const { status, onMesure } = useLiveSocket()
   // This entire page is admin-only (RequireAuth gates it at the
   // route level), so every action is allowed here. The permission
   // check is still pulled so we can hide the "Enregistrer un ESP32"
@@ -68,12 +68,15 @@ export default function AdminSallesPage() {
 
   useEffect(() => {
     load()
-    // Slow safety poll — measurements arrive through the live socket. Salle
-    // renames / deletes / claims aren't pushed over WS, so we still
-    // need a periodic refresh to pick them up.
-    const t = setInterval(load, 300000)
+    // Measurements arrive through the live socket, but device changes still
+    // need an automatic safety refresh.
+    const t = setInterval(load, 30000)
     return () => clearInterval(t)
   }, [load])
+
+  useEffect(() => {
+    if (status === 'live') load()
+  }, [status, load])
 
   // Live: patch the matching salle tile in place when a new mesure
   // arrives. The "ESP32 non enregistrés" synthetic entry (esp32_id

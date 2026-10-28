@@ -128,7 +128,7 @@ function Layout() {
     }
 
     refreshAlertCount()
-    const t = setInterval(refreshAlertCount, 300000)
+    const t = setInterval(refreshAlertCount, 30000)
     return () => clearInterval(t)
   }, [user, permissions.canViewAlertes])
 
