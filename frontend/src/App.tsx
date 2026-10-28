@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import { LiveSocketProvider } from './context/LiveSocketContext'
+import { LiveSocketProvider, useLiveSocket } from './context/LiveSocketContext'
 import LoginPage from './components/Auth/LoginPage'
 import RequireAuth from './components/Auth/RequireAuth'
 import Navbar from './components/Dashboard/Navbar'
@@ -92,6 +92,21 @@ function AnimatedRoutes() {
   )
 }
 
+function LiveAlertCountSync({ onNewAlert }: { onNewAlert: () => void }) {
+  const { user } = useAuth()
+  const { permissions } = usePermissions()
+  const { onAlerte } = useLiveSocket()
+
+  useEffect(() => {
+    if (!user || !permissions.canViewAlertes) return
+    return onAlerte((data) => {
+      if (!data.traitee) onNewAlert()
+    })
+  }, [user, permissions.canViewAlertes, onAlerte, onNewAlert])
+
+  return null
+}
+
 function Layout() {
   const { user, loading } = useAuth()
   const { permissions } = usePermissions()
@@ -113,7 +128,7 @@ function Layout() {
     }
 
     refreshAlertCount()
-    const t = setInterval(refreshAlertCount, 60000)
+    const t = setInterval(refreshAlertCount, 300000)
     return () => clearInterval(t)
   }, [user, permissions.canViewAlertes])
 
@@ -149,6 +164,7 @@ function Layout() {
 
   return (
     <LiveSocketProvider>
+      <LiveAlertCountSync onNewAlert={() => setAlertCount(count => count + 1)} />
       {/* ── 3-column layout: nav top + [sidebar | main | right panel] ── */}
       {/* h-screen + overflow-hidden on the outer column makes the inner
           <main> the only vertical scroller, so the navbar stays locked. */}

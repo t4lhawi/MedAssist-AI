@@ -376,7 +376,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     load()
-    const id = setInterval(load, 30000)
+    // Measurements and alerts arrive through the live socket. Keep a slow
+    // safety sync for reconnects and changes made outside the socket.
+    const id = setInterval(load, 300000)
     return () => clearInterval(id)
   }, [load])
 

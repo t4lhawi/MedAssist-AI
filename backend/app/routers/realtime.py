@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 import logging
 from typing import Any, Dict
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
@@ -36,18 +37,38 @@ async def realtime_ws(websocket: WebSocket, token: str = ""):
         return
 
     queue = await realtime.subscribe()
-    try:
+    async def send_events() -> None:
         while True:
-            # Drain messages. send_json can raise on a dead socket;
-            # catch and exit so we don't leak the subscriber.
             event = await queue.get()
-            try:
-                await websocket.send_json(event)
-            except Exception:
-                break
+            await websocket.send_json(event)
+
+    async def receive_messages() -> None:
+        while True:
+            await websocket.receive()
+
+    sender = asyncio.create_task(send_events())
+    receiver = asyncio.create_task(receive_messages())
+    try:
+        # Read and write concurrently. Reading client heartbeats prevents
+        # reverse proxies from treating an otherwise quiet socket as idle.
+        done, pending = await asyncio.wait(
+            (sender, receiver),
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+        for task in done:
+            task.result()
+        for task in pending:
+            task.cancel()
+        await asyncio.gather(*pending, return_exceptions=True)
     except WebSocketDisconnect:
         pass
+    except Exception:
+        logger.debug("realtime: websocket closed", exc_info=True)
     finally:
+        for task in (sender, receiver):
+            if not task.done():
+                task.cancel()
+        await asyncio.gather(sender, receiver, return_exceptions=True)
         await realtime.unsubscribe(queue)
         try:
             await websocket.close()

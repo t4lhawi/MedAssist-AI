@@ -68,11 +68,10 @@ export default function AdminSallesPage() {
 
   useEffect(() => {
     load()
-    // Slow safety poll — same rationale as the dashboard. Salle
+    // Slow safety poll — measurements arrive through the live socket. Salle
     // renames / deletes / claims aren't pushed over WS, so we still
-    // need a periodic refresh to pick them up. 30s is fine for an
-    // admin page.
-    const t = setInterval(load, 30000)
+    // need a periodic refresh to pick them up.
+    const t = setInterval(load, 300000)
     return () => clearInterval(t)
   }, [load])
 
