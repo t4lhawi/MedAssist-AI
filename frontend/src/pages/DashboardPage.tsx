@@ -387,7 +387,7 @@ export default function DashboardPage() {
     loadDocuments()
     // Keep an automatic safety refresh for reconnects and changes made
     // outside the socket.
-    const id = setInterval(loadLive, 15000)
+    const id = setInterval(loadLive, 1000)
     return () => clearInterval(id)
   }, [loadLive, loadDocuments])
 
